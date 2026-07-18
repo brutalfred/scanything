@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Loader2, RefreshCw, X, ExternalLink, Sparkles } from "lucide-react";
+import { Camera, Loader2, RefreshCw, X, ExternalLink, Sparkles, Video, Image as ImageIcon, Pause, Play } from "lucide-react";
 import { analyzeRoom, type DetectedItem } from "@/lib/analyze-room.functions";
 import { Button } from "@/components/ui/button";
 
@@ -24,15 +24,32 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
+type Mode = "photo" | "video";
 
 function Index() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [mode, setMode] = useState<Mode>("photo");
   const [phase, setPhase] = useState<Phase>("camera");
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
   const [selected, setSelected] = useState<DetectedItem | null>(null);
+
+  // Video mode state
+  const [liveItems, setLiveItems] = useState<DetectedItem[]>([]);
+  const [videoPaused, setVideoPaused] = useState(false);
+  const analyzingRef = useRef(false);
+  const pausedRef = useRef(false);
+  const modeRef = useRef<Mode>("photo");
+  const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  useEffect(() => {
+    pausedRef.current = videoPaused || !!selected;
+  }, [videoPaused, selected]);
 
   const startCamera = useCallback(async () => {
     setError(null);
@@ -68,28 +85,29 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  const capture = useCallback(async () => {
+  const grabFrame = useCallback((maxDim = 1024, quality = 0.8): string | null => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) return null;
     const w = video.videoWidth;
     const h = video.videoHeight;
-    if (!w || !h) return;
-
+    if (!w || !h) return null;
     const canvas = document.createElement("canvas");
-    const max = 1024;
-    const scale = Math.min(1, max / Math.max(w, h));
+    const scale = Math.min(1, maxDim / Math.max(w, h));
     canvas.width = Math.round(w * scale);
     canvas.height = Math.round(h * scale);
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) return null;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+    return canvas.toDataURL("image/jpeg", quality);
+  }, []);
 
+  const capture = useCallback(async () => {
+    const dataUrl = grabFrame(1024, 0.8);
+    if (!dataUrl) return;
     setSnapshot(dataUrl);
     stopCamera();
     setPhase("analyzing");
     setError(null);
-
     try {
       const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
       setItems(result.items);
@@ -98,14 +116,62 @@ function Index() {
       setError(e instanceof Error ? e.message : "Analysis failed.");
       setPhase("results");
     }
-  }, [stopCamera]);
+  }, [grabFrame, stopCamera]);
+
+  // Video-mode continuous scan loop
+  useEffect(() => {
+    if (mode !== "video" || phase !== "camera") return;
+    let cancelled = false;
+
+    const loop = async () => {
+      while (!cancelled && modeRef.current === "video") {
+        if (pausedRef.current || analyzingRef.current) {
+          await new Promise((r) => setTimeout(r, 300));
+          continue;
+        }
+        const frame = grabFrame(768, 0.7);
+        if (!frame) {
+          await new Promise((r) => setTimeout(r, 400));
+          continue;
+        }
+        analyzingRef.current = true;
+        setScanning(true);
+        try {
+          const result = await analyzeRoom({ data: { imageBase64: frame } });
+          if (!cancelled && modeRef.current === "video") {
+            setLiveItems(result.items);
+            setError(null);
+          }
+        } catch (e) {
+          if (!cancelled) setError(e instanceof Error ? e.message : "Analysis failed.");
+        } finally {
+          analyzingRef.current = false;
+          setScanning(false);
+        }
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+    };
+    void loop();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, phase, grabFrame]);
 
   const reset = useCallback(() => {
     setSnapshot(null);
     setItems([]);
     setSelected(null);
     setError(null);
+    setLiveItems([]);
+    setVideoPaused(false);
     setPhase("camera");
+  }, []);
+
+  const switchMode = useCallback((m: Mode) => {
+    setMode(m);
+    setLiveItems([]);
+    setVideoPaused(false);
+    setError(null);
   }, []);
 
   return (
@@ -135,6 +201,34 @@ function Index() {
       <main className="mx-auto max-w-4xl px-4 py-4">
         {phase === "camera" && (
           <div className="space-y-3">
+            {/* Mode toggle */}
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-full border border-border bg-secondary p-1">
+                <button
+                  onClick={() => switchMode("photo")}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                    mode === "photo"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <ImageIcon className="h-3.5 w-3.5" />
+                  Photo
+                </button>
+                <button
+                  onClick={() => switchMode("video")}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                    mode === "video"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Video className="h-3.5 w-3.5" />
+                  Live video
+                </button>
+              </div>
+            </div>
+
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video">
               <video
                 ref={videoRef}
@@ -142,21 +236,85 @@ function Index() {
                 muted
                 className="absolute inset-0 h-full w-full object-cover"
               />
+
+              {/* Live overlay boxes (video mode) */}
+              {mode === "video" &&
+                liveItems.map((it, i) => (
+                  <button
+                    key={`${i}-${it.name}`}
+                    onClick={() => setSelected(it)}
+                    className="group absolute rounded-md border-2 border-emerald-400 bg-emerald-400/15 shadow-[0_0_0_1px_rgba(0,0,0,0.4)] transition-all hover:bg-emerald-400/30 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    style={{
+                      left: `${it.box.x * 100}%`,
+                      top: `${it.box.y * 100}%`,
+                      width: `${it.box.w * 100}%`,
+                      height: `${it.box.h * 100}%`,
+                    }}
+                  >
+                    <span className="absolute -top-5 left-0 max-w-full truncate rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-medium text-white shadow">
+                      {it.name}
+                    </span>
+                  </button>
+                ))}
+
+              {/* Video mode status pill */}
+              {mode === "video" && (
+                <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      videoPaused
+                        ? "bg-yellow-400"
+                        : scanning
+                          ? "bg-emerald-400 animate-pulse"
+                          : "bg-emerald-400"
+                    }`}
+                  />
+                  {videoPaused ? "Paused" : scanning ? "Scanning…" : "Live"}
+                </div>
+              )}
+
               {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center text-sm text-white">
+                <div className="absolute inset-x-2 bottom-2 rounded-md bg-black/80 p-2 text-center text-xs text-white">
                   {error}
                 </div>
               )}
             </div>
-            <div className="flex flex-col items-center gap-2">
-              <Button size="lg" onClick={capture} className="w-full max-w-xs">
-                <Camera className="mr-2 h-5 w-5" />
-                Scan the room
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                Point at a room and tap. AI finds every item bigger than an apple.
-              </p>
-            </div>
+
+            {mode === "photo" ? (
+              <div className="flex flex-col items-center gap-2">
+                <Button size="lg" onClick={capture} className="w-full max-w-xs">
+                  <Camera className="mr-2 h-5 w-5" />
+                  Scan the room
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Point at a room and tap. AI finds every item bigger than an apple.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  onClick={() => setVideoPaused((p) => !p)}
+                  className="w-full max-w-xs"
+                >
+                  {videoPaused ? (
+                    <>
+                      <Play className="mr-2 h-5 w-5" />
+                      Resume scanning
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="mr-2 h-5 w-5" />
+                      Pause scanning
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Green boxes appear over detected items. Tap any box for details.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
