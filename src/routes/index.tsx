@@ -1,7 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Loader2, RefreshCw, X, ExternalLink, Sparkles, Video, Image as ImageIcon, Pause, Play } from "lucide-react";
-import { analyzeRoom, type DetectedItem } from "@/lib/analyze-room.functions";
+import {
+  Camera,
+  Loader2,
+  RefreshCw,
+  X,
+  ExternalLink,
+  Sparkles,
+  Video,
+  Image as ImageIcon,
+  Pause,
+  Play,
+} from "lucide-react";
+import {
+  analyzeRoom,
+  quickScan,
+  enrichItem,
+  type DetectedItem,
+  type QuickItem,
+} from "@/lib/analyze-room.functions";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -26,6 +43,40 @@ export const Route = createFileRoute("/")({
 type Phase = "camera" | "analyzing" | "results";
 type Mode = "photo" | "video";
 
+type Enrichment = Omit<DetectedItem, "box" | "name">;
+
+type TrackedItem = {
+  id: string;
+  name: string;
+  box: { x: number; y: number; w: number; h: number };
+  enrichment?: Enrichment;
+  enriching?: boolean;
+  firstSeen: number;
+  lastSeen: number;
+};
+
+const MAX_TRACKED = 10;
+const STALE_MS = 6000;
+
+function normName(n: string) {
+  return n.toLowerCase().trim();
+}
+function centerDist(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+) {
+  const ax = a.x + a.w / 2;
+  const ay = a.y + a.h / 2;
+  const bx = b.x + b.w / 2;
+  const by = b.y + b.h / 2;
+  return Math.hypot(ax - bx, ay - by);
+}
+function distFromCenter(b: { x: number; y: number; w: number; h: number }) {
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  return Math.hypot(cx - 0.5, cy - 0.5);
+}
+
 function Index() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -34,14 +85,16 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
-  const [selected, setSelected] = useState<DetectedItem | null>(null);
+  const [selected, setSelected] = useState<TrackedItem | DetectedItem | null>(null);
 
   // Video mode state
-  const [liveItems, setLiveItems] = useState<DetectedItem[]>([]);
+  const [tracked, setTracked] = useState<TrackedItem[]>([]);
+  const trackedRef = useRef<TrackedItem[]>([]);
   const [videoPaused, setVideoPaused] = useState(false);
-  const analyzingRef = useRef(false);
+  const scanningRef = useRef(false);
   const pausedRef = useRef(false);
   const modeRef = useRef<Mode>("photo");
+  const enrichingIdsRef = useRef<Set<string>>(new Set());
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
@@ -50,12 +103,19 @@ function Index() {
   useEffect(() => {
     pausedRef.current = videoPaused || !!selected;
   }, [videoPaused, selected]);
+  useEffect(() => {
+    trackedRef.current = tracked;
+  }, [tracked]);
 
   const startCamera = useCallback(async () => {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 1280 },
+        },
         audio: false,
       });
       streamRef.current = stream;
@@ -118,37 +178,136 @@ function Index() {
     }
   }, [grabFrame, stopCamera]);
 
-  // Video-mode continuous scan loop
+  // Merge quickScan detections into tracked state
+  const mergeDetections = useCallback((detections: QuickItem[]) => {
+    setTracked((prev) => {
+      const now = Date.now();
+      const next = prev.map((t) => ({ ...t }));
+      const usedIdx = new Set<number>();
+
+      for (const det of detections) {
+        const dn = normName(det.name);
+        let bestIdx = -1;
+        let bestDist = Infinity;
+        for (let i = 0; i < next.length; i++) {
+          if (usedIdx.has(i)) continue;
+          const t = next[i];
+          if (normName(t.name) !== dn) continue;
+          const d = centerDist(t.box, det.box);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        }
+        // fallback: nearest box regardless of name if very close
+        if (bestIdx === -1) {
+          for (let i = 0; i < next.length; i++) {
+            if (usedIdx.has(i)) continue;
+            const d = centerDist(next[i].box, det.box);
+            if (d < 0.08 && d < bestDist) {
+              bestDist = d;
+              bestIdx = i;
+            }
+          }
+        }
+        if (bestIdx >= 0) {
+          usedIdx.add(bestIdx);
+          next[bestIdx].box = det.box;
+          next[bestIdx].lastSeen = now;
+          // keep original name (already enriched maybe)
+        } else {
+          next.push({
+            id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
+            name: det.name,
+            box: det.box,
+            firstSeen: now,
+            lastSeen: now,
+          });
+        }
+      }
+
+      // prune stale
+      const fresh = next.filter((t) => now - t.lastSeen < STALE_MS);
+      // keep 10 nearest to center
+      fresh.sort((a, b) => distFromCenter(a.box) - distFromCenter(b.box));
+      return fresh.slice(0, MAX_TRACKED);
+    });
+  }, []);
+
+  // Video-mode quick-scan loop
   useEffect(() => {
     if (mode !== "video" || phase !== "camera") return;
     let cancelled = false;
 
     const loop = async () => {
       while (!cancelled && modeRef.current === "video") {
-        if (pausedRef.current || analyzingRef.current) {
+        if (pausedRef.current || scanningRef.current) {
+          await new Promise((r) => setTimeout(r, 200));
+          continue;
+        }
+        const frame = grabFrame(512, 0.6);
+        if (!frame) {
           await new Promise((r) => setTimeout(r, 300));
           continue;
         }
-        const frame = grabFrame(768, 0.7);
+        scanningRef.current = true;
+        setScanning(true);
+        try {
+          const result = await quickScan({ data: { imageBase64: frame } });
+          if (!cancelled && modeRef.current === "video") {
+            mergeDetections(result.items);
+            setError(null);
+          }
+        } catch (e) {
+          if (!cancelled) setError(e instanceof Error ? e.message : "Scan failed.");
+        } finally {
+          scanningRef.current = false;
+          setScanning(false);
+        }
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    };
+    void loop();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, phase, grabFrame, mergeDetections]);
+
+  // Background enrichment loop — one item at a time
+  useEffect(() => {
+    if (mode !== "video" || phase !== "camera") return;
+    let cancelled = false;
+
+    const loop = async () => {
+      while (!cancelled && modeRef.current === "video") {
+        const target = trackedRef.current.find(
+          (t) => !t.enrichment && !enrichingIdsRef.current.has(t.id),
+        );
+        if (!target || pausedRef.current) {
+          await new Promise((r) => setTimeout(r, 500));
+          continue;
+        }
+        const frame = grabFrame(640, 0.7);
         if (!frame) {
           await new Promise((r) => setTimeout(r, 400));
           continue;
         }
-        analyzingRef.current = true;
-        setScanning(true);
+        enrichingIdsRef.current.add(target.id);
         try {
-          const result = await analyzeRoom({ data: { imageBase64: frame } });
-          if (!cancelled && modeRef.current === "video") {
-            setLiveItems(result.items);
-            setError(null);
+          const enrichment = await enrichItem({
+            data: { name: target.name, imageBase64: frame },
+          });
+          if (!cancelled) {
+            setTracked((prev) =>
+              prev.map((t) => (t.id === target.id ? { ...t, enrichment } : t)),
+            );
           }
-        } catch (e) {
-          if (!cancelled) setError(e instanceof Error ? e.message : "Analysis failed.");
+        } catch {
+          // silent — try next tick
         } finally {
-          analyzingRef.current = false;
-          setScanning(false);
+          enrichingIdsRef.current.delete(target.id);
         }
-        await new Promise((r) => setTimeout(r, 1200));
+        await new Promise((r) => setTimeout(r, 300));
       }
     };
     void loop();
@@ -162,16 +321,20 @@ function Index() {
     setItems([]);
     setSelected(null);
     setError(null);
-    setLiveItems([]);
+    setTracked([]);
     setVideoPaused(false);
     setPhase("camera");
   }, []);
 
   const switchMode = useCallback((m: Mode) => {
     setMode(m);
-    setLiveItems([]);
+    setTracked([]);
     setVideoPaused(false);
     setError(null);
+  }, []);
+
+  const openTracked = useCallback((t: TrackedItem) => {
+    setSelected(t);
   }, []);
 
   return (
@@ -239,11 +402,11 @@ function Index() {
 
               {/* Live overlay boxes (video mode) */}
               {mode === "video" &&
-                liveItems.map((it, i) => (
+                tracked.map((it) => (
                   <button
-                    key={`${i}-${it.name}`}
-                    onClick={() => setSelected(it)}
-                    className="group absolute rounded-md border-2 border-emerald-400 bg-emerald-400/15 shadow-[0_0_0_1px_rgba(0,0,0,0.4)] transition-all hover:bg-emerald-400/30 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    key={it.id}
+                    onClick={() => openTracked(it)}
+                    className="group absolute rounded border border-emerald-400 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(0,0,0,0.35)] transition-[left,top,width,height,background-color] duration-300 ease-out hover:bg-emerald-400/25 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                     style={{
                       left: `${it.box.x * 100}%`,
                       top: `${it.box.y * 100}%`,
@@ -251,11 +414,23 @@ function Index() {
                       height: `${it.box.h * 100}%`,
                     }}
                   >
-                    <span className="absolute -top-5 left-0 max-w-full truncate rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-medium text-white shadow">
+                    <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
                       {it.name}
+                      {it.enrichment && (
+                        <span className="ml-1 opacity-90">
+                          ${it.enrichment.priceMin}–${it.enrichment.priceMax}
+                        </span>
+                      )}
                     </span>
                   </button>
                 ))}
+
+              {/* Center focus reticle (video mode) */}
+              {mode === "video" && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="h-1 w-1 rounded-full bg-white/50 shadow-[0_0_0_3px_rgba(255,255,255,0.15)]" />
+                </div>
+              )}
 
               {/* Video mode status pill */}
               {mode === "video" && (
@@ -291,29 +466,81 @@ function Index() {
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  onClick={() => setVideoPaused((p) => !p)}
-                  className="w-full max-w-xs"
-                >
-                  {videoPaused ? (
-                    <>
-                      <Play className="mr-2 h-5 w-5" />
-                      Resume scanning
-                    </>
+              <>
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    onClick={() => setVideoPaused((p) => !p)}
+                    className="w-full max-w-xs"
+                  >
+                    {videoPaused ? (
+                      <>
+                        <Play className="mr-2 h-5 w-5" />
+                        Resume scanning
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="mr-2 h-5 w-5" />
+                        Pause scanning
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Green boxes track items near the center. Tap any item to see details.
+                  </p>
+                </div>
+
+                {/* Live list below camera */}
+                <div className="rounded-2xl border border-border bg-card">
+                  <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
+                    <h2 className="text-xs font-semibold text-muted-foreground">
+                      Detected in view ({tracked.length}/{MAX_TRACKED})
+                    </h2>
+                    {scanning && (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {tracked.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                      Point the camera at objects…
+                    </div>
                   ) : (
-                    <>
-                      <Pause className="mr-2 h-5 w-5" />
-                      Pause scanning
-                    </>
+                    <ul className="divide-y divide-border/60">
+                      {tracked.map((it) => (
+                        <li key={it.id}>
+                          <button
+                            onClick={() => openTracked(it)}
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
+                          >
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-medium">
+                                {it.name}
+                              </div>
+                              {it.enrichment ? (
+                                <div className="truncate text-[11px] capitalize text-muted-foreground">
+                                  {it.enrichment.category}
+                                </div>
+                              ) : (
+                                <div className="text-[11px] text-muted-foreground">
+                                  analyzing…
+                                </div>
+                              )}
+                            </div>
+                            {it.enrichment ? (
+                              <div className="shrink-0 text-xs font-semibold text-primary">
+                                ${it.enrichment.priceMin}–${it.enrichment.priceMax}
+                              </div>
+                            ) : (
+                              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Green boxes appear over detected items. Tap any box for details.
-                </p>
-              </div>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -392,49 +619,83 @@ function Index() {
         )}
       </main>
 
-      {selected && (
-        <div
-          className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-semibold">{selected.name}</h3>
-                <p className="text-xs capitalize text-muted-foreground">
-                  {selected.category}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelected(null)}
-                className="rounded-full p-1 text-muted-foreground hover:bg-accent"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+      {selected && <DetailPanel item={selected} onClose={() => setSelected(null)} />}
+    </div>
+  );
+}
 
-            <p className="mt-3 text-sm leading-relaxed">{selected.description}</p>
+function DetailPanel({
+  item,
+  onClose,
+}: {
+  item: TrackedItem | DetectedItem;
+  onClose: () => void;
+}) {
+  const isTracked = (i: TrackedItem | DetectedItem): i is TrackedItem =>
+    (i as TrackedItem).id !== undefined;
+
+  const name = item.name;
+  const enrichment: Enrichment | undefined = isTracked(item)
+    ? item.enrichment
+    : {
+        category: item.category,
+        description: item.description,
+        priceMin: item.priceMin,
+        priceMax: item.priceMax,
+        currency: item.currency,
+        searchUrl: item.searchUrl,
+        infoUrl: item.infoUrl,
+      };
+
+  return (
+    <div
+      className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">{name}</h3>
+            {enrichment ? (
+              <p className="text-xs capitalize text-muted-foreground">
+                {enrichment.category}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Analyzing details…</p>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1 text-muted-foreground hover:bg-accent"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {enrichment ? (
+          <>
+            <p className="mt-3 text-sm leading-relaxed">{enrichment.description}</p>
 
             <div className="mt-4 rounded-lg bg-secondary p-3">
               <div className="text-xs font-medium text-muted-foreground">
                 Estimated price range
               </div>
               <div className="text-xl font-semibold text-foreground">
-                ${selected.priceMin}
-                <span className="text-muted-foreground"> – </span>${selected.priceMax}
+                ${enrichment.priceMin}
+                <span className="text-muted-foreground"> – </span>${enrichment.priceMax}
                 <span className="ml-1 text-xs text-muted-foreground">
-                  {selected.currency}
+                  {enrichment.currency}
                 </span>
               </div>
             </div>
 
             <div className="mt-4 flex flex-col gap-2">
               <a
-                href={selected.searchUrl}
+                href={enrichment.searchUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
@@ -443,7 +704,7 @@ function Index() {
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
               <a
-                href={selected.infoUrl}
+                href={enrichment.infoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
@@ -452,9 +713,14 @@ function Index() {
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
             </div>
+          </>
+        ) : (
+          <div className="mt-6 flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading details…
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
