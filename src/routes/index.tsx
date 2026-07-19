@@ -333,9 +333,49 @@ function Index() {
     setError(null);
   }, []);
 
-  const openTracked = useCallback((t: TrackedItem) => {
-    setSelected(t);
+  // Door handling
+  const [doorPrompt, setDoorPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(null);
+  const [addressInput, setAddressInput] = useState("");
+
+  const openAddressSearch = useCallback((address: string) => {
+    const url = `https://www.google.com/search?q=${encodeURIComponent(address)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   }, []);
+
+  const openItem = useCallback(
+    (item: TrackedItem | DetectedItem) => {
+      const isDoor = /\bdoor(way|s)?\b/i.test(item.name);
+      if (isDoor) {
+        const saved =
+          typeof window !== "undefined" ? window.localStorage.getItem("roomscan:address") : null;
+        if (saved && saved.trim()) {
+          openAddressSearch(saved.trim());
+        } else {
+          setAddressInput("");
+          setDoorPrompt({ item });
+        }
+        return;
+      }
+      setSelected(item);
+    },
+    [openAddressSearch],
+  );
+
+  const openTracked = useCallback((t: TrackedItem) => openItem(t), [openItem]);
+
+  const submitAddress = useCallback(
+    (remember: boolean) => {
+      const addr = addressInput.trim();
+      if (!addr) return;
+      if (remember && typeof window !== "undefined") {
+        window.localStorage.setItem("roomscan:address", addr);
+      }
+      setDoorPrompt(null);
+      openAddressSearch(addr);
+    },
+    [addressInput, openAddressSearch],
+  );
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
