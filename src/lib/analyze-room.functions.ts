@@ -30,14 +30,19 @@ export type QuickResult = {
   items: QuickItem[];
 };
 
-const FULL_SYSTEM = `You are a fast visual room-analyzer. Identify DISTINCT physical objects visible in the photo that are LARGER than an apple (roughly >10cm across). Ignore tiny items, wall paint, floor, ceiling, and merged clutter.
+const FULL_SYSTEM = `You are a fast visual room-analyzer. Identify DISTINCT physical objects visible in the photo that are LARGER than an apple (roughly >10cm across).
+
+PRIORITY — focus almost entirely on everyday human-use objects:
+furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, kitchenware, decor, instruments, sports gear, pets/pet items, food items, doors, windows.
+
+DO NOT include structural/architectural surfaces (walls, wall paint, floor, ceiling, beams, pillars, concrete, tiles, carpet, molding, radiators, empty corners) UNLESS the photo contains essentially no everyday items — only then may you include at most 1-2 structural elements as a last resort.
 
 For each object, respond with a compact JSON object matching:
 {
   "items": [
     {
       "name": "short common name",
-      "category": "furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|other",
+      "category": "furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|door|other",
       "description": "1-2 sentence plain description of what it likely is (brand/style guess if obvious)",
       "priceMin": number in USD (typical low retail),
       "priceMax": number in USD (typical high retail),
@@ -53,7 +58,12 @@ box is the object's bounding box in NORMALIZED image coordinates where (0,0) is 
 
 Keep it under 12 items. Prefer confident guesses. Output ONLY JSON, no markdown.`;
 
-const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name up to 10 distinct objects LARGER than an apple. Focus on objects near the CENTER of the frame first. Use the shortest possible common name (1-2 words: "TV", "Bed", "Lamp", "Chair", "Plant").
+const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name up to 10 distinct objects LARGER than an apple. Focus on objects near the CENTER of the frame first.
+
+PRIORITY — spot everyday human-use items: furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, kitchenware, decor, instruments, sports gear, doors, windows.
+IGNORE walls, wall paint, floor, ceiling, beams, pillars, concrete, tiles, carpet, molding — unless there is literally nothing else visible in the frame.
+
+Use the shortest possible common name (1-2 words: "TV", "Bed", "Lamp", "Chair", "Plant", "Door").
 
 Respond with ONLY compact JSON:
 {"items":[{"name":"TV","box":{"x":0.2,"y":0.3,"w":0.4,"h":0.3}}]}

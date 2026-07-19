@@ -333,9 +333,49 @@ function Index() {
     setError(null);
   }, []);
 
-  const openTracked = useCallback((t: TrackedItem) => {
-    setSelected(t);
+  // Door handling
+  const [doorPrompt, setDoorPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(null);
+  const [addressInput, setAddressInput] = useState("");
+
+  const openAddressSearch = useCallback((address: string) => {
+    const url = `https://www.google.com/search?q=${encodeURIComponent(address)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   }, []);
+
+  const openItem = useCallback(
+    (item: TrackedItem | DetectedItem) => {
+      const isDoor = /\bdoor(way|s)?\b/i.test(item.name);
+      if (isDoor) {
+        const saved =
+          typeof window !== "undefined" ? window.localStorage.getItem("roomscan:address") : null;
+        if (saved && saved.trim()) {
+          openAddressSearch(saved.trim());
+        } else {
+          setAddressInput("");
+          setDoorPrompt({ item });
+        }
+        return;
+      }
+      setSelected(item);
+    },
+    [openAddressSearch],
+  );
+
+  const openTracked = useCallback((t: TrackedItem) => openItem(t), [openItem]);
+
+  const submitAddress = useCallback(
+    (remember: boolean) => {
+      const addr = addressInput.trim();
+      if (!addr) return;
+      if (remember && typeof window !== "undefined") {
+        window.localStorage.setItem("roomscan:address", addr);
+      }
+      setDoorPrompt(null);
+      openAddressSearch(addr);
+    },
+    [addressInput, openAddressSearch],
+  );
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -563,7 +603,7 @@ function Index() {
                 items.map((it, i) => (
                   <button
                     key={i}
-                    onClick={() => setSelected(it)}
+                    onClick={() => openItem(it)}
                     className="group absolute rounded-md border-2 border-primary/80 bg-primary/10 transition-all hover:bg-primary/25 focus:outline-none focus:ring-2 focus:ring-primary"
                     style={{
                       left: `${it.box.x * 100}%`,
@@ -594,7 +634,7 @@ function Index() {
                   {items.map((it, i) => (
                     <button
                       key={i}
-                      onClick={() => setSelected(it)}
+                      onClick={() => openItem(it)}
                       className="rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-primary hover:bg-accent"
                     >
                       <div className="text-sm font-medium">{it.name}</div>
@@ -620,6 +660,69 @@ function Index() {
       </main>
 
       {selected && <DetailPanel item={selected} onClose={() => setSelected(null)} />}
+
+      {doorPrompt && (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
+          onClick={() => setDoorPrompt(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold">Which address is this?</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  You scanned a door. Enter the address to look it up on the web.
+                </p>
+              </div>
+              <button
+                onClick={() => setDoorPrompt(null)}
+                className="rounded-full p-1 text-muted-foreground hover:bg-accent"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitAddress(true);
+              }}
+              className="mt-4 space-y-3"
+            >
+              <input
+                autoFocus
+                type="text"
+                inputMode="text"
+                value={addressInput}
+                onChange={(e) => setAddressInput(e.target.value)}
+                placeholder="e.g. 1600 Pennsylvania Ave NW, Washington, DC"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" className="flex-1" disabled={!addressInput.trim()}>
+                  Save & search
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="flex-1"
+                  disabled={!addressInput.trim()}
+                  onClick={() => submitAddress(false)}
+                >
+                  Search once
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Saved locally on this device so future door scans open instantly.
+              </p>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
