@@ -634,7 +634,7 @@ function Index() {
                   {items.map((it, i) => (
                     <button
                       key={i}
-                      onClick={() => setSelected(it)}
+                      onClick={() => openItem(it)}
                       className="rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-primary hover:bg-accent"
                     >
                       <div className="text-sm font-medium">{it.name}</div>
