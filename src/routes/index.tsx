@@ -603,7 +603,7 @@ function Index() {
                 items.map((it, i) => (
                   <button
                     key={i}
-                    onClick={() => setSelected(it)}
+                    onClick={() => openItem(it)}
                     className="group absolute rounded-md border-2 border-primary/80 bg-primary/10 transition-all hover:bg-primary/25 focus:outline-none focus:ring-2 focus:ring-primary"
                     style={{
                       left: `${it.box.x * 100}%`,
