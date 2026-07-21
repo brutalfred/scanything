@@ -138,7 +138,41 @@
   }
 
   body {
-    background-color: var(--color-background);
+    background-color: #000;
     color: var(--color-foreground);
+    background-image:
+      radial-gradient(ellipse at top, oklch(0.18 0.05 85 / 0.35), transparent 60%),
+      radial-gradient(ellipse at bottom, oklch(0.15 0.04 70 / 0.25), transparent 60%);
+    background-attachment: fixed;
   }
+}
+
+@utility gold-line {
+  background: linear-gradient(
+    90deg,
+    oklch(0.55 0.1 60) 0%,
+    oklch(0.88 0.16 85) 45%,
+    oklch(0.98 0.05 95) 50%,
+    oklch(0.88 0.16 85) 55%,
+    oklch(0.55 0.1 60) 100%
+  );
+}
+
+@utility gold-text {
+  background: linear-gradient(
+    180deg,
+    oklch(0.95 0.08 90) 0%,
+    oklch(0.82 0.16 85) 50%,
+    oklch(0.65 0.14 70) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility gold-glow {
+  box-shadow:
+    0 0 0 1px oklch(0.75 0.14 85 / 0.6),
+    0 0 20px oklch(0.82 0.15 85 / 0.25),
+    inset 0 1px 0 oklch(0.95 0.08 90 / 0.15);
 }
