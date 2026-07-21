@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Camera,
   Loader2,
@@ -11,6 +11,8 @@ import {
   Image as ImageIcon,
   Pause,
   Play,
+  SlidersHorizontal,
+  Download,
 } from "lucide-react";
 import {
   analyzeRoom,
@@ -42,13 +44,14 @@ export const Route = createFileRoute("/")({
 
 type Phase = "camera" | "analyzing" | "results";
 type Mode = "photo" | "video";
+type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
 
 type TrackedItem = {
   id: string;
   name: string;
-  box: { x: number; y: number; w: number; h: number };
+  box: Box;
   enrichment?: Enrichment;
   enriching?: boolean;
   firstSeen: number;
@@ -58,23 +61,67 @@ type TrackedItem = {
 const MAX_TRACKED = 10;
 const STALE_MS = 6000;
 
+const CATEGORY_FILTERS: { key: string; label: string }[] = [
+  { key: "furniture", label: "Furniture" },
+  { key: "electronics", label: "Electronics" },
+  { key: "appliance", label: "Appliances" },
+  { key: "decor", label: "Decor" },
+  { key: "plant", label: "Plants" },
+  { key: "kitchenware", label: "Kitchenware" },
+  { key: "clothing", label: "Clothing" },
+  { key: "toy", label: "Toys" },
+  { key: "book", label: "Books" },
+  { key: "instrument", label: "Instruments" },
+  { key: "door", label: "Doors" },
+  { key: "other", label: "Other" },
+];
+const DEFAULT_FILTERS = new Set(CATEGORY_FILTERS.map((c) => c.key));
+const FILTER_STORAGE_KEY = "roomscan:filters";
+
 function normName(n: string) {
   return n.toLowerCase().trim();
 }
-function centerDist(
-  a: { x: number; y: number; w: number; h: number },
-  b: { x: number; y: number; w: number; h: number },
-) {
+function centerDist(a: Box, b: Box) {
   const ax = a.x + a.w / 2;
   const ay = a.y + a.h / 2;
   const bx = b.x + b.w / 2;
   const by = b.y + b.h / 2;
   return Math.hypot(ax - bx, ay - by);
 }
-function distFromCenter(b: { x: number; y: number; w: number; h: number }) {
+function distFromCenter(b: Box) {
   const cx = b.x + b.w / 2;
   const cy = b.y + b.h / 2;
   return Math.hypot(cx - 0.5, cy - 0.5);
+}
+
+async function cropAndDownload(imgSrc: string, box: Box, name: string) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise<void>((res, rej) => {
+    img.onload = () => res();
+    img.onerror = () => rej(new Error("image load failed"));
+    img.src = imgSrc;
+  });
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  const cw = Math.max(1, Math.round(box.w * iw));
+  const ch = Math.max(1, Math.round(box.h * ih));
+  const canvas = document.createElement("canvas");
+  canvas.width = cw;
+  canvas.height = ch;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.drawImage(img, box.x * iw, box.y * ih, box.w * iw, box.h * ih, 0, 0, cw, ch);
+  const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, "image/jpeg", 0.92));
+  if (!blob) return;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name.replace(/[^a-z0-9]+/gi, "_").toLowerCase() || "item"}.jpeg`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function Index() {
@@ -86,6 +133,32 @@ function Index() {
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
   const [selected, setSelected] = useState<TrackedItem | DetectedItem | null>(null);
+
+  // Filter state
+  const [filters, setFilters] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set(DEFAULT_FILTERS);
+    try {
+      const raw = window.localStorage.getItem(FILTER_STORAGE_KEY);
+      if (!raw) return new Set(DEFAULT_FILTERS);
+      const arr = JSON.parse(raw) as string[];
+      return new Set(arr);
+    } catch {
+      return new Set(DEFAULT_FILTERS);
+    }
+  });
+  const [filterOpen, setFilterOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...filters]));
+  }, [filters]);
+  const toggleFilter = (key: string) => {
+    setFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   // Video mode state
   const [tracked, setTracked] = useState<TrackedItem[]>([]);
@@ -101,8 +174,8 @@ function Index() {
     modeRef.current = mode;
   }, [mode]);
   useEffect(() => {
-    pausedRef.current = videoPaused || !!selected;
-  }, [videoPaused, selected]);
+    pausedRef.current = videoPaused || !!selected || filterOpen;
+  }, [videoPaused, selected, filterOpen]);
   useEffect(() => {
     trackedRef.current = tracked;
   }, [tracked]);
@@ -178,7 +251,6 @@ function Index() {
     }
   }, [grabFrame, stopCamera]);
 
-  // Merge quickScan detections into tracked state
   const mergeDetections = useCallback((detections: QuickItem[]) => {
     setTracked((prev) => {
       const now = Date.now();
@@ -199,7 +271,6 @@ function Index() {
             bestIdx = i;
           }
         }
-        // fallback: nearest box regardless of name if very close
         if (bestIdx === -1) {
           for (let i = 0; i < next.length; i++) {
             if (usedIdx.has(i)) continue;
@@ -214,7 +285,6 @@ function Index() {
           usedIdx.add(bestIdx);
           next[bestIdx].box = det.box;
           next[bestIdx].lastSeen = now;
-          // keep original name (already enriched maybe)
         } else {
           next.push({
             id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
@@ -226,15 +296,12 @@ function Index() {
         }
       }
 
-      // prune stale
       const fresh = next.filter((t) => now - t.lastSeen < STALE_MS);
-      // keep 10 nearest to center
       fresh.sort((a, b) => distFromCenter(a.box) - distFromCenter(b.box));
       return fresh.slice(0, MAX_TRACKED);
     });
   }, []);
 
-  // Video-mode quick-scan loop
   useEffect(() => {
     if (mode !== "video" || phase !== "camera") return;
     let cancelled = false;
@@ -273,7 +340,6 @@ function Index() {
     };
   }, [mode, phase, grabFrame, mergeDetections]);
 
-  // Background enrichment loop — one item at a time
   useEffect(() => {
     if (mode !== "video" || phase !== "camera") return;
     let cancelled = false;
@@ -303,7 +369,7 @@ function Index() {
             );
           }
         } catch {
-          // silent — try next tick
+          // silent
         } finally {
           enrichingIdsRef.current.delete(target.id);
         }
@@ -361,8 +427,6 @@ function Index() {
     [openAddressSearch],
   );
 
-  const openTracked = useCallback((t: TrackedItem) => openItem(t), [openItem]);
-
   const submitAddress = useCallback(
     (remember: boolean) => {
       const addr = addressInput.trim();
@@ -376,30 +440,187 @@ function Index() {
     [addressInput, openAddressSearch],
   );
 
+  // Long-press → save cropped item image
+  const [savePrompt, setSavePrompt] = useState<
+    { name: string; box: Box; imgSrc: string } | null
+  >(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const longPressRef = useRef<{ timer: number | null; fired: boolean }>({
+    timer: null,
+    fired: false,
+  });
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressRef.current.timer !== null) {
+      window.clearTimeout(longPressRef.current.timer);
+      longPressRef.current.timer = null;
+    }
+  }, []);
+
+  const startLongPress = useCallback(
+    (getData: () => { name: string; box: Box; imgSrc: string } | null) => {
+      cancelLongPress();
+      longPressRef.current.fired = false;
+      longPressRef.current.timer = window.setTimeout(() => {
+        const data = getData();
+        longPressRef.current.timer = null;
+        if (data) {
+          longPressRef.current.fired = true;
+          setSavePrompt(data);
+        }
+      }, 2000);
+    },
+    [cancelLongPress],
+  );
+
+  const handleTapAfterPress = useCallback(
+    (onTap: () => void) => {
+      cancelLongPress();
+      if (longPressRef.current.fired) {
+        longPressRef.current.fired = false;
+        return;
+      }
+      onTap();
+    },
+    [cancelLongPress],
+  );
+
+  const confirmSave = useCallback(async () => {
+    if (!savePrompt) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await cropAndDownload(savePrompt.imgSrc, savePrompt.box, savePrompt.name);
+      setSavePrompt(null);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Save failed.");
+    } finally {
+      setSaving(false);
+    }
+  }, [savePrompt]);
+
+  // Filtered lists
+  const isAllowed = useCallback(
+    (category: string | undefined) => {
+      if (!category) return true; // not yet enriched
+      const k = category.toLowerCase();
+      const match = CATEGORY_FILTERS.find((c) => c.key === k)?.key ?? "other";
+      return filters.has(match);
+    },
+    [filters],
+  );
+
+  const visibleTracked = useMemo(
+    () => tracked.filter((t) => isAllowed(t.enrichment?.category)),
+    [tracked, isAllowed],
+  );
+  const visibleItems = useMemo(
+    () => items.filter((it) => isAllowed(it.category)),
+    [items, isAllowed],
+  );
+
+  const allOn = filters.size === CATEGORY_FILTERS.length;
+  const noneOn = filters.size === 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur">
+    <div className="min-h-screen text-foreground">
+      <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg gold-line text-black gold-glow">
               <Sparkles className="h-4 w-4" />
             </div>
             <div>
-              <h1 className="text-sm font-semibold leading-tight">RoomScan</h1>
+              <h1 className="text-sm font-semibold leading-tight gold-text">RoomScan</h1>
               <p className="text-[11px] leading-tight text-muted-foreground">
                 AI room analyzer
               </p>
             </div>
           </div>
-          {phase === "results" && (
-            <Button size="sm" variant="secondary" onClick={reset}>
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-              New scan
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFilterOpen((o) => !o)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filter
+              <span className="ml-1 rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                {filters.size}
+              </span>
+            </button>
+            {phase === "results" && (
+              <Button size="sm" variant="secondary" onClick={reset}>
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                New scan
+              </Button>
+            )}
+          </div>
         </div>
+        <div className="h-px w-full gold-line opacity-80" />
       </header>
+
+      {filterOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60"
+          onClick={() => setFilterOpen(false)}
+        >
+          <div
+            className="mx-auto mt-16 w-[min(92vw,28rem)] rounded-2xl border border-border bg-card p-4 gold-glow"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold gold-text">Scan filters</h3>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setFilters(new Set(CATEGORY_FILTERS.map((c) => c.key)))}
+                  disabled={allOn}
+                  className="rounded-md border border-border/60 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent disabled:opacity-40"
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setFilters(new Set())}
+                  disabled={noneOn}
+                  className="rounded-md border border-border/60 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent disabled:opacity-40"
+                >
+                  None
+                </button>
+                <button
+                  onClick={() => setFilterOpen(false)}
+                  className="rounded-md border border-border/60 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+            <p className="mb-3 text-[11px] text-muted-foreground">
+              Choose what RoomScan should highlight. Off = hidden from boxes and list.
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {CATEGORY_FILTERS.map((c) => {
+                const on = filters.has(c.key);
+                return (
+                  <button
+                    key={c.key}
+                    onClick={() => toggleFilter(c.key)}
+                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs transition-colors ${
+                      on
+                        ? "border-primary bg-primary/15 text-foreground"
+                        : "border-border/50 bg-card text-muted-foreground hover:bg-accent"
+                    }`}
+                  >
+                    <span>{c.label}</span>
+                    <span
+                      className={`ml-2 h-2 w-2 rounded-full ${on ? "bg-primary" : "bg-muted"}`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="mx-auto max-w-4xl px-4 py-4">
         {phase === "camera" && (
@@ -432,7 +653,7 @@ function Index() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video">
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
               <video
                 ref={videoRef}
                 playsInline
@@ -440,18 +661,31 @@ function Index() {
                 className="absolute inset-0 h-full w-full object-cover"
               />
 
-              {/* Live overlay boxes (video mode) */}
               {mode === "video" &&
-                tracked.map((it) => (
+                visibleTracked.map((it) => (
                   <button
                     key={it.id}
-                    onClick={() => openTracked(it)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleTapAfterPress(() => openItem(it));
+                    }}
+                    onPointerDown={() => {
+                      const frame = grabFrame(1280, 0.92);
+                      startLongPress(() =>
+                        frame ? { name: it.name, box: it.box, imgSrc: frame } : null,
+                      );
+                    }}
+                    onPointerUp={cancelLongPress}
+                    onPointerLeave={cancelLongPress}
+                    onPointerCancel={cancelLongPress}
+                    onContextMenu={(e) => e.preventDefault()}
                     className="group absolute rounded border border-emerald-400 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(0,0,0,0.35)] transition-[left,top,width,height,background-color] duration-300 ease-out hover:bg-emerald-400/25 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                     style={{
                       left: `${it.box.x * 100}%`,
                       top: `${it.box.y * 100}%`,
                       width: `${it.box.w * 100}%`,
                       height: `${it.box.h * 100}%`,
+                      touchAction: "none",
                     }}
                   >
                     <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
@@ -465,14 +699,12 @@ function Index() {
                   </button>
                 ))}
 
-              {/* Center focus reticle (video mode) */}
               {mode === "video" && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <div className="h-1 w-1 rounded-full bg-white/50 shadow-[0_0_0_3px_rgba(255,255,255,0.15)]" />
                 </div>
               )}
 
-              {/* Video mode status pill */}
               {mode === "video" && (
                 <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
                   <span
@@ -527,30 +759,31 @@ function Index() {
                     )}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
-                    Green boxes track items near the center. Tap any item to see details.
+                    Tap a box for details. Press & hold 2s to save it as a .jpeg.
                   </p>
                 </div>
 
-                {/* Live list below camera */}
                 <div className="rounded-2xl border border-border bg-card">
                   <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
                     <h2 className="text-xs font-semibold text-muted-foreground">
-                      Detected in view ({tracked.length}/{MAX_TRACKED})
+                      Detected in view ({visibleTracked.length}/{MAX_TRACKED})
                     </h2>
                     {scanning && (
                       <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                     )}
                   </div>
-                  {tracked.length === 0 ? (
+                  {visibleTracked.length === 0 ? (
                     <div className="px-3 py-6 text-center text-xs text-muted-foreground">
-                      Point the camera at objects…
+                      {tracked.length > 0
+                        ? "All detections filtered out. Adjust filters."
+                        : "Point the camera at objects…"}
                     </div>
                   ) : (
-                    <ul className="divide-y divide-border/60">
-                      {tracked.map((it) => (
+                    <ul className="divide-y divide-border/40">
+                      {visibleTracked.map((it) => (
                         <li key={it.id}>
                           <button
-                            onClick={() => openTracked(it)}
+                            onClick={() => openItem(it)}
                             className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
                           >
                             <div className="min-w-0">
@@ -587,7 +820,7 @@ function Index() {
 
         {(phase === "analyzing" || phase === "results") && snapshot && (
           <div className="space-y-4">
-            <div className="relative overflow-hidden rounded-2xl border border-border bg-black">
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
               <img
                 src={snapshot}
                 alt="Captured room"
@@ -600,16 +833,31 @@ function Index() {
                 </div>
               )}
               {phase === "results" &&
-                items.map((it, i) => (
+                visibleItems.map((it, i) => (
                   <button
                     key={i}
-                    onClick={() => openItem(it)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleTapAfterPress(() => openItem(it));
+                    }}
+                    onPointerDown={() =>
+                      startLongPress(() =>
+                        snapshot
+                          ? { name: it.name, box: it.box, imgSrc: snapshot }
+                          : null,
+                      )
+                    }
+                    onPointerUp={cancelLongPress}
+                    onPointerLeave={cancelLongPress}
+                    onPointerCancel={cancelLongPress}
+                    onContextMenu={(e) => e.preventDefault()}
                     className="group absolute rounded-md border-2 border-primary/80 bg-primary/10 transition-all hover:bg-primary/25 focus:outline-none focus:ring-2 focus:ring-primary"
                     style={{
                       left: `${it.box.x * 100}%`,
                       top: `${it.box.y * 100}%`,
                       width: `${it.box.w * 100}%`,
                       height: `${it.box.h * 100}%`,
+                      touchAction: "none",
                     }}
                   >
                     <span className="absolute -top-6 left-0 max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
@@ -625,17 +873,17 @@ function Index() {
               </div>
             )}
 
-            {phase === "results" && items.length > 0 && (
+            {phase === "results" && visibleItems.length > 0 && (
               <div>
                 <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
-                  {items.length} item{items.length === 1 ? "" : "s"} detected — tap to explore
+                  {visibleItems.length} item{visibleItems.length === 1 ? "" : "s"} — tap to explore, hold 2s to save
                 </h2>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {items.map((it, i) => (
+                  {visibleItems.map((it, i) => (
                     <button
                       key={i}
                       onClick={() => openItem(it)}
-                      className="rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-primary hover:bg-accent"
+                      className="rounded-lg border border-border/60 bg-card p-3 text-left transition-colors hover:border-primary hover:bg-accent"
                     >
                       <div className="text-sm font-medium">{it.name}</div>
                       <div className="text-xs text-muted-foreground capitalize">
@@ -650,9 +898,11 @@ function Index() {
               </div>
             )}
 
-            {phase === "results" && items.length === 0 && !error && (
+            {phase === "results" && visibleItems.length === 0 && !error && (
               <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-                No items detected. Try a clearer photo.
+                {items.length > 0
+                  ? "All items filtered out. Adjust filters to see them."
+                  : "No items detected. Try a clearer photo."}
               </div>
             )}
           </div>
@@ -667,12 +917,12 @@ function Index() {
           onClick={() => setDoorPrompt(null)}
         >
           <div
-            className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl"
+            className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold">Which address is this?</h3>
+                <h3 className="text-lg font-semibold gold-text">Which address is this?</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   You scanned a door. Enter the address to look it up on the web.
                 </p>
@@ -723,6 +973,70 @@ function Index() {
           </div>
         </div>
       )}
+
+      {savePrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          onClick={() => !saving && setSavePrompt(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold gold-text">Save as picture?</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Save “{savePrompt.name}” as its own .jpeg to your device.
+            </p>
+            <div className="mt-4 overflow-hidden rounded-lg border border-border/60 bg-black">
+              <div
+                className="relative w-full"
+                style={{
+                  aspectRatio: `${Math.max(0.4, savePrompt.box.w / Math.max(0.001, savePrompt.box.h))}`,
+                }}
+              >
+                <img
+                  src={savePrompt.imgSrc}
+                  alt=""
+                  className="absolute h-auto max-w-none"
+                  style={{
+                    width: `${100 / Math.max(0.001, savePrompt.box.w)}%`,
+                    left: `-${(savePrompt.box.x / Math.max(0.001, savePrompt.box.w)) * 100}%`,
+                    top: `-${(savePrompt.box.y / Math.max(0.001, savePrompt.box.h)) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+            {saveError && (
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                {saveError}
+              </div>
+            )}
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Button onClick={confirmSave} disabled={saving} className="flex-1">
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Save .jpeg
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={saving}
+                onClick={() => setSavePrompt(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -756,12 +1070,12 @@ function DetailPanel({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl"
+        className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold">{name}</h3>
+            <h3 className="text-lg font-semibold gold-text">{name}</h3>
             {enrichment ? (
               <p className="text-xs capitalize text-muted-foreground">
                 {enrichment.category}
