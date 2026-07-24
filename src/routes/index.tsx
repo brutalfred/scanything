@@ -924,19 +924,31 @@ function Index() {
                 </h2>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {visibleItems.map((it, i) => (
-                    <button
+                    <div
                       key={i}
-                      onClick={() => openItem(it)}
-                      className="rounded-lg border border-border/60 bg-card p-3 text-left transition-colors hover:border-primary hover:bg-accent"
+                      className="relative rounded-lg border border-border/60 bg-card transition-colors hover:border-primary"
                     >
-                      <div className="text-sm font-medium">{it.name}</div>
-                      <div className="text-xs text-muted-foreground capitalize">
-                        {it.category}
-                      </div>
-                      <div className="mt-1 text-xs font-medium text-primary">
-                        ${it.priceMin}–${it.priceMax}
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => openItem(it)}
+                        className="block w-full rounded-lg p-3 pr-8 text-left transition-colors hover:bg-accent"
+                      >
+                        <div className="text-sm font-medium">{it.name}</div>
+                        <div className="text-xs text-muted-foreground capitalize">
+                          {it.category}
+                        </div>
+                        <div className="mt-1 text-xs font-medium text-primary">
+                          ${it.priceMin}–${it.priceMax}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => blockItem(it.name)}
+                        title="Remove & don't rescan for 1 min"
+                        aria-label={`Remove ${it.name} for 1 minute`}
+                        className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
