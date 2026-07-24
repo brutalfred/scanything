@@ -817,10 +817,10 @@ function Index() {
                   ) : (
                     <ul className="divide-y divide-border/40">
                       {visibleTracked.map((it) => (
-                        <li key={it.id}>
+                        <li key={it.id} className="flex items-stretch">
                           <button
                             onClick={() => openItem(it)}
-                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
+                            className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
                           >
                             <div className="min-w-0">
                               <div className="truncate text-sm font-medium">
@@ -843,6 +843,14 @@ function Index() {
                             ) : (
                               <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
                             )}
+                          </button>
+                          <button
+                            onClick={() => blockItem(it.name)}
+                            title="Remove & don't rescan for 1 min"
+                            aria-label={`Remove ${it.name} for 1 minute`}
+                            className="flex items-center justify-center px-3 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </li>
                       ))}
