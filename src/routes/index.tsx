@@ -171,6 +171,40 @@ function Index() {
   const enrichingIdsRef = useRef<Set<string>>(new Set());
   const [scanning, setScanning] = useState(false);
 
+  // Blocklist: name -> expiry timestamp (ms). Prevents rescan for 60s.
+  const BLOCK_MS = 60_000;
+  const [blocked, setBlocked] = useState<Record<string, number>>({});
+  const blockedRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    blockedRef.current = blocked;
+  }, [blocked]);
+  const isBlocked = useCallback((name: string) => {
+    const exp = blockedRef.current[normName(name)];
+    return typeof exp === "number" && exp > Date.now();
+  }, []);
+  // Sweep expired entries periodically so UI updates re-enable items.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setBlocked((prev) => {
+        const now = Date.now();
+        let changed = false;
+        const next: Record<string, number> = {};
+        for (const [k, v] of Object.entries(prev)) {
+          if (v > now) next[k] = v;
+          else changed = true;
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const blockItem = useCallback((name: string) => {
+    const key = normName(name);
+    setBlocked((prev) => ({ ...prev, [key]: Date.now() + BLOCK_MS }));
+    setTracked((prev) => prev.filter((t) => normName(t.name) !== key));
+    setItems((prev) => prev.filter((it) => normName(it.name) !== key));
+  }, []);
+
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
