@@ -13,6 +13,7 @@ import {
   Play,
   SlidersHorizontal,
   Download,
+  Trash2,
 } from "lucide-react";
 import {
   analyzeRoom,
