@@ -684,7 +684,7 @@ function Index() {
                   }`}
                 >
                   <Video className="h-3.5 w-3.5" />
-                  Live video
+                  Video Scan
                 </button>
               </div>
             </div>
