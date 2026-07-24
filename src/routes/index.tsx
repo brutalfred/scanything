@@ -13,6 +13,7 @@ import {
   Play,
   SlidersHorizontal,
   Download,
+  Trash2,
 } from "lucide-react";
 import {
   analyzeRoom,
@@ -170,6 +171,40 @@ function Index() {
   const enrichingIdsRef = useRef<Set<string>>(new Set());
   const [scanning, setScanning] = useState(false);
 
+  // Blocklist: name -> expiry timestamp (ms). Prevents rescan for 60s.
+  const BLOCK_MS = 60_000;
+  const [blocked, setBlocked] = useState<Record<string, number>>({});
+  const blockedRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    blockedRef.current = blocked;
+  }, [blocked]);
+  const isBlocked = useCallback((name: string) => {
+    const exp = blockedRef.current[normName(name)];
+    return typeof exp === "number" && exp > Date.now();
+  }, []);
+  // Sweep expired entries periodically so UI updates re-enable items.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setBlocked((prev) => {
+        const now = Date.now();
+        let changed = false;
+        const next: Record<string, number> = {};
+        for (const [k, v] of Object.entries(prev)) {
+          if (v > now) next[k] = v;
+          else changed = true;
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const blockItem = useCallback((name: string) => {
+    const key = normName(name);
+    setBlocked((prev) => ({ ...prev, [key]: Date.now() + BLOCK_MS }));
+    setTracked((prev) => prev.filter((t) => normName(t.name) !== key));
+    setItems((prev) => prev.filter((it) => normName(it.name) !== key));
+  }, []);
+
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
@@ -259,6 +294,7 @@ function Index() {
 
       for (const det of detections) {
         const dn = normName(det.name);
+        if (isBlocked(det.name)) continue;
         let bestIdx = -1;
         let bestDist = Infinity;
         for (let i = 0; i < next.length; i++) {
@@ -300,7 +336,7 @@ function Index() {
       fresh.sort((a, b) => distFromCenter(a.box) - distFromCenter(b.box));
       return fresh.slice(0, MAX_TRACKED);
     });
-  }, []);
+  }, [isBlocked]);
 
   useEffect(() => {
     if (mode !== "video" || phase !== "camera") return;
@@ -512,12 +548,12 @@ function Index() {
   );
 
   const visibleTracked = useMemo(
-    () => tracked.filter((t) => isAllowed(t.enrichment?.category)),
-    [tracked, isAllowed],
+    () => tracked.filter((t) => isAllowed(t.enrichment?.category) && !isBlocked(t.name)),
+    [tracked, isAllowed, isBlocked, blocked],
   );
   const visibleItems = useMemo(
-    () => items.filter((it) => isAllowed(it.category)),
-    [items, isAllowed],
+    () => items.filter((it) => isAllowed(it.category) && !isBlocked(it.name)),
+    [items, isAllowed, isBlocked, blocked],
   );
 
   const allOn = filters.size === CATEGORY_FILTERS.length;
@@ -637,7 +673,7 @@ function Index() {
                   }`}
                 >
                   <ImageIcon className="h-3.5 w-3.5" />
-                  Photo
+                  Photo Scan
                 </button>
                 <button
                   onClick={() => switchMode("video")}
@@ -648,7 +684,7 @@ function Index() {
                   }`}
                 >
                   <Video className="h-3.5 w-3.5" />
-                  Live video
+                  Video Scan
                 </button>
               </div>
             </div>
@@ -781,10 +817,10 @@ function Index() {
                   ) : (
                     <ul className="divide-y divide-border/40">
                       {visibleTracked.map((it) => (
-                        <li key={it.id}>
+                        <li key={it.id} className="flex items-stretch">
                           <button
                             onClick={() => openItem(it)}
-                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
+                            className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
                           >
                             <div className="min-w-0">
                               <div className="truncate text-sm font-medium">
@@ -807,6 +843,14 @@ function Index() {
                             ) : (
                               <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
                             )}
+                          </button>
+                          <button
+                            onClick={() => blockItem(it.name)}
+                            title="Remove & don't rescan for 1 min"
+                            aria-label={`Remove ${it.name} for 1 minute`}
+                            className="flex items-center justify-center px-3 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </li>
                       ))}
@@ -880,19 +924,31 @@ function Index() {
                 </h2>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {visibleItems.map((it, i) => (
-                    <button
+                    <div
                       key={i}
-                      onClick={() => openItem(it)}
-                      className="rounded-lg border border-border/60 bg-card p-3 text-left transition-colors hover:border-primary hover:bg-accent"
+                      className="relative rounded-lg border border-border/60 bg-card transition-colors hover:border-primary"
                     >
-                      <div className="text-sm font-medium">{it.name}</div>
-                      <div className="text-xs text-muted-foreground capitalize">
-                        {it.category}
-                      </div>
-                      <div className="mt-1 text-xs font-medium text-primary">
-                        ${it.priceMin}–${it.priceMax}
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => openItem(it)}
+                        className="block w-full rounded-lg p-3 pr-8 text-left transition-colors hover:bg-accent"
+                      >
+                        <div className="text-sm font-medium">{it.name}</div>
+                        <div className="text-xs text-muted-foreground capitalize">
+                          {it.category}
+                        </div>
+                        <div className="mt-1 text-xs font-medium text-primary">
+                          ${it.priceMin}–${it.priceMax}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => blockItem(it.name)}
+                        title="Remove & don't rescan for 1 min"
+                        aria-label={`Remove ${it.name} for 1 minute`}
+                        className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
