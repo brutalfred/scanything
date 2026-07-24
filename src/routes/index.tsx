@@ -673,7 +673,7 @@ function Index() {
                   }`}
                 >
                   <ImageIcon className="h-3.5 w-3.5" />
-                  Photo
+                  Photo Scan
                 </button>
                 <button
                   onClick={() => switchMode("video")}
