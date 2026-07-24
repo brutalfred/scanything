@@ -336,7 +336,7 @@ function Index() {
       fresh.sort((a, b) => distFromCenter(a.box) - distFromCenter(b.box));
       return fresh.slice(0, MAX_TRACKED);
     });
-  }, []);
+  }, [isBlocked]);
 
   useEffect(() => {
     if (mode !== "video" || phase !== "camera") return;
