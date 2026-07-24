@@ -548,12 +548,12 @@ function Index() {
   );
 
   const visibleTracked = useMemo(
-    () => tracked.filter((t) => isAllowed(t.enrichment?.category)),
-    [tracked, isAllowed],
+    () => tracked.filter((t) => isAllowed(t.enrichment?.category) && !isBlocked(t.name)),
+    [tracked, isAllowed, isBlocked, blocked],
   );
   const visibleItems = useMemo(
-    () => items.filter((it) => isAllowed(it.category)),
-    [items, isAllowed],
+    () => items.filter((it) => isAllowed(it.category) && !isBlocked(it.name)),
+    [items, isAllowed, isBlocked, blocked],
   );
 
   const allOn = filters.size === CATEGORY_FILTERS.length;
