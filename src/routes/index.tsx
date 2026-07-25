@@ -326,7 +326,7 @@ function Index() {
 
       for (const det of detections) {
         const dn = normName(det.name);
-        if (isBlocked(det.name)) continue;
+        if (isBlocked(det.name) || isBodyPart(det.name)) continue;
         let bestIdx = -1;
         let bestDist = Infinity;
         for (let i = 0; i < next.length; i++) {
