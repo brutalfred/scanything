@@ -594,19 +594,40 @@ function Index() {
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gold-line text-black gold-glow">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold leading-tight gold-text">RoomScan</h1>
-              <p className="text-[11px] leading-tight text-muted-foreground">
-                AI room analyzer
-              </p>
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex select-none items-baseline font-black tracking-tight leading-none">
+              <span className="gold-text text-2xl rotate-[-6deg] inline-block">S</span>
+              <span className="gold-text text-xl italic">c</span>
+              <span className="gold-text text-2xl rotate-[4deg] inline-block">a</span>
+              <span className="gold-text text-lg">n</span>
+              <span className="gold-text text-2xl rotate-[-3deg] inline-block">y</span>
+              <span className="gold-text text-xl italic">t</span>
+              <span className="gold-text text-2xl rotate-[5deg] inline-block">h</span>
+              <span className="gold-text text-lg">i</span>
+              <span className="gold-text text-xl italic rotate-[-4deg] inline-block">n</span>
+              <span className="gold-text text-2xl rotate-[6deg] inline-block">g</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {phase === "camera" && torchSupported && (
+              <button
+                onClick={toggleTorch}
+                aria-label={torchOn ? "Turn flashlight off" : "Turn flashlight on"}
+                title={torchOn ? "Flashlight on" : "Flashlight off"}
+                className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/70 transition-colors gold-glow ${
+                  torchOn
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground hover:bg-accent"
+                }`}
+              >
+                {torchOn ? (
+                  <Flashlight className="h-4 w-4" />
+                ) : (
+                  <FlashlightOff className="h-4 w-4" />
+                )}
+              </button>
+            )}
             <button
               onClick={() => setFilterOpen((o) => !o)}
               className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
