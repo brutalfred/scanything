@@ -310,7 +310,7 @@ function Index() {
     setError(null);
     try {
       const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
-      setItems(result.items);
+      setItems(result.items.filter((it) => !isBodyPart(it.name)));
       setPhase("results");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
