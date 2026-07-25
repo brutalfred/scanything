@@ -83,6 +83,13 @@ const FILTER_STORAGE_KEY = "roomscan:filters";
 function normName(n: string) {
   return n.toLowerCase().trim();
 }
+
+const BODY_PART_RE =
+  /\b(hand|hands|arm|arms|leg|legs|foot|feet|toe|toes|finger|fingers|thumb|torso|chest|shoulder|shoulders|face|faces|head|heads|hair|skin|nose|ear|ears|eye|eyes|mouth|lip|lips|neck|knee|knees|elbow|elbows|belly|stomach|back|butt|body|bodies|person|people|human|humans|man|woman|boy|girl|child|kid|baby)\b/i;
+
+function isBodyPart(name: string) {
+  return BODY_PART_RE.test(name);
+}
 function centerDist(a: Box, b: Box) {
   const ax = a.x + a.w / 2;
   const ay = a.y + a.h / 2;
