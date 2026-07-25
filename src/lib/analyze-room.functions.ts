@@ -35,6 +35,8 @@ const FULL_SYSTEM = `You are a fast visual room-analyzer. Identify DISTINCT phys
 PRIORITY — focus almost entirely on everyday human-use objects:
 furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, kitchenware, decor, instruments, sports gear, pets/pet items, food items, doors, windows.
 
+NEVER include human body parts or people (no hand, arm, leg, foot, torso, face, head, hair, skin, finger, nose, ear, eye, mouth, person, human, body). Skip them entirely.
+
 DO NOT include structural/architectural surfaces (walls, wall paint, floor, ceiling, beams, pillars, concrete, tiles, carpet, molding, radiators, empty corners) UNLESS the photo contains essentially no everyday items — only then may you include at most 1-2 structural elements as a last resort.
 
 For each object, respond with a compact JSON object matching:
@@ -61,6 +63,7 @@ Keep it under 12 items. Prefer confident guesses. Output ONLY JSON, no markdown.
 const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name up to 10 distinct objects LARGER than an apple. Focus on objects near the CENTER of the frame first.
 
 PRIORITY — spot everyday human-use items: furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, kitchenware, decor, instruments, sports gear, doors, windows.
+NEVER include human body parts or people (hand, arm, leg, foot, torso, face, head, hair, skin, finger, nose, ear, eye, mouth, person, human, body). Skip them entirely.
 IGNORE walls, wall paint, floor, ceiling, beams, pillars, concrete, tiles, carpet, molding — unless there is literally nothing else visible in the frame.
 
 Use the shortest possible common name (1-2 words: "TV", "Bed", "Lamp", "Chair", "Plant", "Door").

@@ -6,7 +6,6 @@ import {
   RefreshCw,
   X,
   ExternalLink,
-  Sparkles,
   Video,
   Image as ImageIcon,
   Pause,
@@ -14,6 +13,8 @@ import {
   SlidersHorizontal,
   Download,
   Trash2,
+  Flashlight,
+  FlashlightOff,
 } from "lucide-react";
 import {
   analyzeRoom,
@@ -27,16 +28,16 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "RoomScan — AI camera room analyzer" },
+      { title: "Scanything — AI camera room analyzer" },
       {
         name: "description",
         content:
-          "Point your camera at a room. AI identifies every object bigger than an apple with prices and info.",
+          "Point your camera at a room. Scanything's AI identifies every item bigger than an apple with prices and info.",
       },
-      { property: "og:title", content: "RoomScan — AI camera room analyzer" },
+      { property: "og:title", content: "Scanything — AI camera room analyzer" },
       {
         property: "og:description",
-        content: "Identify everything in your room instantly with AI.",
+        content: "Scan anything in your room instantly with AI.",
       },
     ],
   }),
@@ -81,6 +82,13 @@ const FILTER_STORAGE_KEY = "roomscan:filters";
 
 function normName(n: string) {
   return n.toLowerCase().trim();
+}
+
+const BODY_PART_RE =
+  /\b(hand|hands|arm|arms|leg|legs|foot|feet|toe|toes|finger|fingers|thumb|torso|chest|shoulder|shoulders|face|faces|head|heads|hair|skin|nose|ear|ears|eye|eyes|mouth|lip|lips|neck|knee|knees|elbow|elbows|belly|stomach|back|butt|body|bodies|person|people|human|humans|man|woman|boy|girl|child|kid|baby)\b/i;
+
+function isBodyPart(name: string) {
+  return BODY_PART_RE.test(name);
 }
 function centerDist(a: Box, b: Box) {
   const ax = a.x + a.w / 2;
@@ -128,6 +136,8 @@ async function cropAndDownload(imgSrc: string, box: Box, name: string) {
 function Index() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
   const [mode, setMode] = useState<Mode>("photo");
   const [phase, setPhase] = useState<Phase>("camera");
   const [error, setError] = useState<string | null>(null);
@@ -231,6 +241,12 @@ function Index() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
+      const track = stream.getVideoTracks()[0];
+      const caps = (track?.getCapabilities?.() ?? {}) as MediaTrackCapabilities & {
+        torch?: boolean;
+      };
+      setTorchSupported(Boolean(caps.torch));
+      setTorchOn(false);
     } catch (e) {
       setError(
         e instanceof Error
@@ -243,7 +259,23 @@ function Index() {
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    setTorchOn(false);
+    setTorchSupported(false);
   }, []);
+
+  const toggleTorch = useCallback(async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({
+        advanced: [{ torch: next } as MediaTrackConstraintSet & { torch: boolean }],
+      });
+      setTorchOn(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Flashlight not available.");
+    }
+  }, [torchOn]);
 
   useEffect(() => {
     if (phase === "camera") {
@@ -278,7 +310,7 @@ function Index() {
     setError(null);
     try {
       const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
-      setItems(result.items);
+      setItems(result.items.filter((it) => !isBodyPart(it.name)));
       setPhase("results");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
@@ -294,7 +326,7 @@ function Index() {
 
       for (const det of detections) {
         const dn = normName(det.name);
-        if (isBlocked(det.name)) continue;
+        if (isBlocked(det.name) || isBodyPart(det.name)) continue;
         let bestIdx = -1;
         let bestDist = Infinity;
         for (let i = 0; i < next.length; i++) {
@@ -562,19 +594,40 @@ function Index() {
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gold-line text-black gold-glow">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold leading-tight gold-text">RoomScan</h1>
-              <p className="text-[11px] leading-tight text-muted-foreground">
-                AI room analyzer
-              </p>
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex select-none items-baseline font-black tracking-tight leading-none">
+              <span className="gold-text text-2xl rotate-[-6deg] inline-block">S</span>
+              <span className="gold-text text-xl italic">c</span>
+              <span className="gold-text text-2xl rotate-[4deg] inline-block">a</span>
+              <span className="gold-text text-lg">n</span>
+              <span className="gold-text text-2xl rotate-[-3deg] inline-block">y</span>
+              <span className="gold-text text-xl italic">t</span>
+              <span className="gold-text text-2xl rotate-[5deg] inline-block">h</span>
+              <span className="gold-text text-lg">i</span>
+              <span className="gold-text text-xl italic rotate-[-4deg] inline-block">n</span>
+              <span className="gold-text text-2xl rotate-[6deg] inline-block">g</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {phase === "camera" && torchSupported && (
+              <button
+                onClick={toggleTorch}
+                aria-label={torchOn ? "Turn flashlight off" : "Turn flashlight on"}
+                title={torchOn ? "Flashlight on" : "Flashlight off"}
+                className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/70 transition-colors gold-glow ${
+                  torchOn
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground hover:bg-accent"
+                }`}
+              >
+                {torchOn ? (
+                  <Flashlight className="h-4 w-4" />
+                ) : (
+                  <FlashlightOff className="h-4 w-4" />
+                )}
+              </button>
+            )}
             <button
               onClick={() => setFilterOpen((o) => !o)}
               className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
@@ -631,7 +684,7 @@ function Index() {
               </div>
             </div>
             <p className="mb-3 text-[11px] text-muted-foreground">
-              Choose what RoomScan should highlight. Off = hidden from boxes and list.
+              Choose what Scanything should highlight. Off = hidden from boxes and list.
             </p>
             <div className="grid grid-cols-2 gap-1.5">
               {CATEGORY_FILTERS.map((c) => {
