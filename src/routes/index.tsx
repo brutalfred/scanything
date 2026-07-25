@@ -28,16 +28,16 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "RoomScan — AI camera room analyzer" },
+      { title: "Scanything — AI camera room analyzer" },
       {
         name: "description",
         content:
-          "Point your camera at a room. AI identifies every object bigger than an apple with prices and info.",
+          "Point your camera at a room. Scanything's AI identifies every item bigger than an apple with prices and info.",
       },
-      { property: "og:title", content: "RoomScan — AI camera room analyzer" },
+      { property: "og:title", content: "Scanything — AI camera room analyzer" },
       {
         property: "og:description",
-        content: "Identify everything in your room instantly with AI.",
+        content: "Scan anything in your room instantly with AI.",
       },
     ],
   }),
