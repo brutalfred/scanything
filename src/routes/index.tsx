@@ -6,7 +6,6 @@ import {
   RefreshCw,
   X,
   ExternalLink,
-  Sparkles,
   Video,
   Image as ImageIcon,
   Pause,
@@ -14,6 +13,8 @@ import {
   SlidersHorizontal,
   Download,
   Trash2,
+  Flashlight,
+  FlashlightOff,
 } from "lucide-react";
 import {
   analyzeRoom,
