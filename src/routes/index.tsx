@@ -241,6 +241,12 @@ function Index() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
+      const track = stream.getVideoTracks()[0];
+      const caps = (track?.getCapabilities?.() ?? {}) as MediaTrackCapabilities & {
+        torch?: boolean;
+      };
+      setTorchSupported(Boolean(caps.torch));
+      setTorchOn(false);
     } catch (e) {
       setError(
         e instanceof Error
@@ -253,7 +259,23 @@ function Index() {
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    setTorchOn(false);
+    setTorchSupported(false);
   }, []);
+
+  const toggleTorch = useCallback(async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({
+        advanced: [{ torch: next } as MediaTrackConstraintSet & { torch: boolean }],
+      });
+      setTorchOn(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Flashlight not available.");
+    }
+  }, [torchOn]);
 
   useEffect(() => {
     if (phase === "camera") {
