@@ -684,7 +684,7 @@ function Index() {
               </div>
             </div>
             <p className="mb-3 text-[11px] text-muted-foreground">
-              Choose what RoomScan should highlight. Off = hidden from boxes and list.
+              Choose what Scanything should highlight. Off = hidden from boxes and list.
             </p>
             <div className="grid grid-cols-2 gap-1.5">
               {CATEGORY_FILTERS.map((c) => {
