@@ -1236,7 +1236,16 @@ function Index() {
         )}
       </main>
 
-      {selected && <DetailPanel item={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <DetailPanel
+          item={selected}
+          imageBase64={selectedImage}
+          onClose={() => {
+            setSelected(null);
+            setSelectedImage(null);
+          }}
+        />
+      )}
 
       {doorPrompt && (
         <div
