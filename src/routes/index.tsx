@@ -15,13 +15,22 @@ import {
   Trash2,
   Flashlight,
   FlashlightOff,
+  Sparkles,
+  Languages,
+  User,
 } from "lucide-react";
 import {
   analyzeRoom,
   quickScan,
   enrichItem,
+  analyzeFurther,
+  translateText,
+  personInfo,
   type DetectedItem,
   type QuickItem,
+  type DeepAnalysis,
+  type Translation,
+  type PersonInfo,
 } from "@/lib/analyze-room.functions";
 import { Button } from "@/components/ui/button";
 
@@ -75,6 +84,8 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
   { key: "book", label: "Books" },
   { key: "instrument", label: "Instruments" },
   { key: "door", label: "Doors" },
+  { key: "text", label: "Text / Signs" },
+  { key: "person", label: "People" },
   { key: "other", label: "Other" },
 ];
 const DEFAULT_FILTERS = new Set(CATEGORY_FILTERS.map((c) => c.key));
@@ -89,6 +100,16 @@ const BODY_PART_RE =
 
 function isBodyPart(name: string) {
   return BODY_PART_RE.test(name);
+}
+
+// Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
+// Any code point >= U+0370 excluding common punctuation counts as non-Latin.
+function hasNonLatin(text: string) {
+  for (const ch of text) {
+    const cp = ch.codePointAt(0)!;
+    if (cp >= 0x0370) return true;
+  }
+  return false;
 }
 function centerDist(a: Box, b: Box) {
   const ax = a.x + a.w / 2;
@@ -133,6 +154,62 @@ async function cropAndDownload(imgSrc: string, box: Box, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// Pinch-to-zoom hook. Attach handlers to an outer container; wrap inner content
+// with a div that uses returned `transformStyle`. Boxes inside inherit the zoom.
+function usePinchZoom(min = 1, max = 5) {
+  const [scale, setScale] = useState(1);
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const startRef = useRef({ dist: 0, scale: 1 });
+  const [pinching, setPinching] = useState(false);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size === 2) {
+      const [a, b] = [...pointersRef.current.values()];
+      startRef.current.dist = Math.hypot(a.x - b.x, a.y - b.y);
+      startRef.current.scale = scale;
+      setPinching(true);
+    }
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!pointersRef.current.has(e.pointerId)) return;
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size === 2 && startRef.current.dist > 0) {
+      const [a, b] = [...pointersRef.current.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const next = Math.max(min, Math.min(max, startRef.current.scale * (d / startRef.current.dist)));
+      setScale(next);
+    }
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    pointersRef.current.delete(e.pointerId);
+    if (pointersRef.current.size < 2) {
+      startRef.current.dist = 0;
+      setPinching(false);
+    }
+  };
+  const reset = useCallback(() => setScale(1), []);
+
+  const handlers = {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel: onPointerUp,
+    onPointerLeave: onPointerUp,
+    style: { touchAction: "none" as const },
+  };
+  const transformStyle: React.CSSProperties = {
+    transform: `scale(${scale})`,
+    transformOrigin: "center center",
+    transition: pinching ? "none" : "transform 200ms ease-out",
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    inset: 0,
+  };
+  return { scale, pinching, reset, handlers, transformStyle };
+}
+
 function Index() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -144,6 +221,7 @@ function Index() {
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
   const [selected, setSelected] = useState<TrackedItem | DetectedItem | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Filter state
   const [filters, setFilters] = useState<Set<string>>(() => {
@@ -310,7 +388,7 @@ function Index() {
     setError(null);
     try {
       const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
-      setItems(result.items.filter((it) => !isBodyPart(it.name)));
+      setItems(result.items.filter((it) => it.category === "person" || !isBodyPart(it.name)));
       setPhase("results");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
@@ -471,10 +549,29 @@ function Index() {
   const [doorPrompt, setDoorPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(null);
   const [addressInput, setAddressInput] = useState("");
 
+  // Person handling (photo mode only, when person is the main subject)
+  const [personPrompt, setPersonPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(
+    null,
+  );
+  const [personName, setPersonName] = useState("");
+  const [personLoading, setPersonLoading] = useState(false);
+  const [personResult, setPersonResult] = useState<{ name: string; info: PersonInfo } | null>(
+    null,
+  );
+  const [personError, setPersonError] = useState<string | null>(null);
+
+  // List tab (Items / Categories)
+  const [listTab, setListTab] = useState<"items" | "categories">("items");
+
   const openAddressSearch = useCallback((address: string) => {
     const url = `https://www.google.com/search?q=${encodeURIComponent(address)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }, []);
+
+  const isPersonItem = (item: TrackedItem | DetectedItem) => {
+    const cat = "category" in item ? item.category : item.enrichment?.category;
+    return cat === "person";
+  };
 
   const openItem = useCallback(
     (item: TrackedItem | DetectedItem) => {
@@ -490,10 +587,36 @@ function Index() {
         }
         return;
       }
+      if (isPersonItem(item)) {
+        setPersonName("");
+        setPersonError(null);
+        setPersonPrompt({ item });
+        return;
+      }
+      // Capture image at open time (snapshot for photo mode, live frame for video)
+      const img = snapshot ?? grabFrame(1280, 0.9) ?? null;
+      setSelectedImage(img);
       setSelected(item);
     },
-    [openAddressSearch],
+    [openAddressSearch, snapshot],
   );
+
+  const submitPerson = useCallback(async () => {
+    const name = personName.trim();
+    if (!name) return;
+    setPersonLoading(true);
+    setPersonError(null);
+    try {
+      const info = await personInfo({ data: { name } });
+      setPersonResult({ name, info });
+      setPersonPrompt(null);
+    } catch (e) {
+      setPersonError(e instanceof Error ? e.message : "Lookup failed.");
+    } finally {
+      setPersonLoading(false);
+    }
+  }, [personName]);
+
 
   const submitAddress = useCallback(
     (remember: boolean) => {
@@ -588,8 +711,47 @@ function Index() {
     [items, isAllowed, isBlocked, blocked],
   );
 
+  // Group items by category for the Categories tab.
+  const groupBy = <T,>(arr: T[], keyFn: (t: T) => string) => {
+    const map = new Map<string, T[]>();
+    for (const it of arr) {
+      const k = keyFn(it) || "other";
+      const g = map.get(k) ?? [];
+      g.push(it);
+      map.set(k, g);
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  };
+  const categoryLabel = (key: string) =>
+    CATEGORY_FILTERS.find((c) => c.key === key)?.label ??
+    key.charAt(0).toUpperCase() + key.slice(1);
+
+  const trackedByCategory = useMemo(
+    () => groupBy(visibleTracked, (t) => (t.enrichment?.category || "").toLowerCase()),
+    [visibleTracked],
+  );
+  const itemsByCategory = useMemo(
+    () => groupBy(visibleItems, (t) => (t.category || "").toLowerCase()),
+    [visibleItems],
+  );
+
   const allOn = filters.size === CATEGORY_FILTERS.length;
   const noneOn = filters.size === 0;
+
+  // Pinch-zoom for camera & snapshot views
+  const cameraZoom = usePinchZoom();
+  const photoZoom = usePinchZoom();
+  useEffect(() => {
+    // reset zoom when phase changes
+    cameraZoom.reset();
+    photoZoom.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+  useEffect(() => {
+    if (cameraZoom.pinching || photoZoom.pinching) cancelLongPress();
+  }, [cameraZoom.pinching, photoZoom.pinching, cancelLongPress]);
+
+
 
   return (
     <div className="min-h-screen text-foreground">
@@ -743,59 +905,63 @@ function Index() {
             </div>
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
-              <video
-                ref={videoRef}
-                playsInline
-                muted
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              <div {...cameraZoom.handlers} className="absolute inset-0">
+                <div style={cameraZoom.transformStyle}>
+                  <video
+                    ref={videoRef}
+                    playsInline
+                    muted
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
 
-              {mode === "video" &&
-                visibleTracked.map((it) => (
-                  <button
-                    key={it.id}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleTapAfterPress(() => openItem(it));
-                    }}
-                    onPointerDown={() => {
-                      const frame = grabFrame(1280, 0.92);
-                      startLongPress(() =>
-                        frame ? { name: it.name, box: it.box, imgSrc: frame } : null,
-                      );
-                    }}
-                    onPointerUp={cancelLongPress}
-                    onPointerLeave={cancelLongPress}
-                    onPointerCancel={cancelLongPress}
-                    onContextMenu={(e) => e.preventDefault()}
-                    className="group absolute rounded border border-emerald-400 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(0,0,0,0.35)] transition-[left,top,width,height,background-color] duration-300 ease-out hover:bg-emerald-400/25 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                    style={{
-                      left: `${it.box.x * 100}%`,
-                      top: `${it.box.y * 100}%`,
-                      width: `${it.box.w * 100}%`,
-                      height: `${it.box.h * 100}%`,
-                      touchAction: "none",
-                    }}
-                  >
-                    <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
-                      {it.name}
-                      {it.enrichment && (
-                        <span className="ml-1 opacity-90">
-                          ${it.enrichment.priceMin}–${it.enrichment.priceMax}
+                  {mode === "video" &&
+                    visibleTracked.map((it) => (
+                      <button
+                        key={it.id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleTapAfterPress(() => openItem(it));
+                        }}
+                        onPointerDown={() => {
+                          const frame = grabFrame(1280, 0.92);
+                          startLongPress(() =>
+                            frame ? { name: it.name, box: it.box, imgSrc: frame } : null,
+                          );
+                        }}
+                        onPointerUp={cancelLongPress}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="group absolute rounded border border-emerald-400 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(0,0,0,0.35)] transition-[left,top,width,height,background-color] duration-300 ease-out hover:bg-emerald-400/25 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                        style={{
+                          left: `${it.box.x * 100}%`,
+                          top: `${it.box.y * 100}%`,
+                          width: `${it.box.w * 100}%`,
+                          height: `${it.box.h * 100}%`,
+                          touchAction: "none",
+                        }}
+                      >
+                        <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
+                          {it.name}
+                          {it.enrichment && (
+                            <span className="ml-1 opacity-90">
+                              ${it.enrichment.priceMin}–${it.enrichment.priceMax}
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </span>
-                  </button>
-                ))}
+                      </button>
+                    ))}
 
-              {mode === "video" && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="h-1 w-1 rounded-full bg-white/50 shadow-[0_0_0_3px_rgba(255,255,255,0.15)]" />
+                  {mode === "video" && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <div className="h-1 w-1 rounded-full bg-white/50 shadow-[0_0_0_3px_rgba(255,255,255,0.15)]" />
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {mode === "video" && (
-                <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
+                <div className="pointer-events-none absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
                       videoPaused
@@ -809,8 +975,17 @@ function Index() {
                 </div>
               )}
 
+              {cameraZoom.scale > 1.01 && (
+                <button
+                  onClick={cameraZoom.reset}
+                  className="absolute right-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-black/90"
+                >
+                  {cameraZoom.scale.toFixed(1)}× · reset
+                </button>
+              )}
+
               {error && (
-                <div className="absolute inset-x-2 bottom-2 rounded-md bg-black/80 p-2 text-center text-xs text-white">
+                <div className="pointer-events-none absolute inset-x-2 bottom-2 rounded-md bg-black/80 p-2 text-center text-xs text-white">
                   {error}
                 </div>
               )}
@@ -822,9 +997,6 @@ function Index() {
                   <Camera className="mr-2 h-5 w-5" />
                   Scan the room
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Point at a room and tap. AI finds every item bigger than an apple.
-                </p>
               </div>
             ) : (
               <>
@@ -853,13 +1025,29 @@ function Index() {
                 </div>
 
                 <div className="rounded-2xl border border-border bg-card">
-                  <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-                    <h2 className="text-xs font-semibold text-muted-foreground">
-                      Detected in view ({visibleTracked.length}/{MAX_TRACKED})
-                    </h2>
-                    {scanning && (
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                    )}
+                  <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+                    <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
+                      <button
+                        onClick={() => setListTab("items")}
+                        className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "items" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Items
+                      </button>
+                      <button
+                        onClick={() => setListTab("categories")}
+                        className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Categories
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-muted-foreground">
+                        {visibleTracked.length}/{MAX_TRACKED}
+                      </span>
+                      {scanning && (
+                        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
                   {visibleTracked.length === 0 ? (
                     <div className="px-3 py-6 text-center text-xs text-muted-foreground">
@@ -867,47 +1055,40 @@ function Index() {
                         ? "All detections filtered out. Adjust filters."
                         : "Point the camera at objects…"}
                     </div>
-                  ) : (
+                  ) : listTab === "items" ? (
                     <ul className="divide-y divide-border/40">
                       {visibleTracked.map((it) => (
-                        <li key={it.id} className="flex items-stretch">
-                          <button
-                            onClick={() => openItem(it)}
-                            className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
-                          >
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-medium">
-                                {it.name}
-                              </div>
-                              {it.enrichment ? (
-                                <div className="truncate text-[11px] capitalize text-muted-foreground">
-                                  {it.enrichment.category}
-                                </div>
-                              ) : (
-                                <div className="text-[11px] text-muted-foreground">
-                                  analyzing…
-                                </div>
-                              )}
-                            </div>
-                            {it.enrichment ? (
-                              <div className="shrink-0 text-xs font-semibold text-primary">
-                                ${it.enrichment.priceMin}–${it.enrichment.priceMax}
-                              </div>
-                            ) : (
-                              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => blockItem(it.name)}
-                            title="Remove & don't rescan for 1 min"
-                            aria-label={`Remove ${it.name} for 1 minute`}
-                            className="flex items-center justify-center px-3 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </li>
+                        <TrackedRow
+                          key={it.id}
+                          item={it}
+                          onOpen={() => openItem(it)}
+                          onBlock={() => blockItem(it.name)}
+                        />
                       ))}
                     </ul>
+                  ) : (
+                    <div>
+                      {trackedByCategory.map(([cat, list]) => (
+                        <div key={cat}>
+                          <div className="sticky top-0 flex items-center justify-between border-b border-border/40 bg-card/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                            <span>{categoryLabel(cat)}</span>
+                            <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
+                              {list.length}
+                            </span>
+                          </div>
+                          <ul className="divide-y divide-border/40">
+                            {list.map((it) => (
+                              <TrackedRow
+                                key={it.id}
+                                item={it}
+                                onOpen={() => openItem(it)}
+                                onBlock={() => blockItem(it.name)}
+                              />
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </>
@@ -918,50 +1099,62 @@ function Index() {
         {(phase === "analyzing" || phase === "results") && snapshot && (
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
-              <img
-                src={snapshot}
-                alt="Captured room"
-                className="block h-auto w-full"
-              />
+              <div {...photoZoom.handlers} className="relative">
+                <div style={photoZoom.transformStyle}>
+                  <img
+                    src={snapshot}
+                    alt="Captured room"
+                    className="block h-auto w-full"
+                  />
+                  {phase === "results" &&
+                    visibleItems.map((it, i) => (
+                      <button
+                        key={i}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleTapAfterPress(() => openItem(it));
+                        }}
+                        onPointerDown={() =>
+                          startLongPress(() =>
+                            snapshot
+                              ? { name: it.name, box: it.box, imgSrc: snapshot }
+                              : null,
+                          )
+                        }
+                        onPointerUp={cancelLongPress}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="group absolute rounded-md border-2 border-primary/80 bg-primary/10 transition-all hover:bg-primary/25 focus:outline-none focus:ring-2 focus:ring-primary"
+                        style={{
+                          left: `${it.box.x * 100}%`,
+                          top: `${it.box.y * 100}%`,
+                          width: `${it.box.w * 100}%`,
+                          height: `${it.box.h * 100}%`,
+                          touchAction: "none",
+                        }}
+                      >
+                        <span className="absolute -top-6 left-0 max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
+                          {it.name}
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              </div>
               {phase === "analyzing" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 text-white">
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 text-white">
                   <Loader2 className="h-8 w-8 animate-spin" />
                   <p className="text-sm">Analyzing room…</p>
                 </div>
               )}
-              {phase === "results" &&
-                visibleItems.map((it, i) => (
-                  <button
-                    key={i}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleTapAfterPress(() => openItem(it));
-                    }}
-                    onPointerDown={() =>
-                      startLongPress(() =>
-                        snapshot
-                          ? { name: it.name, box: it.box, imgSrc: snapshot }
-                          : null,
-                      )
-                    }
-                    onPointerUp={cancelLongPress}
-                    onPointerLeave={cancelLongPress}
-                    onPointerCancel={cancelLongPress}
-                    onContextMenu={(e) => e.preventDefault()}
-                    className="group absolute rounded-md border-2 border-primary/80 bg-primary/10 transition-all hover:bg-primary/25 focus:outline-none focus:ring-2 focus:ring-primary"
-                    style={{
-                      left: `${it.box.x * 100}%`,
-                      top: `${it.box.y * 100}%`,
-                      width: `${it.box.w * 100}%`,
-                      height: `${it.box.h * 100}%`,
-                      touchAction: "none",
-                    }}
-                  >
-                    <span className="absolute -top-6 left-0 max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
-                      {it.name}
-                    </span>
-                  </button>
-                ))}
+              {photoZoom.scale > 1.01 && (
+                <button
+                  onClick={photoZoom.reset}
+                  className="absolute right-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-black/90"
+                >
+                  {photoZoom.scale.toFixed(1)}× · reset
+                </button>
+              )}
             </div>
 
             {error && (
@@ -972,38 +1165,63 @@ function Index() {
 
             {phase === "results" && visibleItems.length > 0 && (
               <div>
-                <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
-                  {visibleItems.length} item{visibleItems.length === 1 ? "" : "s"} — tap to explore, hold 2s to save
-                </h2>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {visibleItems.map((it, i) => (
-                    <div
-                      key={i}
-                      className="relative rounded-lg border border-border/60 bg-card transition-colors hover:border-primary"
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
+                    <button
+                      onClick={() => setListTab("items")}
+                      className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "items" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      <button
-                        onClick={() => openItem(it)}
-                        className="block w-full rounded-lg p-3 pr-8 text-left transition-colors hover:bg-accent"
-                      >
-                        <div className="text-sm font-medium">{it.name}</div>
-                        <div className="text-xs text-muted-foreground capitalize">
-                          {it.category}
-                        </div>
-                        <div className="mt-1 text-xs font-medium text-primary">
-                          ${it.priceMin}–${it.priceMax}
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => blockItem(it.name)}
-                        title="Remove & don't rescan for 1 min"
-                        aria-label={`Remove ${it.name} for 1 minute`}
-                        className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                      Items
+                    </button>
+                    <button
+                      onClick={() => setListTab("categories")}
+                      className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Categories
+                    </button>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">
+                    {visibleItems.length} · tap to explore, hold 2s to save
+                  </span>
                 </div>
+                {listTab === "items" ? (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {visibleItems.map((it, i) => (
+                      <PhotoItemCard
+                        key={i}
+                        item={it}
+                        onOpen={() => openItem(it)}
+                        onBlock={() => blockItem(it.name)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {itemsByCategory.map(([cat, list]) => (
+                      <div
+                        key={cat}
+                        className="rounded-xl border border-border/60 bg-card p-2"
+                      >
+                        <div className="mb-2 flex items-center justify-between px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <span>{categoryLabel(cat)}</span>
+                          <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
+                            {list.length}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          {list.map((it, i) => (
+                            <PhotoItemCard
+                              key={i}
+                              item={it}
+                              onOpen={() => openItem(it)}
+                              onBlock={() => blockItem(it.name)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1018,7 +1236,16 @@ function Index() {
         )}
       </main>
 
-      {selected && <DetailPanel item={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <DetailPanel
+          item={selected}
+          imageBase64={selectedImage}
+          onClose={() => {
+            setSelected(null);
+            setSelectedImage(null);
+          }}
+        />
+      )}
 
       {doorPrompt && (
         <div
@@ -1146,15 +1373,157 @@ function Index() {
           </div>
         </div>
       )}
+
+      {personPrompt && !personResult && (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          onClick={() => !personLoading && setPersonPrompt(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold gold-text">Who is this person?</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Type their name — we’ll pull together a quick public summary.
+                </p>
+              </div>
+              <button
+                onClick={() => !personLoading && setPersonPrompt(null)}
+                className="rounded-full p-1 text-muted-foreground hover:bg-accent"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitPerson();
+              }}
+              className="mt-4 space-y-3"
+            >
+              <input
+                autoFocus
+                type="text"
+                value={personName}
+                onChange={(e) => setPersonName(e.target.value)}
+                placeholder="e.g. Marie Curie"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              />
+              {personError && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                  {personError}
+                </div>
+              )}
+              <Button type="submit" className="w-full" disabled={personLoading || !personName.trim()}>
+                {personLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Looking up…
+                  </>
+                ) : (
+                  <>
+                    <User className="mr-2 h-4 w-4" />
+                    Search
+                  </>
+                )}
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {personResult && (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          onClick={() => {
+            setPersonResult(null);
+            setPersonPrompt(null);
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold gold-text">{personResult.name}</h3>
+                {personResult.info.occupation && (
+                  <p className="text-xs text-muted-foreground">
+                    {personResult.info.occupation}
+                    {personResult.info.nationality ? ` · ${personResult.info.nationality}` : ""}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setPersonResult(null);
+                  setPersonPrompt(null);
+                }}
+                className="rounded-full p-1 text-muted-foreground hover:bg-accent"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {personResult.info.known ? (
+              <>
+                {personResult.info.summary && (
+                  <p className="mt-3 text-sm leading-relaxed">{personResult.info.summary}</p>
+                )}
+                {personResult.info.bullets.length > 0 && (
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+                    {personResult.info.bullets.map((b, i) => (
+                      <li key={i}>{b}</li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No widely-known public info for that name. Try a more complete spelling.
+              </p>
+            )}
+            <div className="mt-4 flex flex-col gap-2">
+              <a
+                href={
+                  personResult.info.wikipediaUrl ||
+                  `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(personResult.name)}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+              >
+                Wikipedia
+                <ExternalLink className="h-4 w-4 opacity-60" />
+              </a>
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(personResult.name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+              >
+                Google search
+                <ExternalLink className="h-4 w-4 opacity-60" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function DetailPanel({
   item,
+  imageBase64,
   onClose,
 }: {
   item: TrackedItem | DetectedItem;
+  imageBase64: string | null;
   onClose: () => void;
 }) {
   const isTracked = (i: TrackedItem | DetectedItem): i is TrackedItem =>
@@ -1173,13 +1542,54 @@ function DetailPanel({
         infoUrl: item.infoUrl,
       };
 
+  const [deep, setDeep] = useState<DeepAnalysis | null>(null);
+  const [deepLoading, setDeepLoading] = useState(false);
+  const [deepError, setDeepError] = useState<string | null>(null);
+
+  const [translation, setTranslation] = useState<Translation | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState<string | null>(null);
+  const showTranslate = hasNonLatin(name);
+
+  const runDeep = useCallback(async () => {
+    if (!imageBase64) {
+      setDeepError("No image available. Reopen from a scan.");
+      return;
+    }
+    setDeepLoading(true);
+    setDeepError(null);
+    try {
+      const result = await analyzeFurther({
+        data: { name, imageBase64: imageBase64.replace(/^data:[^,]+,/, "") },
+      });
+      setDeep(result);
+    } catch (e) {
+      setDeepError(e instanceof Error ? e.message : "Analysis failed.");
+    } finally {
+      setDeepLoading(false);
+    }
+  }, [imageBase64, name]);
+
+  const runTranslate = useCallback(async () => {
+    setTranslating(true);
+    setTranslateError(null);
+    try {
+      const result = await translateText({ data: { text: name } });
+      setTranslation(result);
+    } catch (e) {
+      setTranslateError(e instanceof Error ? e.message : "Translation failed.");
+    } finally {
+      setTranslating(false);
+    }
+  }, [name]);
+
   return (
     <div
       className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -1238,7 +1648,134 @@ function DetailPanel({
                 Learn more
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
+
+              <Button
+                variant="secondary"
+                onClick={runDeep}
+                disabled={deepLoading || !imageBase64}
+                className="justify-start"
+              >
+                {deepLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing further…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Analyze further
+                  </>
+                )}
+              </Button>
+
+              {showTranslate && (
+                <Button
+                  variant="secondary"
+                  onClick={runTranslate}
+                  disabled={translating}
+                  className="justify-start"
+                >
+                  {translating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Translating…
+                    </>
+                  ) : (
+                    <>
+                      <Languages className="mr-2 h-4 w-4" />
+                      Translate
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
+
+            {deepError && (
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                {deepError}
+              </div>
+            )}
+            {deep && (
+              <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Deep analysis · {deep.confidence} confidence
+                </div>
+                <div className="mt-1 text-sm font-semibold">
+                  {[deep.brand, deep.product].filter(Boolean).join(" — ") || "Best guess"}
+                </div>
+                {deep.description && (
+                  <p className="mt-1 text-sm leading-relaxed">{deep.description}</p>
+                )}
+                {(deep.priceMin > 0 || deep.priceMax > 0) && (
+                  <div className="mt-2 text-sm font-medium text-primary">
+                    ${deep.priceMin}–${deep.priceMax} {deep.currency}
+                  </div>
+                )}
+                <div className="mt-2 flex flex-col gap-2">
+                  {deep.buyUrl && (
+                    <a
+                      href={deep.buyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      Buy this exact product
+                      <ExternalLink className="h-4 w-4 opacity-60" />
+                    </a>
+                  )}
+                  {deep.infoUrl && (
+                    <a
+                      href={deep.infoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      Reviews & specs
+                      <ExternalLink className="h-4 w-4 opacity-60" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {translateError && (
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                {translateError}
+              </div>
+            )}
+            {translation && (
+              <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Translation
+                  {translation.language && ` · ${translation.language}`}
+                  {translation.script && ` (${translation.script})`}
+                </div>
+                {translation.translation ? (
+                  <div className="mt-1 text-sm font-medium">{translation.translation}</div>
+                ) : (
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    Couldn’t translate confidently.
+                  </div>
+                )}
+                {translation.transliteration && (
+                  <div className="text-xs text-muted-foreground">
+                    Romanized: {translation.transliteration}
+                  </div>
+                )}
+                {translation.note && (
+                  <p className="mt-1 text-xs text-muted-foreground">{translation.note}</p>
+                )}
+                <a
+                  href={`https://translate.google.com/?sl=${encodeURIComponent(translation.languageCode || "auto")}&tl=en&text=${encodeURIComponent(name)}&op=translate`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                >
+                  Open in Google Translate
+                  <ExternalLink className="h-4 w-4 opacity-60" />
+                </a>
+              </div>
+            )}
           </>
         ) : (
           <div className="mt-6 flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
@@ -1250,3 +1787,82 @@ function DetailPanel({
     </div>
   );
 }
+
+function TrackedRow({
+  item,
+  onOpen,
+  onBlock,
+}: {
+  item: TrackedItem;
+  onOpen: () => void;
+  onBlock: () => void;
+}) {
+  return (
+    <li className="flex items-stretch">
+      <button
+        onClick={onOpen}
+        className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
+      >
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium">{item.name}</div>
+          {item.enrichment ? (
+            <div className="truncate text-[11px] capitalize text-muted-foreground">
+              {item.enrichment.category}
+            </div>
+          ) : (
+            <div className="text-[11px] text-muted-foreground">analyzing…</div>
+          )}
+        </div>
+        {item.enrichment ? (
+          <div className="shrink-0 text-xs font-semibold text-primary">
+            ${item.enrichment.priceMin}–${item.enrichment.priceMax}
+          </div>
+        ) : (
+          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+        )}
+      </button>
+      <button
+        onClick={onBlock}
+        title="Remove & don't rescan for 1 min"
+        aria-label={`Remove ${item.name} for 1 minute`}
+        className="flex items-center justify-center px-3 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </li>
+  );
+}
+
+function PhotoItemCard({
+  item,
+  onOpen,
+  onBlock,
+}: {
+  item: DetectedItem;
+  onOpen: () => void;
+  onBlock: () => void;
+}) {
+  return (
+    <div className="relative rounded-lg border border-border/60 bg-card transition-colors hover:border-primary">
+      <button
+        onClick={onOpen}
+        className="block w-full rounded-lg p-3 pr-8 text-left transition-colors hover:bg-accent"
+      >
+        <div className="text-sm font-medium">{item.name}</div>
+        <div className="text-xs text-muted-foreground capitalize">{item.category}</div>
+        <div className="mt-1 text-xs font-medium text-primary">
+          ${item.priceMin}–${item.priceMax}
+        </div>
+      </button>
+      <button
+        onClick={onBlock}
+        title="Remove & don't rescan for 1 min"
+        aria-label={`Remove ${item.name} for 1 minute`}
+        className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
