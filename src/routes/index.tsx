@@ -15,13 +15,22 @@ import {
   Trash2,
   Flashlight,
   FlashlightOff,
+  Sparkles,
+  Languages,
+  User,
 } from "lucide-react";
 import {
   analyzeRoom,
   quickScan,
   enrichItem,
+  analyzeFurther,
+  translateText,
+  personInfo,
   type DetectedItem,
   type QuickItem,
+  type DeepAnalysis,
+  type Translation,
+  type PersonInfo,
 } from "@/lib/analyze-room.functions";
 import { Button } from "@/components/ui/button";
 
@@ -75,6 +84,8 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
   { key: "book", label: "Books" },
   { key: "instrument", label: "Instruments" },
   { key: "door", label: "Doors" },
+  { key: "text", label: "Text / Signs" },
+  { key: "person", label: "People" },
   { key: "other", label: "Other" },
 ];
 const DEFAULT_FILTERS = new Set(CATEGORY_FILTERS.map((c) => c.key));
@@ -89,6 +100,16 @@ const BODY_PART_RE =
 
 function isBodyPart(name: string) {
   return BODY_PART_RE.test(name);
+}
+
+// Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
+// Any code point >= U+0370 excluding common punctuation counts as non-Latin.
+function hasNonLatin(text: string) {
+  for (const ch of text) {
+    const cp = ch.codePointAt(0)!;
+    if (cp >= 0x0370) return true;
+  }
+  return false;
 }
 function centerDist(a: Box, b: Box) {
   const ax = a.x + a.w / 2;
@@ -131,6 +152,62 @@ async function cropAndDownload(imgSrc: string, box: Box, name: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Pinch-to-zoom hook. Attach handlers to an outer container; wrap inner content
+// with a div that uses returned `transformStyle`. Boxes inside inherit the zoom.
+function usePinchZoom(min = 1, max = 5) {
+  const [scale, setScale] = useState(1);
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const startRef = useRef({ dist: 0, scale: 1 });
+  const [pinching, setPinching] = useState(false);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size === 2) {
+      const [a, b] = [...pointersRef.current.values()];
+      startRef.current.dist = Math.hypot(a.x - b.x, a.y - b.y);
+      startRef.current.scale = scale;
+      setPinching(true);
+    }
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!pointersRef.current.has(e.pointerId)) return;
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size === 2 && startRef.current.dist > 0) {
+      const [a, b] = [...pointersRef.current.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const next = Math.max(min, Math.min(max, startRef.current.scale * (d / startRef.current.dist)));
+      setScale(next);
+    }
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    pointersRef.current.delete(e.pointerId);
+    if (pointersRef.current.size < 2) {
+      startRef.current.dist = 0;
+      setPinching(false);
+    }
+  };
+  const reset = useCallback(() => setScale(1), []);
+
+  const handlers = {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel: onPointerUp,
+    onPointerLeave: onPointerUp,
+    style: { touchAction: "none" as const },
+  };
+  const transformStyle: React.CSSProperties = {
+    transform: `scale(${scale})`,
+    transformOrigin: "center center",
+    transition: pinching ? "none" : "transform 200ms ease-out",
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    inset: 0,
+  };
+  return { scale, pinching, reset, handlers, transformStyle };
 }
 
 function Index() {
@@ -310,7 +387,7 @@ function Index() {
     setError(null);
     try {
       const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
-      setItems(result.items.filter((it) => !isBodyPart(it.name)));
+      setItems(result.items.filter((it) => it.category === "person" || !isBodyPart(it.name)));
       setPhase("results");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
@@ -471,10 +548,29 @@ function Index() {
   const [doorPrompt, setDoorPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(null);
   const [addressInput, setAddressInput] = useState("");
 
+  // Person handling (photo mode only, when person is the main subject)
+  const [personPrompt, setPersonPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(
+    null,
+  );
+  const [personName, setPersonName] = useState("");
+  const [personLoading, setPersonLoading] = useState(false);
+  const [personResult, setPersonResult] = useState<{ name: string; info: PersonInfo } | null>(
+    null,
+  );
+  const [personError, setPersonError] = useState<string | null>(null);
+
+  // List tab (Items / Categories)
+  const [listTab, setListTab] = useState<"items" | "categories">("items");
+
   const openAddressSearch = useCallback((address: string) => {
     const url = `https://www.google.com/search?q=${encodeURIComponent(address)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }, []);
+
+  const isPersonItem = (item: TrackedItem | DetectedItem) => {
+    const cat = "category" in item ? item.category : item.enrichment?.category;
+    return cat === "person";
+  };
 
   const openItem = useCallback(
     (item: TrackedItem | DetectedItem) => {
@@ -490,10 +586,33 @@ function Index() {
         }
         return;
       }
+      if (isPersonItem(item)) {
+        setPersonName("");
+        setPersonError(null);
+        setPersonPrompt({ item });
+        return;
+      }
       setSelected(item);
     },
     [openAddressSearch],
   );
+
+  const submitPerson = useCallback(async () => {
+    const name = personName.trim();
+    if (!name) return;
+    setPersonLoading(true);
+    setPersonError(null);
+    try {
+      const info = await personInfo({ data: { name } });
+      setPersonResult({ name, info });
+      setPersonPrompt(null);
+    } catch (e) {
+      setPersonError(e instanceof Error ? e.message : "Lookup failed.");
+    } finally {
+      setPersonLoading(false);
+    }
+  }, [personName]);
+
 
   const submitAddress = useCallback(
     (remember: boolean) => {
@@ -588,8 +707,47 @@ function Index() {
     [items, isAllowed, isBlocked, blocked],
   );
 
+  // Group items by category for the Categories tab.
+  const groupBy = <T,>(arr: T[], keyFn: (t: T) => string) => {
+    const map = new Map<string, T[]>();
+    for (const it of arr) {
+      const k = keyFn(it) || "other";
+      const g = map.get(k) ?? [];
+      g.push(it);
+      map.set(k, g);
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  };
+  const categoryLabel = (key: string) =>
+    CATEGORY_FILTERS.find((c) => c.key === key)?.label ??
+    key.charAt(0).toUpperCase() + key.slice(1);
+
+  const trackedByCategory = useMemo(
+    () => groupBy(visibleTracked, (t) => (t.enrichment?.category || "").toLowerCase()),
+    [visibleTracked],
+  );
+  const itemsByCategory = useMemo(
+    () => groupBy(visibleItems, (t) => (t.category || "").toLowerCase()),
+    [visibleItems],
+  );
+
   const allOn = filters.size === CATEGORY_FILTERS.length;
   const noneOn = filters.size === 0;
+
+  // Pinch-zoom for camera & snapshot views
+  const cameraZoom = usePinchZoom();
+  const photoZoom = usePinchZoom();
+  useEffect(() => {
+    // reset zoom when phase changes
+    cameraZoom.reset();
+    photoZoom.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+  useEffect(() => {
+    if (cameraZoom.pinching || photoZoom.pinching) cancelLongPress();
+  }, [cameraZoom.pinching, photoZoom.pinching, cancelLongPress]);
+
+
 
   return (
     <div className="min-h-screen text-foreground">
@@ -743,59 +901,63 @@ function Index() {
             </div>
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
-              <video
-                ref={videoRef}
-                playsInline
-                muted
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              <div {...cameraZoom.handlers} className="absolute inset-0">
+                <div style={cameraZoom.transformStyle}>
+                  <video
+                    ref={videoRef}
+                    playsInline
+                    muted
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
 
-              {mode === "video" &&
-                visibleTracked.map((it) => (
-                  <button
-                    key={it.id}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleTapAfterPress(() => openItem(it));
-                    }}
-                    onPointerDown={() => {
-                      const frame = grabFrame(1280, 0.92);
-                      startLongPress(() =>
-                        frame ? { name: it.name, box: it.box, imgSrc: frame } : null,
-                      );
-                    }}
-                    onPointerUp={cancelLongPress}
-                    onPointerLeave={cancelLongPress}
-                    onPointerCancel={cancelLongPress}
-                    onContextMenu={(e) => e.preventDefault()}
-                    className="group absolute rounded border border-emerald-400 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(0,0,0,0.35)] transition-[left,top,width,height,background-color] duration-300 ease-out hover:bg-emerald-400/25 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                    style={{
-                      left: `${it.box.x * 100}%`,
-                      top: `${it.box.y * 100}%`,
-                      width: `${it.box.w * 100}%`,
-                      height: `${it.box.h * 100}%`,
-                      touchAction: "none",
-                    }}
-                  >
-                    <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
-                      {it.name}
-                      {it.enrichment && (
-                        <span className="ml-1 opacity-90">
-                          ${it.enrichment.priceMin}–${it.enrichment.priceMax}
+                  {mode === "video" &&
+                    visibleTracked.map((it) => (
+                      <button
+                        key={it.id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleTapAfterPress(() => openItem(it));
+                        }}
+                        onPointerDown={() => {
+                          const frame = grabFrame(1280, 0.92);
+                          startLongPress(() =>
+                            frame ? { name: it.name, box: it.box, imgSrc: frame } : null,
+                          );
+                        }}
+                        onPointerUp={cancelLongPress}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="group absolute rounded border border-emerald-400 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(0,0,0,0.35)] transition-[left,top,width,height,background-color] duration-300 ease-out hover:bg-emerald-400/25 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                        style={{
+                          left: `${it.box.x * 100}%`,
+                          top: `${it.box.y * 100}%`,
+                          width: `${it.box.w * 100}%`,
+                          height: `${it.box.h * 100}%`,
+                          touchAction: "none",
+                        }}
+                      >
+                        <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
+                          {it.name}
+                          {it.enrichment && (
+                            <span className="ml-1 opacity-90">
+                              ${it.enrichment.priceMin}–${it.enrichment.priceMax}
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </span>
-                  </button>
-                ))}
+                      </button>
+                    ))}
 
-              {mode === "video" && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="h-1 w-1 rounded-full bg-white/50 shadow-[0_0_0_3px_rgba(255,255,255,0.15)]" />
+                  {mode === "video" && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <div className="h-1 w-1 rounded-full bg-white/50 shadow-[0_0_0_3px_rgba(255,255,255,0.15)]" />
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {mode === "video" && (
-                <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
+                <div className="pointer-events-none absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
                       videoPaused
@@ -809,8 +971,17 @@ function Index() {
                 </div>
               )}
 
+              {cameraZoom.scale > 1.01 && (
+                <button
+                  onClick={cameraZoom.reset}
+                  className="absolute right-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-black/90"
+                >
+                  {cameraZoom.scale.toFixed(1)}× · reset
+                </button>
+              )}
+
               {error && (
-                <div className="absolute inset-x-2 bottom-2 rounded-md bg-black/80 p-2 text-center text-xs text-white">
+                <div className="pointer-events-none absolute inset-x-2 bottom-2 rounded-md bg-black/80 p-2 text-center text-xs text-white">
                   {error}
                 </div>
               )}
@@ -822,9 +993,6 @@ function Index() {
                   <Camera className="mr-2 h-5 w-5" />
                   Scan the room
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Point at a room and tap. AI finds every item bigger than an apple.
-                </p>
               </div>
             ) : (
               <>
@@ -853,13 +1021,29 @@ function Index() {
                 </div>
 
                 <div className="rounded-2xl border border-border bg-card">
-                  <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-                    <h2 className="text-xs font-semibold text-muted-foreground">
-                      Detected in view ({visibleTracked.length}/{MAX_TRACKED})
-                    </h2>
-                    {scanning && (
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                    )}
+                  <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+                    <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
+                      <button
+                        onClick={() => setListTab("items")}
+                        className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "items" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Items
+                      </button>
+                      <button
+                        onClick={() => setListTab("categories")}
+                        className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Categories
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-muted-foreground">
+                        {visibleTracked.length}/{MAX_TRACKED}
+                      </span>
+                      {scanning && (
+                        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
                   {visibleTracked.length === 0 ? (
                     <div className="px-3 py-6 text-center text-xs text-muted-foreground">
@@ -867,47 +1051,40 @@ function Index() {
                         ? "All detections filtered out. Adjust filters."
                         : "Point the camera at objects…"}
                     </div>
-                  ) : (
+                  ) : listTab === "items" ? (
                     <ul className="divide-y divide-border/40">
                       {visibleTracked.map((it) => (
-                        <li key={it.id} className="flex items-stretch">
-                          <button
-                            onClick={() => openItem(it)}
-                            className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
-                          >
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-medium">
-                                {it.name}
-                              </div>
-                              {it.enrichment ? (
-                                <div className="truncate text-[11px] capitalize text-muted-foreground">
-                                  {it.enrichment.category}
-                                </div>
-                              ) : (
-                                <div className="text-[11px] text-muted-foreground">
-                                  analyzing…
-                                </div>
-                              )}
-                            </div>
-                            {it.enrichment ? (
-                              <div className="shrink-0 text-xs font-semibold text-primary">
-                                ${it.enrichment.priceMin}–${it.enrichment.priceMax}
-                              </div>
-                            ) : (
-                              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => blockItem(it.name)}
-                            title="Remove & don't rescan for 1 min"
-                            aria-label={`Remove ${it.name} for 1 minute`}
-                            className="flex items-center justify-center px-3 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </li>
+                        <TrackedRow
+                          key={it.id}
+                          item={it}
+                          onOpen={() => openItem(it)}
+                          onBlock={() => blockItem(it.name)}
+                        />
                       ))}
                     </ul>
+                  ) : (
+                    <div>
+                      {trackedByCategory.map(([cat, list]) => (
+                        <div key={cat}>
+                          <div className="sticky top-0 flex items-center justify-between border-b border-border/40 bg-card/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                            <span>{categoryLabel(cat)}</span>
+                            <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
+                              {list.length}
+                            </span>
+                          </div>
+                          <ul className="divide-y divide-border/40">
+                            {list.map((it) => (
+                              <TrackedRow
+                                key={it.id}
+                                item={it}
+                                onOpen={() => openItem(it)}
+                                onBlock={() => blockItem(it.name)}
+                              />
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </>
