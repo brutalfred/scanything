@@ -1095,50 +1095,62 @@ function Index() {
         {(phase === "analyzing" || phase === "results") && snapshot && (
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
-              <img
-                src={snapshot}
-                alt="Captured room"
-                className="block h-auto w-full"
-              />
+              <div {...photoZoom.handlers} className="relative">
+                <div style={photoZoom.transformStyle}>
+                  <img
+                    src={snapshot}
+                    alt="Captured room"
+                    className="block h-auto w-full"
+                  />
+                  {phase === "results" &&
+                    visibleItems.map((it, i) => (
+                      <button
+                        key={i}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleTapAfterPress(() => openItem(it));
+                        }}
+                        onPointerDown={() =>
+                          startLongPress(() =>
+                            snapshot
+                              ? { name: it.name, box: it.box, imgSrc: snapshot }
+                              : null,
+                          )
+                        }
+                        onPointerUp={cancelLongPress}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="group absolute rounded-md border-2 border-primary/80 bg-primary/10 transition-all hover:bg-primary/25 focus:outline-none focus:ring-2 focus:ring-primary"
+                        style={{
+                          left: `${it.box.x * 100}%`,
+                          top: `${it.box.y * 100}%`,
+                          width: `${it.box.w * 100}%`,
+                          height: `${it.box.h * 100}%`,
+                          touchAction: "none",
+                        }}
+                      >
+                        <span className="absolute -top-6 left-0 max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
+                          {it.name}
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              </div>
               {phase === "analyzing" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 text-white">
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 text-white">
                   <Loader2 className="h-8 w-8 animate-spin" />
                   <p className="text-sm">Analyzing room…</p>
                 </div>
               )}
-              {phase === "results" &&
-                visibleItems.map((it, i) => (
-                  <button
-                    key={i}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleTapAfterPress(() => openItem(it));
-                    }}
-                    onPointerDown={() =>
-                      startLongPress(() =>
-                        snapshot
-                          ? { name: it.name, box: it.box, imgSrc: snapshot }
-                          : null,
-                      )
-                    }
-                    onPointerUp={cancelLongPress}
-                    onPointerLeave={cancelLongPress}
-                    onPointerCancel={cancelLongPress}
-                    onContextMenu={(e) => e.preventDefault()}
-                    className="group absolute rounded-md border-2 border-primary/80 bg-primary/10 transition-all hover:bg-primary/25 focus:outline-none focus:ring-2 focus:ring-primary"
-                    style={{
-                      left: `${it.box.x * 100}%`,
-                      top: `${it.box.y * 100}%`,
-                      width: `${it.box.w * 100}%`,
-                      height: `${it.box.h * 100}%`,
-                      touchAction: "none",
-                    }}
-                  >
-                    <span className="absolute -top-6 left-0 max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
-                      {it.name}
-                    </span>
-                  </button>
-                ))}
+              {photoZoom.scale > 1.01 && (
+                <button
+                  onClick={photoZoom.reset}
+                  className="absolute right-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-black/90"
+                >
+                  {photoZoom.scale.toFixed(1)}× · reset
+                </button>
+              )}
             </div>
 
             {error && (
@@ -1149,38 +1161,63 @@ function Index() {
 
             {phase === "results" && visibleItems.length > 0 && (
               <div>
-                <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
-                  {visibleItems.length} item{visibleItems.length === 1 ? "" : "s"} — tap to explore, hold 2s to save
-                </h2>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {visibleItems.map((it, i) => (
-                    <div
-                      key={i}
-                      className="relative rounded-lg border border-border/60 bg-card transition-colors hover:border-primary"
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
+                    <button
+                      onClick={() => setListTab("items")}
+                      className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "items" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      <button
-                        onClick={() => openItem(it)}
-                        className="block w-full rounded-lg p-3 pr-8 text-left transition-colors hover:bg-accent"
-                      >
-                        <div className="text-sm font-medium">{it.name}</div>
-                        <div className="text-xs text-muted-foreground capitalize">
-                          {it.category}
-                        </div>
-                        <div className="mt-1 text-xs font-medium text-primary">
-                          ${it.priceMin}–${it.priceMax}
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => blockItem(it.name)}
-                        title="Remove & don't rescan for 1 min"
-                        aria-label={`Remove ${it.name} for 1 minute`}
-                        className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                      Items
+                    </button>
+                    <button
+                      onClick={() => setListTab("categories")}
+                      className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Categories
+                    </button>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">
+                    {visibleItems.length} · tap to explore, hold 2s to save
+                  </span>
                 </div>
+                {listTab === "items" ? (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {visibleItems.map((it, i) => (
+                      <PhotoItemCard
+                        key={i}
+                        item={it}
+                        onOpen={() => openItem(it)}
+                        onBlock={() => blockItem(it.name)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {itemsByCategory.map(([cat, list]) => (
+                      <div
+                        key={cat}
+                        className="rounded-xl border border-border/60 bg-card p-2"
+                      >
+                        <div className="mb-2 flex items-center justify-between px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <span>{categoryLabel(cat)}</span>
+                          <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
+                            {list.length}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          {list.map((it, i) => (
+                            <PhotoItemCard
+                              key={i}
+                              item={it}
+                              onOpen={() => openItem(it)}
+                              onBlock={() => blockItem(it.name)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
