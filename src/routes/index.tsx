@@ -1519,9 +1519,11 @@ function Index() {
 
 function DetailPanel({
   item,
+  imageBase64,
   onClose,
 }: {
   item: TrackedItem | DetectedItem;
+  imageBase64: string | null;
   onClose: () => void;
 }) {
   const isTracked = (i: TrackedItem | DetectedItem): i is TrackedItem =>
@@ -1540,13 +1542,54 @@ function DetailPanel({
         infoUrl: item.infoUrl,
       };
 
+  const [deep, setDeep] = useState<DeepAnalysis | null>(null);
+  const [deepLoading, setDeepLoading] = useState(false);
+  const [deepError, setDeepError] = useState<string | null>(null);
+
+  const [translation, setTranslation] = useState<Translation | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState<string | null>(null);
+  const showTranslate = hasNonLatin(name);
+
+  const runDeep = useCallback(async () => {
+    if (!imageBase64) {
+      setDeepError("No image available. Reopen from a scan.");
+      return;
+    }
+    setDeepLoading(true);
+    setDeepError(null);
+    try {
+      const result = await analyzeFurther({
+        data: { name, imageBase64: imageBase64.replace(/^data:[^,]+,/, "") },
+      });
+      setDeep(result);
+    } catch (e) {
+      setDeepError(e instanceof Error ? e.message : "Analysis failed.");
+    } finally {
+      setDeepLoading(false);
+    }
+  }, [imageBase64, name]);
+
+  const runTranslate = useCallback(async () => {
+    setTranslating(true);
+    setTranslateError(null);
+    try {
+      const result = await translateText({ data: { text: name } });
+      setTranslation(result);
+    } catch (e) {
+      setTranslateError(e instanceof Error ? e.message : "Translation failed.");
+    } finally {
+      setTranslating(false);
+    }
+  }, [name]);
+
   return (
     <div
       className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -1605,7 +1648,134 @@ function DetailPanel({
                 Learn more
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
+
+              <Button
+                variant="secondary"
+                onClick={runDeep}
+                disabled={deepLoading || !imageBase64}
+                className="justify-start"
+              >
+                {deepLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing further…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Analyze further
+                  </>
+                )}
+              </Button>
+
+              {showTranslate && (
+                <Button
+                  variant="secondary"
+                  onClick={runTranslate}
+                  disabled={translating}
+                  className="justify-start"
+                >
+                  {translating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Translating…
+                    </>
+                  ) : (
+                    <>
+                      <Languages className="mr-2 h-4 w-4" />
+                      Translate
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
+
+            {deepError && (
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                {deepError}
+              </div>
+            )}
+            {deep && (
+              <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Deep analysis · {deep.confidence} confidence
+                </div>
+                <div className="mt-1 text-sm font-semibold">
+                  {[deep.brand, deep.product].filter(Boolean).join(" — ") || "Best guess"}
+                </div>
+                {deep.description && (
+                  <p className="mt-1 text-sm leading-relaxed">{deep.description}</p>
+                )}
+                {(deep.priceMin > 0 || deep.priceMax > 0) && (
+                  <div className="mt-2 text-sm font-medium text-primary">
+                    ${deep.priceMin}–${deep.priceMax} {deep.currency}
+                  </div>
+                )}
+                <div className="mt-2 flex flex-col gap-2">
+                  {deep.buyUrl && (
+                    <a
+                      href={deep.buyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      Buy this exact product
+                      <ExternalLink className="h-4 w-4 opacity-60" />
+                    </a>
+                  )}
+                  {deep.infoUrl && (
+                    <a
+                      href={deep.infoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      Reviews & specs
+                      <ExternalLink className="h-4 w-4 opacity-60" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {translateError && (
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                {translateError}
+              </div>
+            )}
+            {translation && (
+              <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Translation
+                  {translation.language && ` · ${translation.language}`}
+                  {translation.script && ` (${translation.script})`}
+                </div>
+                {translation.translation ? (
+                  <div className="mt-1 text-sm font-medium">{translation.translation}</div>
+                ) : (
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    Couldn’t translate confidently.
+                  </div>
+                )}
+                {translation.transliteration && (
+                  <div className="text-xs text-muted-foreground">
+                    Romanized: {translation.transliteration}
+                  </div>
+                )}
+                {translation.note && (
+                  <p className="mt-1 text-xs text-muted-foreground">{translation.note}</p>
+                )}
+                <a
+                  href={`https://translate.google.com/?sl=${encodeURIComponent(translation.languageCode || "auto")}&tl=en&text=${encodeURIComponent(name)}&op=translate`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                >
+                  Open in Google Translate
+                  <ExternalLink className="h-4 w-4 opacity-60" />
+                </a>
+              </div>
+            )}
           </>
         ) : (
           <div className="mt-6 flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
@@ -1617,3 +1787,82 @@ function DetailPanel({
     </div>
   );
 }
+
+function TrackedRow({
+  item,
+  onOpen,
+  onBlock,
+}: {
+  item: TrackedItem;
+  onOpen: () => void;
+  onBlock: () => void;
+}) {
+  return (
+    <li className="flex items-stretch">
+      <button
+        onClick={onOpen}
+        className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
+      >
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium">{item.name}</div>
+          {item.enrichment ? (
+            <div className="truncate text-[11px] capitalize text-muted-foreground">
+              {item.enrichment.category}
+            </div>
+          ) : (
+            <div className="text-[11px] text-muted-foreground">analyzing…</div>
+          )}
+        </div>
+        {item.enrichment ? (
+          <div className="shrink-0 text-xs font-semibold text-primary">
+            ${item.enrichment.priceMin}–${item.enrichment.priceMax}
+          </div>
+        ) : (
+          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+        )}
+      </button>
+      <button
+        onClick={onBlock}
+        title="Remove & don't rescan for 1 min"
+        aria-label={`Remove ${item.name} for 1 minute`}
+        className="flex items-center justify-center px-3 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </li>
+  );
+}
+
+function PhotoItemCard({
+  item,
+  onOpen,
+  onBlock,
+}: {
+  item: DetectedItem;
+  onOpen: () => void;
+  onBlock: () => void;
+}) {
+  return (
+    <div className="relative rounded-lg border border-border/60 bg-card transition-colors hover:border-primary">
+      <button
+        onClick={onOpen}
+        className="block w-full rounded-lg p-3 pr-8 text-left transition-colors hover:bg-accent"
+      >
+        <div className="text-sm font-medium">{item.name}</div>
+        <div className="text-xs text-muted-foreground capitalize">{item.category}</div>
+        <div className="mt-1 text-xs font-medium text-primary">
+          ${item.priceMin}–${item.priceMax}
+        </div>
+      </button>
+      <button
+        onClick={onBlock}
+        title="Remove & don't rescan for 1 min"
+        aria-label={`Remove ${item.name} for 1 minute`}
+        className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
