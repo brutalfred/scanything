@@ -593,9 +593,12 @@ function Index() {
         setPersonPrompt({ item });
         return;
       }
+      // Capture image at open time (snapshot for photo mode, live frame for video)
+      const img = snapshot ?? grabFrame(1280, 0.9) ?? null;
+      setSelectedImage(img);
       setSelected(item);
     },
-    [openAddressSearch],
+    [openAddressSearch, snapshot],
   );
 
   const submitPerson = useCallback(async () => {
