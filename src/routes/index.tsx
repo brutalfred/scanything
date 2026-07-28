@@ -221,6 +221,7 @@ function Index() {
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
   const [selected, setSelected] = useState<TrackedItem | DetectedItem | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Filter state
   const [filters, setFilters] = useState<Set<string>>(() => {
