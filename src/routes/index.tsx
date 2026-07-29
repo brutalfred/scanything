@@ -1,3 +1,4 @@
+import logoAsset from "@/assets/scanything-logo.png.asset.json";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
