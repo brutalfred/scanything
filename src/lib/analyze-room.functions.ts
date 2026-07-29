@@ -105,7 +105,19 @@ async function callGateway(body: unknown): Promise<string> {
       throw new Error("AI credits exhausted. Please add credits in workspace settings.");
     throw new Error(`AI request failed (${res.status}): ${text.slice(0, 200)}`);
   }
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  const json = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+
+  // Cost telemetry: record what this call actually cost us.
+  const model = (body as { model?: string })?.model ?? "unknown";
+  const [{ recordAiUsage }, { getRequestUserId }] = await Promise.all([
+    import("./ai-usage.server"),
+    import("./credits.server"),
+  ]);
+  await recordAiUsage({ action, model, usage: json.usage, userId: getRequestUserId() });
+
   return json.choices?.[0]?.message?.content ?? "{}";
 }
 
