@@ -130,7 +130,7 @@ export function AccountButton({
             <button
               type="button"
               onClick={signOut}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-black/30 bg-black/5 px-3 py-2 font-semibold text-black transition-colors hover:bg-black/10"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <LogOut className="h-4 w-4" />
               Log out
