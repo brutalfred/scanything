@@ -42,3 +42,34 @@ export const getCreditState = createServerFn({ method: "POST" })
       })),
     };
   });
+
+export type AdRewardStatus = {
+  claimsToday: number;
+  dailyLimit: number;
+  reward: number;
+};
+
+export const getAdRewardStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdRewardStatus> => {
+    const { data, error } = await context.supabase.rpc("get_ad_reward_status");
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      claimsToday: Number(row?.claims_today ?? 0),
+      dailyLimit: Number(row?.daily_limit ?? 5),
+      reward: Number(row?.reward ?? 2),
+    };
+  });
+
+export const claimAdReward = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ balance: number; claimsToday: number }> => {
+    const { data, error } = await context.supabase.rpc("claim_ad_reward");
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      balance: Number(row?.balance ?? 0),
+      claimsToday: Number(row?.claims_today ?? 0),
+    };
+  });

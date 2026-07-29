@@ -44,6 +44,17 @@ function getBearerToken(): string | null {
  * Signed-in callers are charged server-side and refunded when the AI call fails.
  * Anonymous visitors run on the client-tracked free trial allowance.
  */
+function getUserIdFromToken(token: string): string | null {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64").toString("utf8"),
+    ) as { sub?: string };
+    return payload.sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function withCredits<T>(reason: CreditReason, fn: () => Promise<T>): Promise<T> {
   const token = getBearerToken();
   if (!token) return fn();
@@ -67,7 +78,16 @@ export async function withCredits<T>(reason: CreditReason, fn: () => Promise<T>)
   try {
     return await fn();
   } catch (err) {
-    await supabase.rpc("refund_credits", { _amount: amount, _reason: `refund:${reason}` });
+    // Failed AI calls are free — refund through the backend-only refund path.
+    const userId = getUserIdFromToken(token);
+    if (userId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.rpc("refund_credits_for", {
+        _user_id: userId,
+        _amount: amount,
+        _reason: `refund:${reason}`,
+      });
+    }
     throw err;
   }
 }
