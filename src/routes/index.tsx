@@ -510,7 +510,7 @@ function Scanner() {
 
 
   useEffect(() => {
-    if (mode !== "video" || phase !== "camera") return;
+    if (mode !== "video" || phase !== "camera" || isGuest) return;
     let cancelled = false;
 
     const loop = async () => {
@@ -553,7 +553,8 @@ function Scanner() {
     return () => {
       cancelled = true;
     };
-  }, [mode, phase, grabFrame, credits]);
+  }, [mode, phase, isGuest, grabFrame, credits]);
+
 
   const reset = useCallback(() => {
     setSnapshot(null);
