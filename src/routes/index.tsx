@@ -288,6 +288,8 @@ function Scanner() {
     trackedRef.current = tracked;
   }, [tracked]);
 
+  const cameraOkRef = useRef(false);
+
   const startCamera = useCallback(async () => {
     setError(null);
     try {
@@ -310,14 +312,19 @@ function Scanner() {
       };
       setTorchSupported(Boolean(caps.torch));
       setTorchOn(false);
+      cameraOkRef.current = true;
+      return true;
     } catch (e) {
+      cameraOkRef.current = false;
       setError(
         e instanceof Error
-          ? `Camera access denied: ${e.message}`
-          : "Could not access camera.",
+          ? `Camera access denied: ${e.message}. Retrying in 5s…`
+          : "Could not access camera. Retrying in 5s…",
       );
+      return false;
     }
   }, []);
+
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
