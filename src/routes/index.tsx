@@ -718,7 +718,7 @@ function Scanner() {
             <AccountButton
               signedIn={credits.signedIn}
               email={credits.email}
-              onOpenCredits={credits.openSheet}
+              balance={credits.balance}
             />
           </div>
           <div className="flex min-w-0 flex-1 items-center justify-center select-none">
