@@ -73,29 +73,30 @@ export function AccountButton({
             role="dialog"
             aria-label="Account"
             onClick={(e) => e.stopPropagation()}
-            className="gold-line gold-glow w-full max-w-xs rounded-2xl bg-[#f5e6b8] p-5 text-sm text-black shadow-2xl"
+            className="theme-panel gold-glow w-full max-w-xs rounded-2xl p-5 text-sm shadow-2xl"
           >
-            <p className="truncate text-center text-base font-semibold text-black">
+            <p className="truncate text-center text-base font-semibold">
               {email ?? "Account"}
             </p>
 
             <dl className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-black/70">Credits</dt>
-                <dd className="font-semibold text-black">{balance}</dd>
+                <dt className="opacity-70">Credits</dt>
+                <dd className="font-semibold">{balance}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-black/70">Photo scans</dt>
+                <dt className="opacity-70">Photo scans</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.photoScans ?? 0)}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-black/70">Credits spent</dt>
+                <dt className="opacity-70">Credits spent</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.creditsSpent ?? 0)}
                 </dd>
               </div>
+
             </dl>
 
             <div className="mt-5">
