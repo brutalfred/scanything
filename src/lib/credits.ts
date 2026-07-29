@@ -21,7 +21,6 @@ export const CREDIT_LABELS: Record<CreditReason, string> = {
 };
 
 export const SIGNUP_GRANT = 5;
-export const DAILY_FLOOR = 25;
 
 export const INSUFFICIENT_CREDITS = "insufficient_credits";
 

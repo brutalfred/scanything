@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, X, Play } from "lucide-react";
 import { toast } from "sonner";
-import { CREDIT_COSTS, CREDIT_LABELS, DAILY_FLOOR, type CreditReason } from "@/lib/credits";
+import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 import { CREDIT_PACKS, AD_REWARD_CREDITS } from "@/lib/credit-packs";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { getPaddleEnvironment } from "@/lib/paddle";
@@ -128,7 +128,7 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
 
           {credits.signedIn && (
             <p className="mb-5 text-xs text-black/60">
-              Your balance also tops back up to {DAILY_FLOOR} credits once a day.
+              Credits never expire. Top up any time, or watch an ad for free credits.
             </p>
           )}
 
