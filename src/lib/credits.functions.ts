@@ -84,7 +84,7 @@ export const claimAdReward = createServerFn({ method: "POST" })
       _session_id: data.sessionId,
     });
     if (error) throw new Error(error.message);
-    const row = Array.isArray(data) ? data[0] : data;
+    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
     return {
       balance: Number(row?.balance ?? 0),
       claimsToday: Number(row?.claims_today ?? 0),
