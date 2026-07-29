@@ -56,6 +56,12 @@ export function useCredits() {
         const result = await claimSignupGrant({ data: { deviceHash } });
         if (cancelled) return;
         localStorage.setItem(key, "1");
+        // Optimistically reflect the new balance in the counter immediately.
+        queryClient.setQueryData<CreditState>(["credits"], (prev) => ({
+          balance: result.balance,
+          lastDailyGrantAt: prev?.lastDailyGrantAt ?? null,
+          ledger: prev?.ledger ?? [],
+        }));
         if (result.status === "granted") {
           toast.success(`${result.balance} free trial credits added — enjoy!`);
         } else if (result.status === "device_used") {
@@ -76,6 +82,7 @@ export function useCredits() {
       cancelled = true;
     };
   }, [session?.user.id, queryClient]);
+
 
   const refresh = useCallback(() => {
     if (signedIn) queryClient.invalidateQueries({ queryKey: ["credits"] });
