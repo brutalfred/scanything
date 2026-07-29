@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getCreditState } from "@/lib/credits.functions";
+import { getCreditState, getAdRewardStatus, claimAdReward } from "@/lib/credits.functions";
+import { AD_DAILY_LIMIT } from "@/lib/credit-packs";
 import {
   ANON_TRIAL_CREDITS,
   CREDIT_COSTS,
