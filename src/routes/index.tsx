@@ -847,6 +847,7 @@ function Scanner() {
               <CreditMeter
                 balance={credits.balance}
                 loading={credits.loading}
+                signedIn={credits.signedIn}
                 onClick={credits.openSheet}
               />
               <div className="inline-flex rounded-full border border-border bg-secondary p-1">
