@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { withCredits } from "./credits.server";
 
 const InputSchema = z.object({
   imageBase64: z.string().min(100),
@@ -128,7 +129,8 @@ function toDataUrl(b: string) {
 export const analyzeRoom = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<AnalyzeResult> => {
-    const content = await callGateway({
+    const content = await withCredits("photo_scan", () =>
+      callGateway({
       model: "google/gemini-3-flash-preview",
       response_format: { type: "json_object" },
       messages: [
@@ -153,7 +155,8 @@ export const analyzeRoom = createServerFn({ method: "POST" })
 export const quickScan = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<QuickResult> => {
-    const content = await callGateway({
+    const content = await withCredits("quick_scan", () =>
+      callGateway({
       model: "google/gemini-3-flash-preview",
       response_format: { type: "json_object" },
       messages: [
@@ -192,7 +195,8 @@ const EnrichInput = z.object({
 export const enrichItem = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => EnrichInput.parse(data))
   .handler(async ({ data }): Promise<Omit<DetectedItem, "box" | "name">> => {
-    const content = await callGateway({
+    const content = await withCredits("enrich", () =>
+      callGateway({
       model: "google/gemini-3-flash-preview",
       response_format: { type: "json_object" },
       messages: [
@@ -271,7 +275,8 @@ export type DeepAnalysis = {
 export const analyzeFurther = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => DeepInput.parse(data))
   .handler(async ({ data }): Promise<DeepAnalysis> => {
-    const content = await callGateway({
+    const content = await withCredits("analyze_further", () =>
+      callGateway({
       model: "google/gemini-2.5-pro",
       response_format: { type: "json_object" },
       messages: [
@@ -321,7 +326,8 @@ export type Translation = {
 export const translateText = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => TranslateInput.parse(data))
   .handler(async ({ data }): Promise<Translation> => {
-    const content = await callGateway({
+    const content = await withCredits("translate", () =>
+      callGateway({
       model: "google/gemini-3-flash-preview",
       response_format: { type: "json_object" },
       messages: [
@@ -354,7 +360,8 @@ export type PersonInfo = {
 export const personInfo = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => PersonInput.parse(data))
   .handler(async ({ data }): Promise<PersonInfo> => {
-    const content = await callGateway({
+    const content = await withCredits("person_info", () =>
+      callGateway({
       model: "google/gemini-2.5-pro",
       response_format: { type: "json_object" },
       messages: [
