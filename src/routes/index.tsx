@@ -1688,7 +1688,7 @@ function DetailPanel({
               <Button
                 variant="secondary"
                 onClick={runDeep}
-                disabled={deepLoading || !imageBase64}
+                disabled={deepLoading || !imageBase64 || !panelCredits.canAfford("analyze_further")}
                 className="justify-start"
               >
                 {deepLoading ? (
@@ -1699,7 +1699,7 @@ function DetailPanel({
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Analyze further
+                    Analyze further · {CREDIT_COSTS.analyze_further}
                   </>
                 )}
               </Button>
@@ -1708,7 +1708,7 @@ function DetailPanel({
                 <Button
                   variant="secondary"
                   onClick={runTranslate}
-                  disabled={translating}
+                  disabled={translating || !panelCredits.canAfford("translate")}
                   className="justify-start"
                 >
                   {translating ? (
@@ -1719,7 +1719,7 @@ function DetailPanel({
                   ) : (
                     <>
                       <Languages className="mr-2 h-4 w-4" />
-                      Translate
+                      Translate · {CREDIT_COSTS.translate}
                     </>
                   )}
                 </Button>
