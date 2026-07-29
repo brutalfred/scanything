@@ -9,11 +9,13 @@ import {
   claimAdReward,
   startAdSession,
   claimSignupGrant,
+  type CreditState,
 } from "@/lib/credits.functions";
 import { getDeviceHash } from "@/lib/device-id";
 import { AD_DAILY_LIMIT } from "@/lib/credit-packs";
 import { CREDIT_COSTS, type CreditReason } from "@/lib/credits";
 import { adErrorMessage } from "@/lib/ad-errors";
+
 
 export function useCredits() {
   const queryClient = useQueryClient();
