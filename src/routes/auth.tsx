@@ -93,7 +93,7 @@ function AuthPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-5">
-      <div className="gold-line w-full max-w-sm rounded-2xl bg-card p-6">
+      <div className="gold-glow gold-line w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-foreground">
         <h1 className="gold-text mb-1 text-2xl font-bold">Scanything</h1>
         <p className="mb-6 text-sm text-muted-foreground">
           Sign in to keep your scan credits. New accounts receive a one-time gift of {SIGNUP_GRANT}{" "}
