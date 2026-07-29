@@ -93,27 +93,21 @@ function AuthPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-5">
-      <div className="gold-glow gold-line w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-foreground">
-        <h1 className="gold-text mb-1 text-2xl font-bold">Scanything</h1>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Sign in to keep your scan credits. New accounts receive a one-time gift of {SIGNUP_GRANT}{" "}
-          free trial credits — one per device.
-        </p>
-
-        {notice && (
-          <p className="mb-4 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary">
-            {notice}
-          </p>
-        )}
-
+      <div className="gold-glow gold-line w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-white p-6 text-black">
         {mode !== "forgot" && (
           <button
             type="button"
             onClick={google}
-            className="mb-4 w-full rounded-lg border border-primary/40 px-4 py-2.5 text-sm font-semibold text-primary"
+            className="mb-4 w-full rounded-lg border border-black/30 px-4 py-2.5 text-sm font-semibold text-black hover:bg-black/5"
           >
             Continue with Google
           </button>
+        )}
+
+        {notice && (
+          <p className="mb-4 rounded-lg bg-black/10 px-3 py-2 text-xs text-black">
+            {notice}
+          </p>
         )}
 
         <form onSubmit={submit} className="space-y-3">
@@ -123,7 +117,7 @@ function AuthPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
+            className="w-full rounded-lg border border-black/20 bg-black px-3 py-2.5 text-sm text-white placeholder:text-white/60"
           />
           {mode !== "forgot" && (
             <input
@@ -133,13 +127,13 @@ function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
+              className="w-full rounded-lg border border-black/20 bg-black px-3 py-2.5 text-sm text-white placeholder:text-white/60"
             />
           )}
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
           >
             {mode === "signin"
               ? "Sign in"
@@ -155,7 +149,7 @@ function AuthPage() {
             setNotice(null);
             setMode(mode === "signin" ? "signup" : "signin");
           }}
-          className="mt-4 w-full text-xs text-muted-foreground underline"
+          className="mt-4 w-full text-xs text-black underline"
         >
           {mode === "signin" ? "No account? Sign up" : "Already have an account? Sign in"}
         </button>
@@ -166,13 +160,12 @@ function AuthPage() {
             setNotice(null);
             setMode(mode === "forgot" ? "signin" : "forgot");
           }}
-          className="mt-2 w-full text-xs text-muted-foreground underline"
+          className="mt-2 w-full text-xs text-black underline"
         >
           {mode === "forgot" ? "Back to sign in" : "Forgot your password?"}
         </button>
 
-
-        <Link to="/" className="mt-4 block text-center text-xs text-muted-foreground">
+        <Link to="/" className="mt-4 block text-center text-xs text-black">
           Back to scanning
         </Link>
       </div>
