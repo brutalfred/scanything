@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_reward_claims: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_accounts: {
         Row: {
           balance: number
@@ -65,11 +86,54 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_purchases: {
+        Row: {
+          amount_cents: number | null
+          created_at: string
+          credits: number
+          currency: string | null
+          environment: string
+          id: string
+          paddle_transaction_id: string
+          price_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string
+          credits: number
+          currency?: string | null
+          environment?: string
+          id?: string
+          paddle_transaction_id: string
+          price_id: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string
+          credits?: number
+          currency?: string | null
+          environment?: string
+          id?: string
+          paddle_transaction_id?: string
+          price_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      claim_ad_reward: {
+        Args: never
+        Returns: {
+          balance: number
+          claims_today: number
+        }[]
+      }
       ensure_credit_account: {
         Args: { _user_id: string }
         Returns: {
@@ -85,6 +149,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_ad_reward_status: {
+        Args: never
+        Returns: {
+          claims_today: number
+          daily_limit: number
+          reward: number
+        }[]
       }
       get_credit_state: {
         Args: never
