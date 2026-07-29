@@ -1319,7 +1319,7 @@ function Scanner() {
               Privacy Notice
             </Link>
           </div>
-          <p>© {new Date().getFullYear()} Scanything. Sold by John FREDRIK Mikael Paulsson.</p>
+          <p>© {new Date().getFullYear()} Scanything. All rights reserved.</p>
         </div>
       </footer>
 

@@ -1,39 +1,21 @@
-## Goal
+# Remove legal name from footer
 
-Make the "Watch ad for free credits" reward impossible to farm from the browser. Today the daily 5-claim limit is already enforced in the database, but the claim itself is trusted: anything that calls the claim endpoint gets 2 credits, with no proof an ad was actually watched and no gap required between claims.
+## Does it create problems?
+Generally **no** for the footer, as long as your full legal identity stays in the legal documents (Terms & Conditions and Privacy Notice). Those pages are what most consumer-protection, payment-provider, and data-controller rules actually look at. Removing the name from the bottom of the main app page is a normal cosmetic/legal-hygiene change.
 
-## What is weak right now
+The only caveat: a few jurisdictions (e.g., Germany-style Impressum rules) require operator contact info to be reachable from every commercial page. Your app is small, Swedish, and already has deep-linked legal pages, so the risk is low — but if you ever want maximum safety you can add a footer link like "Terms / Privacy" instead of a personal name.
 
-- `claim_ad_reward()` correctly inserts a row in `ad_reward_claims` and blocks the 6th claim of the day (verified in the database functions).
-- But the client can call `claimAdReward()` directly — skipping the 15-second player entirely — and can fire all 5 daily claims within a second.
-- Nothing ties a claim to a specific ad view, so a replayed request looks identical to a genuine one.
+## What the plan changes
+1. **src/routes/index.tsx** — Remove `"Sold by John FREDRIK Mikael Paulsson"` from the footer and replace it with a clean copyright line such as:
+   ```
+   © {year} Scanything. All rights reserved.
+   ```
+2. **src/routes/terms.tsx** and **src/routes/privacy.tsx** — Leave the `SELLER_NAME` constant as-is. These pages legally need to identify the seller/data controller, and since you have not formed a company yet, your personal name is still the correct value.
+3. **Verification** — Re-run the search to confirm the name no longer appears in any UI footer and only remains in the two policy pages.
 
-## The fix: server-issued ad sessions
+## What this does not change
+- Paddle is still the Merchant of Record, so payout/tax setup is unaffected.
+- No database, credit, auth, or scan features change.
+- No server functions or migrations needed.
 
-1. **Start a session before the ad plays.** When the user opens the ad modal, the app asks the server for an ad session. The server records who asked and when, and returns a one-time token.
-2. **Claim with that token.** When the player finishes, the app sends the token back. The server grants credits only if:
-   - the token belongs to the signed-in user,
-   - it has not been used before (one-time, marked used atomically),
-   - at least the full ad duration has passed since the session started,
-   - it is not older than a few minutes (expired tokens are rejected),
-   - the user is still under the daily limit.
-3. **Add a short cooldown** between successful rewards (e.g. 60 seconds) so the 5 daily rewards can't all be collected instantly.
-4. **Keep the client honest but not trusted.** The modal still counts down, but the countdown is decoration — the server's own timestamps decide.
-
-## User-visible behaviour
-
-- Normal users see no change: watch the ad, collect 2 credits.
-- Closing the ad early and reopening simply starts a new session; no credit is granted.
-- If a reward is attempted too soon after the last one, the app shows "Please wait a moment before your next free ad" instead of granting.
-- Daily limit messaging stays as it is ("No free ads left today").
-
-## Technical details
-
-- New table `public.ad_sessions` (`id`, `user_id`, `created_at`, `used_at`), with GRANTs for `authenticated`/`service_role`, RLS enabled, and a select-own policy; inserts/updates happen only through security-definer functions.
-- New DB function `start_ad_session()` — security definer, requires `auth.uid()`, enforces the daily limit up front and the cooldown against the last `ad_reward_claims` row, returns the session id.
-- Rewrite `claim_ad_reward()` to take `_session_id uuid`: validates ownership, unused state, `now() - created_at >= 15 seconds`, `now() - created_at <= 10 minutes`, daily limit, and cooldown; marks the session used and grants credits in the same transaction. Distinct error codes (`ad_limit_reached`, `ad_too_fast`, `ad_session_invalid`, `ad_cooldown`) so the UI can message properly.
-- `src/lib/credits.functions.ts` — add `startAdSession` server fn; `claimAdReward` now takes the session id.
-- `src/hooks/useCredits.ts` — `claimAd(sessionId)`; map the new error codes to friendly toasts.
-- `src/components/credits/AdRewardModal.tsx` — request a session on mount, hold the id, pass it to the claim call, and disable the collect button until the session exists.
-
-No schema change to `credit_accounts`, `credit_ledger`, or the existing pricing/packs.
+If you later form a Swedish company (enskild firma / AB), we can do a follow-up plan that replaces the personal name everywhere with the company name and registered address.
