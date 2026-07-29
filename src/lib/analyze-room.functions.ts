@@ -90,7 +90,7 @@ const TRANSLATE_SYSTEM = `You translate short pieces of text (signs, logos, labe
 const PERSON_SYSTEM = `You compile a short, neutral, publicly-known summary about a named person for a UI info card. Do NOT invent facts; if you don't know, say so plainly. Use only widely-known public information. Respond ONLY with compact JSON:
 {"known":true|false,"summary":"2-4 sentence neutral overview, or a note that this person is not publicly known","bullets":["short fact 1","short fact 2","..."],"occupation":"if known, else empty","nationality":"if known, else empty","wikipediaUrl":"https://en.wikipedia.org/wiki/<topic> if plausible, else empty"}`;
 
-async function callGateway(body: unknown): Promise<string> {
+async function callGateway(action: string, body: unknown): Promise<string> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -105,7 +105,19 @@ async function callGateway(body: unknown): Promise<string> {
       throw new Error("AI credits exhausted. Please add credits in workspace settings.");
     throw new Error(`AI request failed (${res.status}): ${text.slice(0, 200)}`);
   }
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  const json = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+
+  // Cost telemetry: record what this call actually cost us.
+  const model = (body as { model?: string })?.model ?? "unknown";
+  const [{ recordAiUsage }, { getRequestUserId }] = await Promise.all([
+    import("./ai-usage.server"),
+    import("./credits.server"),
+  ]);
+  await recordAiUsage({ action, model, usage: json.usage, userId: getRequestUserId() });
+
   return json.choices?.[0]?.message?.content ?? "{}";
 }
 
@@ -131,7 +143,7 @@ export const analyzeRoom = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<AnalyzeResult> => {
     const { withCredits } = await import("./credits.server");
     const content = await withCredits("photo_scan", () =>
-      callGateway({
+      callGateway("photo_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
         messages: [
@@ -159,7 +171,7 @@ export const quickScan = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<QuickResult> => {
     const { withCredits } = await import("./credits.server");
     const content = await withCredits("quick_scan", () =>
-      callGateway({
+      callGateway("quick_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
         messages: [
@@ -201,7 +213,7 @@ export const enrichItem = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Omit<DetectedItem, "box" | "name">> => {
     const { withCredits } = await import("./credits.server");
     const content = await withCredits("enrich", () =>
-      callGateway({
+      callGateway("enrich", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
         messages: [
@@ -285,7 +297,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<DeepAnalysis> => {
     const { withCredits } = await import("./credits.server");
     const content = await withCredits("analyze_further", () =>
-      callGateway({
+      callGateway("analyze_further", {
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
@@ -336,7 +348,7 @@ export const translateText = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Translation> => {
     const { withCredits } = await import("./credits.server");
     const content = await withCredits("translate", () =>
-      callGateway({
+      callGateway("translate", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
         messages: [
@@ -372,7 +384,7 @@ export const personInfo = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PersonInfo> => {
     const { withCredits } = await import("./credits.server");
     const content = await withCredits("person_info", () =>
-      callGateway({
+      callGateway("person_info", {
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
