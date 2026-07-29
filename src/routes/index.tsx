@@ -11,7 +11,6 @@ import {
   Pause,
   Play,
   SlidersHorizontal,
-  Download,
   Trash2,
   Flashlight,
   FlashlightOff,
@@ -130,36 +129,6 @@ function distFromCenter(b: Box) {
   return Math.hypot(cx - 0.5, cy - 0.5);
 }
 
-async function cropAndDownload(imgSrc: string, box: Box, name: string) {
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  await new Promise<void>((res, rej) => {
-    img.onload = () => res();
-    img.onerror = () => rej(new Error("image load failed"));
-    img.src = imgSrc;
-  });
-  const iw = img.naturalWidth;
-  const ih = img.naturalHeight;
-  const cw = Math.max(1, Math.round(box.w * iw));
-  const ch = Math.max(1, Math.round(box.h * ih));
-  const canvas = document.createElement("canvas");
-  canvas.width = cw;
-  canvas.height = ch;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.drawImage(img, box.x * iw, box.y * ih, box.w * iw, box.h * ih, 0, 0, cw, ch);
-  const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, "image/jpeg", 0.92));
-  if (!blob) return;
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${name.replace(/[^a-z0-9]+/gi, "_").toLowerCase() || "item"}.jpeg`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
 // Pinch-to-zoom hook. Attach handlers to an outer container; wrap inner content
 // with a div that uses returned `transformStyle`. Boxes inside inherit the zoom.
 function usePinchZoom(min = 1, max = 5) {
@@ -202,7 +171,7 @@ function usePinchZoom(min = 1, max = 5) {
     onPointerUp,
     onPointerCancel: onPointerUp,
     onPointerLeave: onPointerUp,
-    style: { touchAction: "none" as const },
+    style: { touchAction: "pan-y" as const },
   };
   const transformStyle: React.CSSProperties = {
     transform: `scale(${scale})`,
@@ -340,14 +309,17 @@ function Scanner() {
       };
       setTorchSupported(Boolean(caps.torch));
       setTorchOn(false);
+      return true;
     } catch (e) {
       setError(
         e instanceof Error
-          ? `Camera access denied: ${e.message}`
-          : "Could not access camera.",
+          ? `Camera access denied: ${e.message}. Retrying in 5s…`
+          : "Could not access camera. Retrying in 5s…",
       );
+      return false;
     }
   }, []);
+
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -371,12 +343,27 @@ function Scanner() {
   }, [torchOn]);
 
   useEffect(() => {
-    if (phase === "camera") {
-      void startCamera();
-    }
-    return () => stopCamera();
+    if (phase !== "camera") return;
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const attempt = async () => {
+      if (cancelled) return;
+      const ok = await startCamera();
+      if (!ok && !cancelled) {
+        timer = window.setTimeout(attempt, 5000);
+      }
+    };
+    void attempt();
+
+    return () => {
+      cancelled = true;
+      if (timer !== null) window.clearTimeout(timer);
+      stopCamera();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+
 
   const grabFrame = useCallback((maxDim = 1024, quality = 0.8): string | null => {
     const video = videoRef.current;
@@ -662,65 +649,6 @@ function Scanner() {
     [addressInput, openAddressSearch],
   );
 
-  // Long-press → save cropped item image
-  const [savePrompt, setSavePrompt] = useState<
-    { name: string; box: Box; imgSrc: string } | null
-  >(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const longPressRef = useRef<{ timer: number | null; fired: boolean }>({
-    timer: null,
-    fired: false,
-  });
-
-  const cancelLongPress = useCallback(() => {
-    if (longPressRef.current.timer !== null) {
-      window.clearTimeout(longPressRef.current.timer);
-      longPressRef.current.timer = null;
-    }
-  }, []);
-
-  const startLongPress = useCallback(
-    (getData: () => { name: string; box: Box; imgSrc: string } | null) => {
-      cancelLongPress();
-      longPressRef.current.fired = false;
-      longPressRef.current.timer = window.setTimeout(() => {
-        const data = getData();
-        longPressRef.current.timer = null;
-        if (data) {
-          longPressRef.current.fired = true;
-          setSavePrompt(data);
-        }
-      }, 2000);
-    },
-    [cancelLongPress],
-  );
-
-  const handleTapAfterPress = useCallback(
-    (onTap: () => void) => {
-      cancelLongPress();
-      if (longPressRef.current.fired) {
-        longPressRef.current.fired = false;
-        return;
-      }
-      onTap();
-    },
-    [cancelLongPress],
-  );
-
-  const confirmSave = useCallback(async () => {
-    if (!savePrompt) return;
-    setSaving(true);
-    setSaveError(null);
-    try {
-      await cropAndDownload(savePrompt.imgSrc, savePrompt.box, savePrompt.name);
-      setSavePrompt(null);
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Save failed.");
-    } finally {
-      setSaving(false);
-    }
-  }, [savePrompt]);
 
   // Filtered lists
   const isAllowed = useCallback(
@@ -778,9 +706,6 @@ function Scanner() {
     photoZoom.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
-  useEffect(() => {
-    if (cameraZoom.pinching || photoZoom.pinching) cancelLongPress();
-  }, [cameraZoom.pinching, photoZoom.pinching, cancelLongPress]);
 
 
 
@@ -828,16 +753,19 @@ function Scanner() {
                 )}
               </button>
             )}
-            <button
-              onClick={() => setFilterOpen((o) => !o)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Filter</span>
-              <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
-                {filters.size}
-              </span>
-            </button>
+            {!isGuest && (
+              <button
+                onClick={() => setFilterOpen((o) => !o)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Filter</span>
+                <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                  {filters.size}
+                </span>
+              </button>
+            )}
+
             {phase === "results" && (
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
@@ -963,25 +891,15 @@ function Scanner() {
                         key={it.id}
                         onClick={(e) => {
                           e.preventDefault();
-                          handleTapAfterPress(() => openItem(it));
+                          openItem(it);
                         }}
-                        onPointerDown={() => {
-                          const frame = grabFrame(1280, 0.92);
-                          startLongPress(() =>
-                            frame ? { name: it.name, box: it.box, imgSrc: frame } : null,
-                          );
-                        }}
-                        onPointerUp={cancelLongPress}
-                        onPointerLeave={cancelLongPress}
-                        onPointerCancel={cancelLongPress}
-                        onContextMenu={(e) => e.preventDefault()}
                         className="group absolute rounded border border-emerald-400 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(0,0,0,0.35)] transition-[left,top,width,height,background-color] duration-300 ease-out hover:bg-emerald-400/25 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                         style={{
                           left: `${it.box.x * 100}%`,
                           top: `${it.box.y * 100}%`,
                           width: `${it.box.w * 100}%`,
                           height: `${it.box.h * 100}%`,
-                          touchAction: "none",
+                          touchAction: "pan-y",
                         }}
                       >
                         <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
@@ -1088,7 +1006,7 @@ function Scanner() {
                   </Button>
                   {!isGuest && (
                     <p className="text-xs text-muted-foreground text-center">
-                      Tap a box for details. Press & hold 2s to save it as a .jpeg.
+                      Tap a box for details.
                     </p>
                   )}
                 </div>
@@ -1182,26 +1100,15 @@ function Scanner() {
                         key={i}
                         onClick={(e) => {
                           e.preventDefault();
-                          handleTapAfterPress(() => openItem(it));
+                          openItem(it);
                         }}
-                        onPointerDown={() =>
-                          startLongPress(() =>
-                            snapshot
-                              ? { name: it.name, box: it.box, imgSrc: snapshot }
-                              : null,
-                          )
-                        }
-                        onPointerUp={cancelLongPress}
-                        onPointerLeave={cancelLongPress}
-                        onPointerCancel={cancelLongPress}
-                        onContextMenu={(e) => e.preventDefault()}
                         className="group absolute rounded-md border-2 border-primary/80 bg-primary/10 transition-all hover:bg-primary/25 focus:outline-none focus:ring-2 focus:ring-primary"
                         style={{
                           left: `${it.box.x * 100}%`,
                           top: `${it.box.y * 100}%`,
                           width: `${it.box.w * 100}%`,
                           height: `${it.box.h * 100}%`,
-                          touchAction: "none",
+                          touchAction: "pan-y",
                         }}
                       >
                         <span className="absolute -top-6 left-0 max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
@@ -1393,70 +1300,6 @@ function Scanner() {
                 Saved locally on this device so future door scans open instantly.
               </p>
             </form>
-          </div>
-        </div>
-      )}
-
-      {savePrompt && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
-          onClick={() => !saving && setSavePrompt(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold gold-text">Save as picture?</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Save “{savePrompt.name}” as its own .jpeg to your device.
-            </p>
-            <div className="mt-4 overflow-hidden rounded-lg border border-border/60 bg-black">
-              <div
-                className="relative w-full"
-                style={{
-                  aspectRatio: `${Math.max(0.4, savePrompt.box.w / Math.max(0.001, savePrompt.box.h))}`,
-                }}
-              >
-                <img
-                  src={savePrompt.imgSrc}
-                  alt=""
-                  className="absolute h-auto max-w-none"
-                  style={{
-                    width: `${100 / Math.max(0.001, savePrompt.box.w)}%`,
-                    left: `-${(savePrompt.box.x / Math.max(0.001, savePrompt.box.w)) * 100}%`,
-                    top: `-${(savePrompt.box.y / Math.max(0.001, savePrompt.box.h)) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-            {saveError && (
-              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                {saveError}
-              </div>
-            )}
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <Button onClick={confirmSave} disabled={saving} className="flex-1">
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Save .jpeg
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={saving}
-                onClick={() => setSavePrompt(null)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
           </div>
         </div>
       )}
