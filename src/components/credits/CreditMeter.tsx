@@ -4,11 +4,13 @@ import { cn } from "@/lib/utils";
 export function CreditMeter({
   balance,
   loading,
+  signedIn,
   onClick,
 }: {
   balance: number;
   loading?: boolean;
-  onClick: () => void;
+  signedIn?: boolean;
+  onClick?: () => void;
 }) {
   const tone =
     balance <= 0
@@ -20,10 +22,12 @@ export function CreditMeter({
   return (
     <button
       type="button"
-      onClick={onClick}
-      aria-label={`Scan credits: ${balance}`}
+      disabled={!signedIn}
+      onClick={signedIn ? onClick : undefined}
+      aria-label={signedIn ? `Scan credits: ${balance}` : "Sign in to view credits"}
       className={cn(
         "flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1.5 text-sm font-semibold tabular-nums backdrop-blur transition-colors",
+        !signedIn && "cursor-default opacity-80",
         tone,
       )}
     >
@@ -32,3 +36,4 @@ export function CreditMeter({
     </button>
   );
 }
+
