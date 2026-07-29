@@ -11,7 +11,6 @@ import {
   Pause,
   Play,
   SlidersHorizontal,
-  Download,
   Trash2,
   Flashlight,
   FlashlightOff,
@@ -288,8 +287,6 @@ function Scanner() {
     trackedRef.current = tracked;
   }, [tracked]);
 
-  const cameraOkRef = useRef(false);
-
   const startCamera = useCallback(async () => {
     setError(null);
     try {
@@ -312,10 +309,8 @@ function Scanner() {
       };
       setTorchSupported(Boolean(caps.torch));
       setTorchOn(false);
-      cameraOkRef.current = true;
       return true;
     } catch (e) {
-      cameraOkRef.current = false;
       setError(
         e instanceof Error
           ? `Camera access denied: ${e.message}. Retrying in 5s…`
