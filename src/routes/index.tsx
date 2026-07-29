@@ -410,6 +410,9 @@ function Scanner() {
     }
   }, [grabFrame, stopCamera, credits]);
 
+  const isGuest = !credits.signedIn;
+
+
   const mergeDetections = useCallback((detections: QuickItem[]) => {
     setTracked((prev) => {
       const now = Date.now();
