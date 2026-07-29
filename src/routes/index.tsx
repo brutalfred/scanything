@@ -33,6 +33,9 @@ import {
   type PersonInfo,
 } from "@/lib/analyze-room.functions";
 import { Button } from "@/components/ui/button";
+import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
+import { CreditMeter } from "@/components/credits/CreditMeter";
+import { CREDIT_COSTS } from "@/lib/credits";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -211,6 +214,15 @@ function usePinchZoom(min = 1, max = 5) {
 }
 
 function Index() {
+  return (
+    <CreditsProvider>
+      <Scanner />
+    </CreditsProvider>
+  );
+}
+
+function Scanner() {
+  const credits = useCreditsContext();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [torchOn, setTorchOn] = useState(false);
@@ -380,6 +392,7 @@ function Index() {
   }, []);
 
   const capture = useCallback(async () => {
+    if (!credits.spend("photo_scan")) return;
     const dataUrl = grabFrame(1024, 0.8);
     if (!dataUrl) return;
     setSnapshot(dataUrl);
@@ -394,7 +407,7 @@ function Index() {
       setError(e instanceof Error ? e.message : "Analysis failed.");
       setPhase("results");
     }
-  }, [grabFrame, stopCamera]);
+  }, [grabFrame, stopCamera, credits]);
 
   const mergeDetections = useCallback((detections: QuickItem[]) => {
     setTracked((prev) => {
@@ -463,6 +476,11 @@ function Index() {
           await new Promise((r) => setTimeout(r, 300));
           continue;
         }
+        if (!credits.spend("quick_scan", { silent: true })) {
+          setError("Out of scan credits — live scanning paused.");
+          await new Promise((r) => setTimeout(r, 3000));
+          continue;
+        }
         scanningRef.current = true;
         setScanning(true);
         try {
@@ -484,7 +502,7 @@ function Index() {
     return () => {
       cancelled = true;
     };
-  }, [mode, phase, grabFrame, mergeDetections]);
+  }, [mode, phase, grabFrame, mergeDetections, credits]);
 
   useEffect(() => {
     if (mode !== "video" || phase !== "camera") return;
@@ -502,6 +520,10 @@ function Index() {
         const frame = grabFrame(640, 0.7);
         if (!frame) {
           await new Promise((r) => setTimeout(r, 400));
+          continue;
+        }
+        if (!credits.spend("enrich", { silent: true })) {
+          await new Promise((r) => setTimeout(r, 3000));
           continue;
         }
         enrichingIdsRef.current.add(target.id);
@@ -526,7 +548,7 @@ function Index() {
     return () => {
       cancelled = true;
     };
-  }, [mode, phase, grabFrame]);
+  }, [mode, phase, grabFrame, credits]);
 
   const reset = useCallback(() => {
     setSnapshot(null);
@@ -604,6 +626,7 @@ function Index() {
   const submitPerson = useCallback(async () => {
     const name = personName.trim();
     if (!name) return;
+    if (!credits.spend("person_info")) return;
     setPersonLoading(true);
     setPersonError(null);
     try {
@@ -615,7 +638,7 @@ function Index() {
     } finally {
       setPersonLoading(false);
     }
-  }, [personName]);
+  }, [personName, credits]);
 
 
   const submitAddress = useCallback(
@@ -772,6 +795,11 @@ function Index() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <CreditMeter
+              balance={credits.balance}
+              loading={credits.loading}
+              onClick={credits.openSheet}
+            />
             {phase === "camera" && torchSupported && (
               <button
                 onClick={toggleTorch}
@@ -993,9 +1021,14 @@ function Index() {
 
             {mode === "photo" ? (
               <div className="flex flex-col items-center gap-2">
-                <Button size="lg" onClick={capture} className="w-full max-w-xs">
+                <Button
+                  size="lg"
+                  onClick={capture}
+                  disabled={!credits.canAfford("photo_scan")}
+                  className="w-full max-w-xs"
+                >
                   <Camera className="mr-2 h-5 w-5" />
-                  Scan the room
+                  Scan the room · {CREDIT_COSTS.photo_scan}
                 </Button>
               </div>
             ) : (
