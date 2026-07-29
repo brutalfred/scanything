@@ -95,13 +95,21 @@ function AuthPage() {
           up to {DAILY_FLOOR} every day.
         </p>
 
-        <button
-          type="button"
-          onClick={google}
-          className="mb-4 w-full rounded-lg border border-primary/40 px-4 py-2.5 text-sm font-semibold text-primary"
-        >
-          Continue with Google
-        </button>
+        {notice && (
+          <p className="mb-4 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary">
+            {notice}
+          </p>
+        )}
+
+        {mode !== "forgot" && (
+          <button
+            type="button"
+            onClick={google}
+            className="mb-4 w-full rounded-lg border border-primary/40 px-4 py-2.5 text-sm font-semibold text-primary"
+          >
+            Continue with Google
+          </button>
+        )}
 
         <form onSubmit={submit} className="space-y-3">
           <input
@@ -112,31 +120,52 @@ function AuthPage() {
             placeholder="Email"
             className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
           />
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
-          />
+          {mode !== "forgot" && (
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
+            />
+          )}
           <button
             type="submit"
             disabled={busy}
             className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
-            {mode === "signin" ? "Sign in" : "Create account"}
+            {mode === "signin"
+              ? "Sign in"
+              : mode === "signup"
+                ? "Create account"
+                : "Send reset link"}
           </button>
         </form>
 
         <button
           type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          onClick={() => {
+            setNotice(null);
+            setMode(mode === "signin" ? "signup" : "signin");
+          }}
           className="mt-4 w-full text-xs text-muted-foreground underline"
         >
           {mode === "signin" ? "No account? Sign up" : "Already have an account? Sign in"}
         </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setNotice(null);
+            setMode(mode === "forgot" ? "signin" : "forgot");
+          }}
+          className="mt-2 w-full text-xs text-muted-foreground underline"
+        >
+          {mode === "forgot" ? "Back to sign in" : "Forgot your password?"}
+        </button>
+
 
         <Link to="/" className="mt-4 block text-center text-xs text-muted-foreground">
           Back to scanning
