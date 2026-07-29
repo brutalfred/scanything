@@ -6,6 +6,9 @@ import { LogIn, LogOut, User2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
+import { THEMES } from "@/lib/theme";
+import { useTheme } from "@/hooks/useTheme";
+
 
 export function AccountButton({
   signedIn,
