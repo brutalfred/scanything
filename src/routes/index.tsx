@@ -977,36 +977,35 @@ function Scanner() {
                 </div>
               )
             ) : (
-              !isGuest && (
-                <div className="flex flex-col items-center gap-2">
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    onClick={() => setVideoPaused((p) => !p)}
-                    className="w-full max-w-xs"
-                  >
-                    {videoPaused ? (
-                      <>
-                        <Play className="mr-2 h-5 w-5" />
-                        Resume scanning
-                      </>
-                    ) : (
-                      <>
-                        <Pause className="mr-2 h-5 w-5" />
-                        Pause scanning
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Tap a box for details.
-                  </p>
-                </div>
-              )
-            )}
-
-
+              <>
+                {!isGuest && (
+                  <div className="flex flex-col items-center gap-2">
+                    <Button
+                      size="lg"
+                      variant="secondary"
+                      onClick={() => setVideoPaused((p) => !p)}
+                      className="w-full max-w-xs"
+                    >
+                      {videoPaused ? (
+                        <>
+                          <Play className="mr-2 h-5 w-5" />
+                          Resume scanning
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="mr-2 h-5 w-5" />
+                          Pause scanning
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Tap a box for details.
+                    </p>
+                  </div>
+                )}
 
                 <div className="rounded-2xl border border-border bg-card">
+
                   <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
                     <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
                       <button
