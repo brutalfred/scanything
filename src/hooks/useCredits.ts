@@ -3,9 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getCreditState, getAdRewardStatus, claimAdReward } from "@/lib/credits.functions";
+import {
+  getCreditState,
+  getAdRewardStatus,
+  claimAdReward,
+  startAdSession,
+} from "@/lib/credits.functions";
 import { AD_DAILY_LIMIT } from "@/lib/credit-packs";
 import { CREDIT_COSTS, type CreditReason } from "@/lib/credits";
+import { adErrorMessage } from "@/lib/ad-errors";
 
 export function useCredits() {
   const queryClient = useQueryClient();
