@@ -843,13 +843,15 @@ function Scanner() {
         {phase === "camera" && (
           <div className="space-y-3">
             {/* Mode toggle */}
-            <div className="flex items-center justify-center gap-2">
-              <CreditMeter
-                balance={credits.balance}
-                loading={credits.loading}
-                signedIn={credits.signedIn}
-                onClick={credits.openSheet}
-              />
+            <div className="relative flex items-center justify-center gap-2">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                <CreditMeter
+                  balance={credits.balance}
+                  loading={credits.loading}
+                  signedIn={credits.signedIn}
+                  onClick={credits.openSheet}
+                />
+              </div>
               <div className="inline-flex rounded-full border border-border bg-secondary p-1">
                 <button
                   onClick={() => switchMode("photo")}
