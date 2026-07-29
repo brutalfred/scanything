@@ -713,24 +713,24 @@ function Scanner() {
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur">
-        <div className="relative mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <div className="flex flex-1 items-center justify-start">
+        <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-3">
+          <div className="flex flex-shrink-0 items-center justify-start">
             <AccountButton
               signedIn={credits.signedIn}
               email={credits.email}
               onOpenCredits={credits.openSheet}
             />
           </div>
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none">
+          <div className="flex min-w-0 flex-1 items-center justify-center select-none">
             <img
               src={logoAsset.url}
               alt="Scanything"
-              className="h-10 w-auto max-w-[40vw] object-contain sm:h-11"
+              className="h-16 w-full object-contain sm:h-20"
               width={1024}
               height={512}
             />
           </div>
-          <div className="flex flex-1 items-center justify-end gap-2">
+          <div className="flex flex-shrink-0 items-center justify-end gap-2">
             <CreditMeter
               balance={credits.balance}
               loading={credits.loading}
