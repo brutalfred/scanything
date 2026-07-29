@@ -62,10 +62,27 @@ export const getAdRewardStatus = createServerFn({ method: "POST" })
     };
   });
 
+/** Starts a server-tracked ad view. The returned id is required to claim the reward. */
+export const startAdSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ sessionId: string }> => {
+    const { data, error } = await context.supabase.rpc("start_ad_session");
+    if (error) throw new Error(error.message);
+    return { sessionId: data as unknown as string };
+  });
+
 export const claimAdReward = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ balance: number; claimsToday: number }> => {
-    const { data, error } = await context.supabase.rpc("claim_ad_reward");
+  .inputValidator((input: { sessionId: string }) => {
+    if (!input || typeof input.sessionId !== "string" || !input.sessionId) {
+      throw new Error("ad_session_invalid");
+    }
+    return { sessionId: input.sessionId };
+  })
+  .handler(async ({ data, context }): Promise<{ balance: number; claimsToday: number }> => {
+    const { data: rpcData, error } = await context.supabase.rpc("claim_ad_reward", {
+      _session_id: data.sessionId,
+    });
     if (error) throw new Error(error.message);
     const row = Array.isArray(data) ? data[0] : data;
     return {
