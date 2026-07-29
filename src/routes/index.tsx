@@ -826,8 +826,8 @@ function Scanner() {
               className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filter
-              <span className="ml-1 rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+              <span className="hidden sm:inline">Filter</span>
+              <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
                 {filters.size}
               </span>
             </button>
