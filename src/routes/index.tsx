@@ -689,9 +689,6 @@ function Scanner() {
     photoZoom.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
-  useEffect(() => {
-    if (cameraZoom.pinching || photoZoom.pinching) cancelLongPress();
-  }, [cameraZoom.pinching, photoZoom.pinching, cancelLongPress]);
 
 
 
