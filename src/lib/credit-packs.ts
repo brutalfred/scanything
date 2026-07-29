@@ -47,10 +47,3 @@ export const CREDITS_BY_PRICE_ID: Record<string, number> = Object.fromEntries(
   CREDIT_PACKS.map((p) => [p.priceId, p.credits]),
 );
 
-/**
- * Credits granted for watching one commercial.
- * Derived from ad revenue vs. measured scan cost — see `src/lib/economics.ts`.
- */
-export { AD_REWARD_CREDITS } from "./economics";
-/** Maximum commercials a signed-in user can watch per day. */
-export const AD_DAILY_LIMIT = 5;

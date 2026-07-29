@@ -44,53 +44,6 @@ export const getCreditState = createServerFn({ method: "POST" })
     };
   });
 
-export type AdRewardStatus = {
-  claimsToday: number;
-  dailyLimit: number;
-  reward: number;
-};
-
-export const getAdRewardStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<AdRewardStatus> => {
-    const { data, error } = await context.supabase.rpc("get_ad_reward_status");
-    if (error) throw new Error(error.message);
-    const row = Array.isArray(data) ? data[0] : data;
-    return {
-      claimsToday: Number(row?.claims_today ?? 0),
-      dailyLimit: Number(row?.daily_limit ?? 5),
-      reward: Number(row?.reward ?? 2),
-    };
-  });
-
-/** Starts a server-tracked ad view. The returned id is required to claim the reward. */
-export const startAdSession = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ sessionId: string }> => {
-    const { data, error } = await context.supabase.rpc("start_ad_session");
-    if (error) throw new Error(error.message);
-    return { sessionId: data as unknown as string };
-  });
-
-export const claimAdReward = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sessionId: string }) => {
-    if (!input || typeof input.sessionId !== "string" || !input.sessionId) {
-      throw new Error("ad_session_invalid");
-    }
-    return { sessionId: input.sessionId };
-  })
-  .handler(async ({ data, context }): Promise<{ balance: number; claimsToday: number }> => {
-    const { data: rpcData, error } = await context.supabase.rpc("claim_ad_reward", {
-      _session_id: data.sessionId,
-    });
-    if (error) throw new Error(error.message);
-    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-    return {
-      balance: Number(row?.balance ?? 0),
-      claimsToday: Number(row?.claims_today ?? 0),
-    };
-  });
 
 export type SignupGrantResult = {
   status: "granted" | "already_claimed" | "device_used" | "blocked_email";
