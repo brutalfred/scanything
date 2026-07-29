@@ -20,7 +20,7 @@ export const CREDIT_LABELS: Record<CreditReason, string> = {
   person_info: "Person lookup",
 };
 
-export const SIGNUP_GRANT = 100;
+export const SIGNUP_GRANT = 5;
 export const DAILY_FLOOR = 25;
 
 /** Free trial allowance for visitors who have not signed in yet. */
