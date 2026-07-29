@@ -35,6 +35,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_accounts: {
         Row: {
           balance: number
@@ -128,7 +149,7 @@ export type Database = {
     }
     Functions: {
       claim_ad_reward: {
-        Args: never
+        Args: { _session_id: string }
         Returns: {
           balance: number
           claims_today: number
@@ -181,6 +202,7 @@ export type Database = {
         Args: { _amount: number; _metadata?: Json; _reason: string }
         Returns: number
       }
+      start_ad_session: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
