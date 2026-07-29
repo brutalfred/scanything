@@ -466,7 +466,7 @@ function Scanner() {
   }, [isBlocked]);
 
   useEffect(() => {
-    if (mode !== "video" || phase !== "camera") return;
+    if (mode !== "video" || phase !== "camera" || isGuest) return;
     let cancelled = false;
 
     const loop = async () => {
@@ -506,7 +506,8 @@ function Scanner() {
     return () => {
       cancelled = true;
     };
-  }, [mode, phase, grabFrame, mergeDetections, credits]);
+  }, [mode, phase, isGuest, grabFrame, mergeDetections, credits]);
+
 
   useEffect(() => {
     if (mode !== "video" || phase !== "camera") return;
