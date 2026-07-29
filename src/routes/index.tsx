@@ -780,8 +780,8 @@ function Scanner() {
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-3">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-3">
+          <div className="flex items-center gap-2 min-w-0 shrink-0">
             <div className="flex select-none items-baseline font-black tracking-tight leading-none">
               <span className="gold-text text-2xl rotate-[-6deg] inline-block">S</span>
               <span className="gold-text text-xl italic">c</span>
@@ -795,17 +795,14 @@ function Scanner() {
               <span className="gold-text text-2xl rotate-[6deg] inline-block">g</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <CreditMeter
-              balance={credits.balance}
-              loading={credits.loading}
-              onClick={credits.openSheet}
-            />
+          <div className="flex flex-1 justify-center px-2">
             <AccountButton
               signedIn={credits.signedIn}
               email={credits.email}
               onOpenCredits={credits.openSheet}
             />
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             {phase === "camera" && torchSupported && (
               <button
                 onClick={toggleTorch}
@@ -829,8 +826,8 @@ function Scanner() {
               className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filter
-              <span className="ml-1 rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+              <span className="hidden sm:inline">Filter</span>
+              <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
                 {filters.size}
               </span>
             </button>
@@ -911,7 +908,12 @@ function Scanner() {
         {phase === "camera" && (
           <div className="space-y-3">
             {/* Mode toggle */}
-            <div className="flex justify-center">
+            <div className="flex items-center justify-center gap-2">
+              <CreditMeter
+                balance={credits.balance}
+                loading={credits.loading}
+                onClick={credits.openSheet}
+              />
               <div className="inline-flex rounded-full border border-border bg-secondary p-1">
                 <button
                   onClick={() => switchMode("photo")}
