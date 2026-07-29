@@ -1,32 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { LogIn, LogOut, User2, Coins } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { LogIn, LogOut, User2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getAccountStats } from "@/lib/credits.functions";
 
 export function AccountButton({
   signedIn,
   email,
-  onOpenCredits,
+  balance,
 }: {
   signedIn: boolean;
   email: string | null;
-  onOpenCredits: () => void;
+  balance: number;
 }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  const stats = useQuery({
+    queryKey: ["account-stats"],
+    queryFn: () => getAccountStats(),
+    enabled: signedIn && open,
+    staleTime: 15_000,
+  });
 
   async function signOut() {
     setOpen(false);
@@ -50,39 +48,72 @@ export function AccountButton({
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Account menu"
+        onClick={() => setOpen(true)}
+        aria-label="Account"
         className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/40 bg-card text-primary gold-glow"
       >
         <User2 className="h-4 w-4" />
       </button>
+
       {open && (
-        <div className="gold-line absolute right-0 z-40 mt-2 w-56 rounded-xl bg-card p-2 text-sm shadow-xl">
-          <p className="truncate px-2 py-1.5 text-xs text-muted-foreground">{email}</p>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onOpenCredits();
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-accent"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-label="Account"
+            onClick={(e) => e.stopPropagation()}
+            className="gold-line gold-glow w-full max-w-xs rounded-2xl bg-card p-5 text-sm text-foreground shadow-2xl"
           >
-            <Coins className="h-4 w-4" />
-            Credits & history
-          </button>
-          <button
-            type="button"
-            onClick={signOut}
-            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-destructive hover:bg-accent"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </button>
+            <p className="truncate text-center text-base font-semibold text-primary">
+              {email ?? "Account"}
+            </p>
+
+            <dl className="mt-4 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Credits</dt>
+                <dd className="font-semibold text-primary">{balance}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Photo scans</dt>
+                <dd className="font-semibold">
+                  {stats.isLoading ? "…" : (stats.data?.photoScans ?? 0)}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Credits spent</dt>
+                <dd className="font-semibold">
+                  {stats.isLoading ? "…" : (stats.data?.creditsSpent ?? 0)}
+                </dd>
+              </div>
+            </dl>
+
+            <button
+              type="button"
+              onClick={signOut}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-background px-3 py-2 font-semibold text-primary transition-colors hover:bg-accent"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-destructive/50 text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
