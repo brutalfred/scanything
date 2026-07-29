@@ -3,9 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getCreditState, getAdRewardStatus, claimAdReward } from "@/lib/credits.functions";
+import {
+  getCreditState,
+  getAdRewardStatus,
+  claimAdReward,
+  startAdSession,
+} from "@/lib/credits.functions";
 import { AD_DAILY_LIMIT } from "@/lib/credit-packs";
 import { CREDIT_COSTS, type CreditReason } from "@/lib/credits";
+import { adErrorMessage } from "@/lib/ad-errors";
 
 export function useCredits() {
   const queryClient = useQueryClient();
@@ -60,20 +66,28 @@ export function useCredits() {
     staleTime: 30_000,
   });
 
-  const claimAd = useCallback(async () => {
-    try {
-      const result = await claimAdReward();
-      queryClient.setQueryData(["credits"], (prev: typeof query.data) =>
-        prev ? { ...prev, balance: result.balance } : prev,
-      );
-      queryClient.invalidateQueries({ queryKey: ["credits"] });
-      queryClient.invalidateQueries({ queryKey: ["ad-reward-status"] });
-      toast.success("Credits added — enjoy your free scan");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not add credits";
-      toast.error(msg.includes("daily_limit") ? "No free ads left today" : msg);
-    }
-  }, [queryClient, query.data]);
+  const startAd = useCallback(async () => {
+    const { sessionId } = await startAdSession();
+    return sessionId;
+  }, []);
+
+  const claimAd = useCallback(
+    async (sessionId: string) => {
+      try {
+        const result = await claimAdReward({ data: { sessionId } });
+        queryClient.setQueryData(["credits"], (prev: typeof query.data) =>
+          prev ? { ...prev, balance: result.balance } : prev,
+        );
+        queryClient.invalidateQueries({ queryKey: ["credits"] });
+        queryClient.invalidateQueries({ queryKey: ["ad-reward-status"] });
+        toast.success("Credits added — enjoy your free scan");
+      } catch (e) {
+        toast.error(adErrorMessage(e));
+      }
+    },
+    [queryClient, query.data],
+  );
+
 
   return {
     balance,
@@ -86,6 +100,7 @@ export function useCredits() {
     loading: signedIn && query.isLoading,
     adClaimsToday: adQuery.data?.claimsToday ?? 0,
     adDailyLimit: adQuery.data?.dailyLimit ?? AD_DAILY_LIMIT,
+    startAdSession: startAd,
     claimAdReward: claimAd,
     canAfford,
     noteSpend,

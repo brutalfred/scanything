@@ -168,7 +168,11 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
       </div>
 
       {adOpen && (
-        <AdRewardModal onClose={() => setAdOpen(false)} onFinished={credits.claimAdReward} />
+        <AdRewardModal
+          onClose={() => setAdOpen(false)}
+          onStart={credits.startAdSession}
+          onFinished={credits.claimAdReward}
+        />
       )}
     </>
   );
