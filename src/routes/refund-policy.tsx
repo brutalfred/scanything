@@ -20,7 +20,7 @@ export const Route = createFileRoute("/refund-policy")({
   component: RefundPolicyPage,
 });
 
-const CONTACT_EMAIL = "support@scanything.app";
+const CONTACT_EMAIL = "scanythingapp@gmail.com";
 
 function RefundPolicyPage() {
   return (
