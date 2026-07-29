@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Camera,
@@ -1274,6 +1274,23 @@ function Scanner() {
           </div>
         )}
       </main>
+
+      <footer className="border-t border-border/60 bg-background/70 py-6 text-center text-xs text-muted-foreground backdrop-blur">
+        <div className="mx-auto max-w-4xl px-4">
+          <div className="mb-2 flex flex-wrap items-center justify-center gap-4">
+            <Link to="/terms" className="hover:text-foreground hover:underline">
+              Terms & Conditions
+            </Link>
+            <Link to="/refund-policy" className="hover:text-foreground hover:underline">
+              Refund Policy
+            </Link>
+            <Link to="/privacy" className="hover:text-foreground hover:underline">
+              Privacy Notice
+            </Link>
+          </div>
+          <p>© {new Date().getFullYear()} Scanything. Sold by John FREDRIK Mikael Paulsson.</p>
+        </div>
+      </footer>
 
       {selected && (
         <DetailPanel
