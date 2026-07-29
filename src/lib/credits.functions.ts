@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isDisposableEmail } from "@/lib/email-domains";
 
 export type LedgerEntry = {
   id: string;
@@ -88,5 +89,38 @@ export const claimAdReward = createServerFn({ method: "POST" })
     return {
       balance: Number(row?.balance ?? 0),
       claimsToday: Number(row?.claims_today ?? 0),
+    };
+  });
+
+export type SignupGrantResult = {
+  status: "granted" | "already_claimed" | "device_used" | "blocked_email";
+  balance: number;
+};
+
+/**
+ * One-time free trial grant. Limited to one per device, and refused for
+ * disposable email addresses.
+ */
+export const claimSignupGrant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { deviceHash: string }) => {
+    const hash = typeof input?.deviceHash === "string" ? input.deviceHash.trim() : "";
+    if (hash.length < 16 || hash.length > 128) throw new Error("invalid_device");
+    return { deviceHash: hash };
+  })
+  .handler(async ({ data, context }): Promise<SignupGrantResult> => {
+    const email = (context.claims?.email as string | undefined) ?? "";
+    if (email && isDisposableEmail(email)) {
+      return { status: "blocked_email", balance: 0 };
+    }
+
+    const { data: rpcData, error } = await context.supabase.rpc("claim_signup_grant", {
+      _device_hash: data.deviceHash,
+    });
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+    return {
+      status: (row?.status as SignupGrantResult["status"]) ?? "already_claimed",
+      balance: Number(row?.balance ?? 0),
     };
   });

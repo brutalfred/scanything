@@ -143,6 +143,27 @@ export type Database = {
         }
         Relationships: []
       }
+      device_grants: {
+        Row: {
+          created_at: string
+          device_hash: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_hash: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_hash?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -153,6 +174,13 @@ export type Database = {
         Returns: {
           balance: number
           claims_today: number
+        }[]
+      }
+      claim_signup_grant: {
+        Args: { _device_hash: string }
+        Returns: {
+          balance: number
+          status: string
         }[]
       }
       ensure_credit_account: {

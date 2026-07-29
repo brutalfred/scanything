@@ -3,7 +3,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
-import { DAILY_FLOOR, SIGNUP_GRANT } from "@/lib/credits";
+import { SIGNUP_GRANT } from "@/lib/credits";
+import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "@/lib/email-domains";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -13,12 +14,12 @@ export const Route = createFileRoute("/auth")({
       {
         name: "description",
         content:
-          "Sign in to Scanything to keep your scan credits, get a daily free top-up and track what every scan costs.",
+          "Sign in to Scanything to keep your scan credits, claim your one-time free trial credits and track what every scan costs.",
       },
       { property: "og:title", content: "Sign in — Scanything scan credits" },
       {
         property: "og:description",
-        content: "Keep your scan credits and get a daily free top-up in Scanything.",
+        content: "Keep your scan credits and claim your one-time free trial in Scanything.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -48,6 +49,10 @@ function AuthPage() {
         return;
       }
       if (mode === "signup") {
+        if (isDisposableEmail(email)) {
+          toast.error(DISPOSABLE_EMAIL_MESSAGE);
+          return;
+        }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -92,7 +97,7 @@ function AuthPage() {
         <h1 className="gold-text mb-1 text-2xl font-bold">Scanything</h1>
         <p className="mb-6 text-sm text-muted-foreground">
           Sign in to keep your scan credits. New accounts receive a one-time gift of {SIGNUP_GRANT}{" "}
-          free trial credits and top up to {DAILY_FLOOR} every day.
+          free trial credits — one per device.
         </p>
 
         {notice && (

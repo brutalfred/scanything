@@ -46,6 +46,28 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <Ctx.Provider value={value}>
+      {credits.trialNotice && (
+        <div className="sticky top-0 z-50 border-b border-primary/40 bg-card px-4 py-3">
+          <div className="mx-auto flex max-w-4xl items-start gap-3">
+            <p className="flex-1 text-xs text-foreground">{credits.trialNotice}</p>
+            <button
+              type="button"
+              onClick={openSheet}
+              className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+            >
+              Get credits
+            </button>
+            <button
+              type="button"
+              onClick={credits.dismissTrialNotice}
+              aria-label="Dismiss"
+              className="px-1 text-xs text-muted-foreground"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       {children}
       {open && <CreditsSheet credits={credits} onClose={() => setOpen(false)} />}
     </Ctx.Provider>
