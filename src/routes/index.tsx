@@ -963,33 +963,29 @@ function Scanner() {
             </div>
 
             {mode === "photo" ? (
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  size="lg"
-                  onClick={isGuest ? credits.openSheet : capture}
-                  disabled={!isGuest && !credits.canAfford("photo_scan")}
-                  className="w-full max-w-xs"
-                >
-                  <Camera className="mr-2 h-5 w-5" />
-                  {isGuest ? "Sign in to scan" : `Scan the room · ${CREDIT_COSTS.photo_scan}`}
-                </Button>
-              </div>
+              !isGuest && (
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    size="lg"
+                    onClick={capture}
+                    disabled={!credits.canAfford("photo_scan")}
+                    className="w-full max-w-xs"
+                  >
+                    <Camera className="mr-2 h-5 w-5" />
+                    {`Scan the room · ${CREDIT_COSTS.photo_scan}`}
+                  </Button>
+                </div>
+              )
             ) : (
-              <>
+              !isGuest && (
                 <div className="flex flex-col items-center gap-2">
                   <Button
                     size="lg"
                     variant="secondary"
                     onClick={() => setVideoPaused((p) => !p)}
-                    disabled={isGuest}
                     className="w-full max-w-xs"
                   >
-                    {isGuest ? (
-                      <>
-                        <LogIn className="mr-2 h-5 w-5" />
-                        Sign in to scan live
-                      </>
-                    ) : videoPaused ? (
+                    {videoPaused ? (
                       <>
                         <Play className="mr-2 h-5 w-5" />
                         Resume scanning
@@ -1001,12 +997,13 @@ function Scanner() {
                       </>
                     )}
                   </Button>
-                  {!isGuest && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Tap a box for details.
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground text-center">
+                    Tap a box for details.
+                  </p>
                 </div>
+              )
+            )}
+
 
 
                 <div className="rounded-2xl border border-border bg-card">
