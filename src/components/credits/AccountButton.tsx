@@ -6,6 +6,9 @@ import { LogIn, LogOut, User2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
+import { THEMES } from "@/lib/theme";
+import { useTheme } from "@/hooks/useTheme";
+
 
 export function AccountButton({
   signedIn,
@@ -19,6 +22,8 @@ export function AccountButton({
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
+
 
   const stats = useQuery({
     queryKey: ["account-stats"],
@@ -68,35 +73,64 @@ export function AccountButton({
             role="dialog"
             aria-label="Account"
             onClick={(e) => e.stopPropagation()}
-            className="gold-line gold-glow w-full max-w-xs rounded-2xl bg-[#f5e6b8] p-5 text-sm text-black shadow-2xl"
+            className="theme-panel gold-glow w-full max-w-xs rounded-2xl p-5 text-sm shadow-2xl"
           >
-            <p className="truncate text-center text-base font-semibold text-black">
+            <p className="truncate text-center text-base font-semibold">
               {email ?? "Account"}
             </p>
 
             <dl className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-black/70">Credits</dt>
-                <dd className="font-semibold text-black">{balance}</dd>
+                <dt className="opacity-70">Credits</dt>
+                <dd className="font-semibold">{balance}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-black/70">Photo scans</dt>
+                <dt className="opacity-70">Photo scans</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.photoScans ?? 0)}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-black/70">Credits spent</dt>
+                <dt className="opacity-70">Credits spent</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.creditsSpent ?? 0)}
                 </dd>
               </div>
+
             </dl>
+
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>
+              <div className="mt-2 grid grid-cols-5 gap-2">
+                {THEMES.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTheme(t.key)}
+                    aria-label={`${t.label} theme`}
+                    aria-pressed={theme === t.key}
+                    className={`rounded-lg border p-1 transition-transform hover:scale-105 ${
+                      theme === t.key ? "border-current" : "border-transparent opacity-70"
+                    }`}
+                  >
+                    <span className="flex h-6 w-full overflow-hidden rounded">
+                      {t.swatch.map((c) => (
+                        <span key={c} className="flex-1" style={{ backgroundColor: c }} />
+                      ))}
+                    </span>
+                    <span className="mt-1 block text-[9px] font-medium leading-tight">
+                      {t.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
 
             <button
               type="button"
               onClick={signOut}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-black/30 bg-black/5 px-3 py-2 font-semibold text-black transition-colors hover:bg-black/10"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <LogOut className="h-4 w-4" />
               Log out
