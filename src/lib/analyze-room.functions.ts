@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { withCredits } from "./credits.server";
 
 const InputSchema = z.object({
   imageBase64: z.string().min(100),
@@ -129,6 +128,7 @@ function toDataUrl(b: string) {
 export const analyzeRoom = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<AnalyzeResult> => {
+    const { withCredits } = await import("./credits.server");
     const content = await withCredits("photo_scan", () =>
       callGateway({
       model: "google/gemini-3-flash-preview",
@@ -143,7 +143,8 @@ export const analyzeRoom = createServerFn({ method: "POST" })
           ],
         },
       ],
-    });
+      }),
+    );
 
     const parsed = safeParse<AnalyzeResult>(content, { items: [] });
     const items = (parsed.items ?? [])
@@ -155,6 +156,7 @@ export const analyzeRoom = createServerFn({ method: "POST" })
 export const quickScan = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<QuickResult> => {
+    const { withCredits } = await import("./credits.server");
     const content = await withCredits("quick_scan", () =>
       callGateway({
       model: "google/gemini-3-flash-preview",
@@ -169,7 +171,8 @@ export const quickScan = createServerFn({ method: "POST" })
           ],
         },
       ],
-    });
+      }),
+    );
 
     const parsed = safeParse<QuickResult>(content, { items: [] });
     const items = (parsed.items ?? [])
@@ -195,6 +198,7 @@ const EnrichInput = z.object({
 export const enrichItem = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => EnrichInput.parse(data))
   .handler(async ({ data }): Promise<Omit<DetectedItem, "box" | "name">> => {
+    const { withCredits } = await import("./credits.server");
     const content = await withCredits("enrich", () =>
       callGateway({
       model: "google/gemini-3-flash-preview",
@@ -209,7 +213,8 @@ export const enrichItem = createServerFn({ method: "POST" })
           ],
         },
       ],
-    });
+      }),
+    );
 
     const parsed = safeParse<Partial<DetectedItem>>(content, {});
     return {
@@ -275,6 +280,7 @@ export type DeepAnalysis = {
 export const analyzeFurther = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => DeepInput.parse(data))
   .handler(async ({ data }): Promise<DeepAnalysis> => {
+    const { withCredits } = await import("./credits.server");
     const content = await withCredits("analyze_further", () =>
       callGateway({
       model: "google/gemini-2.5-pro",
@@ -292,7 +298,8 @@ export const analyzeFurther = createServerFn({ method: "POST" })
           ],
         },
       ],
-    });
+      }),
+    );
     const parsed = safeParse<Partial<DeepAnalysis>>(content, {});
     const q = [parsed.brand, parsed.product, data.name].filter(Boolean).join(" ").trim();
     return {
@@ -326,6 +333,7 @@ export type Translation = {
 export const translateText = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => TranslateInput.parse(data))
   .handler(async ({ data }): Promise<Translation> => {
+    const { withCredits } = await import("./credits.server");
     const content = await withCredits("translate", () =>
       callGateway({
       model: "google/gemini-3-flash-preview",
@@ -334,7 +342,8 @@ export const translateText = createServerFn({ method: "POST" })
         { role: "system", content: TRANSLATE_SYSTEM },
         { role: "user", content: `Translate to English: ${data.text}` },
       ],
-    });
+      }),
+    );
     const parsed = safeParse<Partial<Translation>>(content, {});
     return {
       language: String(parsed.language ?? "Unknown"),
@@ -360,6 +369,7 @@ export type PersonInfo = {
 export const personInfo = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => PersonInput.parse(data))
   .handler(async ({ data }): Promise<PersonInfo> => {
+    const { withCredits } = await import("./credits.server");
     const content = await withCredits("person_info", () =>
       callGateway({
       model: "google/gemini-2.5-pro",
@@ -371,7 +381,8 @@ export const personInfo = createServerFn({ method: "POST" })
           content: `Give a public info summary for: ${data.name}. Use only widely-known public information. If not publicly known, say so.`,
         },
       ],
-    });
+      }),
+    );
     const parsed = safeParse<Partial<PersonInfo>>(content, {});
     return {
       known: Boolean(parsed.known),
