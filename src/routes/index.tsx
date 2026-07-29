@@ -35,6 +35,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
 import { CreditMeter } from "@/components/credits/CreditMeter";
+import { AccountButton } from "@/components/credits/AccountButton";
 import { CREDIT_COSTS } from "@/lib/credits";
 
 export const Route = createFileRoute("/")({
@@ -799,6 +800,11 @@ function Scanner() {
               balance={credits.balance}
               loading={credits.loading}
               onClick={credits.openSheet}
+            />
+            <AccountButton
+              signedIn={credits.signedIn}
+              email={credits.email}
+              onOpenCredits={credits.openSheet}
             />
             {phase === "camera" && torchSupported && (
               <button
