@@ -28,22 +28,38 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    setNotice(null);
     try {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        setNotice("Reset link sent — check your inbox (and spam folder).");
+        return;
+      }
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+        if (!data.session) {
+          setNotice(
+            `Almost there — confirm your email to activate the account and your ${SIGNUP_GRANT} credits.`,
+          );
+          return;
+        }
         toast.success(`Account created — ${SIGNUP_GRANT} credits added.`);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -68,6 +84,7 @@ function AuthPage() {
     if (result.redirected) return;
     navigate({ to: "/" });
   }
+
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-5">
