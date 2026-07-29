@@ -14,48 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      ad_reward_claims: {
-        Row: {
-          created_at: string
-          credits: number
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          credits: number
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          credits?: number
-          id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      ad_sessions: {
-        Row: {
-          created_at: string
-          id: string
-          used_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          used_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          used_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       ai_usage: {
         Row: {
           action: string
@@ -202,13 +160,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      claim_ad_reward: {
-        Args: { _session_id: string }
-        Returns: {
-          balance: number
-          claims_today: number
-        }[]
-      }
       claim_signup_grant: {
         Args: { _device_hash: string }
         Returns: {
@@ -232,14 +183,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      get_ad_reward_status: {
-        Args: never
-        Returns: {
-          claims_today: number
-          daily_limit: number
-          reward: number
-        }[]
-      }
       get_credit_state: {
         Args: never
         Returns: {
@@ -250,8 +193,6 @@ export type Database = {
       get_scan_economics: {
         Args: { _days?: number }
         Returns: {
-          ad_credits_granted: number
-          ads_watched: number
           avg_scan_cost_micro_usd: number
           scans: number
           total_cost_micro_usd: number
@@ -273,7 +214,6 @@ export type Database = {
         Args: { _amount: number; _metadata?: Json; _reason: string }
         Returns: number
       }
-      start_ad_session: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
