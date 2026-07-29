@@ -56,6 +56,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage: {
+        Row: {
+          action: string
+          cost_micro_usd: number
+          created_at: string
+          id: string
+          input_tokens: number
+          model: string
+          output_tokens: number
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          cost_micro_usd?: number
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          model: string
+          output_tokens?: number
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          cost_micro_usd?: number
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          output_tokens?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       credit_accounts: {
         Row: {
           balance: number
@@ -212,6 +245,16 @@ export type Database = {
         Returns: {
           balance: number
           last_daily_grant_at: string
+        }[]
+      }
+      get_scan_economics: {
+        Args: { _days?: number }
+        Returns: {
+          ad_credits_granted: number
+          ads_watched: number
+          avg_scan_cost_micro_usd: number
+          scans: number
+          total_cost_micro_usd: number
         }[]
       }
       grant_credits: {
