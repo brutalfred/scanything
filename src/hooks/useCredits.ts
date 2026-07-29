@@ -100,6 +100,7 @@ export function useCredits() {
     loading: signedIn && query.isLoading,
     adClaimsToday: adQuery.data?.claimsToday ?? 0,
     adDailyLimit: adQuery.data?.dailyLimit ?? AD_DAILY_LIMIT,
+    startAdSession: startAd,
     claimAdReward: claimAd,
     canAfford,
     noteSpend,
