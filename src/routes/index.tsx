@@ -947,7 +947,7 @@ function Scanner() {
 
               {isGuest && (
                 <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/85 p-3 text-center text-xs text-white">
-                  <p className="mb-2">Sign in to identify objects and save your credits.</p>
+                  <p className="mb-2">Sign in for your 5 free credits and get started.</p>
                   <Link
                     to="/auth"
                     className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
