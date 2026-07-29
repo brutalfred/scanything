@@ -1025,11 +1025,24 @@ function Scanner() {
                 </button>
               )}
 
+              {isGuest && (
+                <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/85 p-3 text-center text-xs text-white">
+                  <p className="mb-2">Sign in to identify objects and save your credits.</p>
+                  <Link
+                    to="/auth"
+                    className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              )}
+
               {error && (
                 <div className="pointer-events-none absolute inset-x-2 bottom-2 rounded-md bg-black/80 p-2 text-center text-xs text-white">
                   {error}
                 </div>
               )}
+
             </div>
 
             {mode === "photo" ? (
