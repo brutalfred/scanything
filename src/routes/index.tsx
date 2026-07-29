@@ -348,12 +348,27 @@ function Scanner() {
   }, [torchOn]);
 
   useEffect(() => {
-    if (phase === "camera") {
-      void startCamera();
-    }
-    return () => stopCamera();
+    if (phase !== "camera") return;
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const attempt = async () => {
+      if (cancelled) return;
+      const ok = await startCamera();
+      if (!ok && !cancelled) {
+        timer = window.setTimeout(attempt, 5000);
+      }
+    };
+    void attempt();
+
+    return () => {
+      cancelled = true;
+      if (timer !== null) window.clearTimeout(timer);
+      stopCamera();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+
 
   const grabFrame = useCallback((maxDim = 1024, quality = 0.8): string | null => {
     const video = videoRef.current;
