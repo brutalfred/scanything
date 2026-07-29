@@ -166,8 +166,12 @@ function AuthPage() {
           {mode === "forgot" ? "Back to sign in" : "Forgot your password?"}
         </button>
 
-        <Link to="/" className="mt-4 block text-center text-xs text-black">
-          Back to scanning
+        <Link
+          to="/"
+          aria-label="Close"
+          className="mx-auto mt-4 flex h-8 w-8 items-center justify-center rounded-full border border-black/20 text-red-500 hover:bg-black/5"
+        >
+          <X className="h-4 w-4" />
         </Link>
       </div>
     </main>
