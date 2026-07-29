@@ -5,16 +5,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getCreditState,
-  getAdRewardStatus,
-  claimAdReward,
-  startAdSession,
   claimSignupGrant,
   type CreditState,
 } from "@/lib/credits.functions";
 import { getDeviceHash } from "@/lib/device-id";
-import { AD_DAILY_LIMIT } from "@/lib/credit-packs";
 import { CREDIT_COSTS, type CreditReason } from "@/lib/credits";
-import { adErrorMessage } from "@/lib/ad-errors";
 
 
 export function useCredits() {
@@ -66,11 +61,11 @@ export function useCredits() {
           toast.success(`${result.balance} free trial credits added — enjoy!`);
         } else if (result.status === "device_used") {
           setTrialNotice(
-            "The free trial has already been used on this device. Buy credits or watch an ad to keep scanning.",
+            "The free trial has already been used on this device. Buy credits to keep scanning.",
           );
         } else if (result.status === "blocked_email") {
           setTrialNotice(
-            "Free trial credits aren't available for temporary email addresses. Buy credits or watch an ad to keep scanning.",
+            "Free trial credits aren't available for temporary email addresses. Buy credits to keep scanning.",
           );
         }
         queryClient.invalidateQueries({ queryKey: ["credits"] });
@@ -105,35 +100,6 @@ export function useCredits() {
     [signedIn, queryClient, query.data],
   );
 
-  const adQuery = useQuery({
-    queryKey: ["ad-reward-status"],
-    queryFn: () => getAdRewardStatus(),
-    enabled: signedIn,
-    staleTime: 30_000,
-  });
-
-  const startAd = useCallback(async () => {
-    const { sessionId } = await startAdSession();
-    return sessionId;
-  }, []);
-
-  const claimAd = useCallback(
-    async (sessionId: string) => {
-      try {
-        const result = await claimAdReward({ data: { sessionId } });
-        queryClient.setQueryData(["credits"], (prev: typeof query.data) =>
-          prev ? { ...prev, balance: result.balance } : prev,
-        );
-        queryClient.invalidateQueries({ queryKey: ["credits"] });
-        queryClient.invalidateQueries({ queryKey: ["ad-reward-status"] });
-        toast.success("Credits added — enjoy your free scan");
-      } catch (e) {
-        toast.error(adErrorMessage(e));
-      }
-    },
-    [queryClient, query.data],
-  );
-
 
   return {
     balance,
@@ -146,10 +112,6 @@ export function useCredits() {
     trialNotice,
     dismissTrialNotice: () => setTrialNotice(null),
     loading: signedIn && query.isLoading,
-    adClaimsToday: adQuery.data?.claimsToday ?? 0,
-    adDailyLimit: adQuery.data?.dailyLimit ?? AD_DAILY_LIMIT,
-    startAdSession: startAd,
-    claimAdReward: claimAd,
     canAfford,
     noteSpend,
     refresh,
@@ -157,4 +119,3 @@ export function useCredits() {
 }
 
 export type CreditsApi = ReturnType<typeof useCredits>;
-

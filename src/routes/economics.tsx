@@ -3,13 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getScanEconomics } from "@/lib/economics.functions";
-import {
-  AD_REVENUE_PER_VIEW_USD,
-  AD_REWARD_CREDITS,
-  PHOTO_SCAN_CREDITS,
-  SCAN_COST_USD_ESTIMATE,
-  adCoversScan,
-} from "@/lib/economics";
+import { SCAN_COST_USD_ESTIMATE } from "@/lib/economics";
 
 export const Route = createFileRoute("/economics")({
   head: () => ({
@@ -17,12 +11,12 @@ export const Route = createFileRoute("/economics")({
       { title: "Scan Economics — Scanything" },
       {
         name: "description",
-        content: "Owner report comparing the cost of a Scanything scan with rewarded ad revenue.",
+        content: "Owner report on the AI cost of Scanything scans.",
       },
       { property: "og:title", content: "Scan Economics — Scanything" },
       {
         property: "og:description",
-        content: "Owner report comparing the cost of a Scanything scan with rewarded ad revenue.",
+        content: "Owner report on the AI cost of Scanything scans.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -44,9 +38,6 @@ function EconomicsPage() {
     queryFn: () => fetchEconomics({ data: { days } }),
     retry: false,
   });
-
-  const measuredCost = data && data.scans > 0 ? data.avgScanCostUsd : SCAN_COST_USD_ESTIMATE;
-  const covers = adCoversScan(measuredCost);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -93,33 +84,6 @@ function EconomicsPage() {
                 value={data.scans > 0 ? usd(data.avgScanCostUsd) : `${usd(SCAN_COST_USD_ESTIMATE)}*`}
               />
               <Stat label="Total AI cost" value={usd(data.totalCostUsd)} />
-              <Stat label="Ads watched" value={String(data.adsWatched)} />
-              <Stat label="Ad revenue" value={usd(data.adRevenueUsd)} />
-              <Stat
-                label="Net"
-                value={usd(data.netUsd)}
-                tone={data.netUsd >= 0 ? "good" : "bad"}
-              />
-            </section>
-
-            <section className="rounded-lg border border-border/60 p-4 text-sm">
-              <h2 className="mb-2 font-semibold gold-text">Ad ↔ scan balance</h2>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>Revenue per completed ad: {usd(AD_REVENUE_PER_VIEW_USD)}</li>
-                <li>
-                  {data.scans > 0 ? "Measured" : "Estimated"} cost per photo scan:{" "}
-                  {usd(measuredCost)}
-                </li>
-                <li>
-                  Ad reward: {AD_REWARD_CREDITS} credits = {AD_REWARD_CREDITS / PHOTO_SCAN_CREDITS}{" "}
-                  photo scan
-                </li>
-              </ul>
-              <p className={`mt-3 font-medium ${covers ? "text-primary" : "text-destructive"}`}>
-                {covers
-                  ? `One ad covers one scan with ${usd(AD_REVENUE_PER_VIEW_USD - measuredCost)} of margin.`
-                  : `One ad falls ${usd(measuredCost - AD_REVENUE_PER_VIEW_USD)} short of a scan — lower the reward or require two ads.`}
-              </p>
             </section>
 
             {data.scans === 0 && (
@@ -128,8 +92,8 @@ function EconomicsPage() {
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              Ad revenue uses the AdMob assumption in <code>src/lib/economics.ts</code>. Update it
-              with your real earnings-per-view from the AdMob dashboard.
+              Cost is measured from the Lovable AI Gateway token usage recorded in{" "}
+              <code>ai_usage</code>. The estimate is based on Gemini 3 Flash until real data exists.
             </p>
           </div>
         ) : null}
