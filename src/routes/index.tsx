@@ -722,18 +722,13 @@ function Scanner() {
             />
           </div>
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none">
-            <div className="flex items-baseline font-black tracking-tight leading-none">
-              <span className="gold-text text-2xl rotate-[-6deg] inline-block">S</span>
-              <span className="gold-text text-xl italic">c</span>
-              <span className="gold-text text-2xl rotate-[4deg] inline-block">a</span>
-              <span className="gold-text text-lg">n</span>
-              <span className="gold-text text-2xl rotate-[-3deg] inline-block">y</span>
-              <span className="gold-text text-xl italic">t</span>
-              <span className="gold-text text-2xl rotate-[5deg] inline-block">h</span>
-              <span className="gold-text text-lg">i</span>
-              <span className="gold-text text-xl italic rotate-[-4deg] inline-block">n</span>
-              <span className="gold-text text-2xl rotate-[6deg] inline-block">g</span>
-            </div>
+            <img
+              src={logoAsset.url}
+              alt="Scanything"
+              className="h-10 w-auto max-w-[40vw] object-contain sm:h-11"
+              width={1024}
+              height={512}
+            />
           </div>
           <div className="flex flex-1 items-center justify-end gap-2">
             <CreditMeter
