@@ -22,7 +22,7 @@ export const Route = createFileRoute("/privacy")({
 
 const SELLER_NAME = "John FREDRIK Mikael Paulsson";
 const APP_NAME = "Scanything";
-const CONTACT_EMAIL = "support@scanything.app";
+const CONTACT_EMAIL = "scanythingapp@gmail.com";
 
 function PrivacyPage() {
   return (
