@@ -59,9 +59,10 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
               <p className="text-xs text-black/60">
                 {credits.signedIn
                   ? (credits.email ?? "Signed in")
-                  : "Free trial — sign in to keep your balance"}
+                  : "Sign in to start scanning and keep your balance"}
               </p>
             </div>
+
             <button onClick={onClose} aria-label="Close" className="text-black/60">
               <X className="h-5 w-5" />
             </button>

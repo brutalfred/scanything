@@ -5,22 +5,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getCreditState, getAdRewardStatus, claimAdReward } from "@/lib/credits.functions";
 import { AD_DAILY_LIMIT } from "@/lib/credit-packs";
-import {
-  ANON_TRIAL_CREDITS,
-  CREDIT_COSTS,
-  readAnonCredits,
-  writeAnonCredits,
-  type CreditReason,
-} from "@/lib/credits";
+import { CREDIT_COSTS, type CreditReason } from "@/lib/credits";
 
 export function useCredits() {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
-  const [anonBalance, setAnonBalance] = useState(ANON_TRIAL_CREDITS);
 
   useEffect(() => {
-    setAnonBalance(readAnonCredits());
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setSessionReady(true);
@@ -38,11 +30,10 @@ export function useCredits() {
     staleTime: 15_000,
   });
 
-  const balance = signedIn ? (query.data?.balance ?? 0) : anonBalance;
+  const balance = signedIn ? (query.data?.balance ?? 0) : 0;
 
   const refresh = useCallback(() => {
     if (signedIn) queryClient.invalidateQueries({ queryKey: ["credits"] });
-    else setAnonBalance(readAnonCredits());
   }, [signedIn, queryClient]);
 
   const canAfford = useCallback(
@@ -54,17 +45,10 @@ export function useCredits() {
   const noteSpend = useCallback(
     (reason: CreditReason) => {
       const cost = CREDIT_COSTS[reason];
-      if (signedIn) {
-        queryClient.setQueryData(["credits"], (prev: typeof query.data) =>
-          prev ? { ...prev, balance: Math.max(0, prev.balance - cost) } : prev,
-        );
-      } else {
-        setAnonBalance((prev) => {
-          const next = Math.max(0, prev - cost);
-          writeAnonCredits(next);
-          return next;
-        });
-      }
+      if (!signedIn) return;
+      queryClient.setQueryData(["credits"], (prev: typeof query.data) =>
+        prev ? { ...prev, balance: Math.max(0, prev.balance - cost) } : prev,
+      );
     },
     [signedIn, queryClient, query.data],
   );
@@ -110,3 +94,4 @@ export function useCredits() {
 }
 
 export type CreditsApi = ReturnType<typeof useCredits>;
+

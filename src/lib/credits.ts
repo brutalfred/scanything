@@ -23,10 +23,6 @@ export const CREDIT_LABELS: Record<CreditReason, string> = {
 export const SIGNUP_GRANT = 5;
 export const DAILY_FLOOR = 25;
 
-/** Free trial allowance for visitors who have not signed in yet. */
-export const ANON_TRIAL_CREDITS = 40;
-export const ANON_STORAGE_KEY = "scanything:trialCredits";
-
 export const INSUFFICIENT_CREDITS = "insufficient_credits";
 
 export function isInsufficientCreditsError(error: unknown): boolean {
@@ -36,14 +32,10 @@ export function isInsufficientCreditsError(error: unknown): boolean {
 }
 
 export function readAnonCredits(): number {
-  if (typeof window === "undefined") return ANON_TRIAL_CREDITS;
-  const raw = window.localStorage.getItem(ANON_STORAGE_KEY);
-  if (raw === null) return ANON_TRIAL_CREDITS;
-  const n = Number(raw);
-  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : ANON_TRIAL_CREDITS;
+  return 0;
 }
 
-export function writeAnonCredits(value: number) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(ANON_STORAGE_KEY, String(Math.max(0, Math.floor(value))));
+export function writeAnonCredits(_value: number) {
+  // No-op: anonymous users do not receive free trial credits.
 }
+

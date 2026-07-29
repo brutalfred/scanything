@@ -18,7 +18,9 @@ import {
   Sparkles,
   Languages,
   User,
+  LogIn,
 } from "lucide-react";
+
 import {
   analyzeRoom,
   quickScan,
@@ -410,6 +412,9 @@ function Scanner() {
     }
   }, [grabFrame, stopCamera, credits]);
 
+  const isGuest = !credits.signedIn;
+
+
   const mergeDetections = useCallback((detections: QuickItem[]) => {
     setTracked((prev) => {
       const now = Date.now();
@@ -463,7 +468,7 @@ function Scanner() {
   }, [isBlocked]);
 
   useEffect(() => {
-    if (mode !== "video" || phase !== "camera") return;
+    if (mode !== "video" || phase !== "camera" || isGuest) return;
     let cancelled = false;
 
     const loop = async () => {
@@ -503,10 +508,11 @@ function Scanner() {
     return () => {
       cancelled = true;
     };
-  }, [mode, phase, grabFrame, mergeDetections, credits]);
+  }, [mode, phase, isGuest, grabFrame, mergeDetections, credits]);
+
 
   useEffect(() => {
-    if (mode !== "video" || phase !== "camera") return;
+    if (mode !== "video" || phase !== "camera" || isGuest) return;
     let cancelled = false;
 
     const loop = async () => {
@@ -549,7 +555,8 @@ function Scanner() {
     return () => {
       cancelled = true;
     };
-  }, [mode, phase, grabFrame, credits]);
+  }, [mode, phase, isGuest, grabFrame, credits]);
+
 
   const reset = useCallback(() => {
     setSnapshot(null);
@@ -1020,23 +1027,36 @@ function Scanner() {
                 </button>
               )}
 
+              {isGuest && (
+                <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/85 p-3 text-center text-xs text-white">
+                  <p className="mb-2">Sign in to identify objects and save your credits.</p>
+                  <Link
+                    to="/auth"
+                    className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              )}
+
               {error && (
                 <div className="pointer-events-none absolute inset-x-2 bottom-2 rounded-md bg-black/80 p-2 text-center text-xs text-white">
                   {error}
                 </div>
               )}
+
             </div>
 
             {mode === "photo" ? (
               <div className="flex flex-col items-center gap-2">
                 <Button
                   size="lg"
-                  onClick={capture}
-                  disabled={!credits.canAfford("photo_scan")}
+                  onClick={isGuest ? credits.openSheet : capture}
+                  disabled={!isGuest && !credits.canAfford("photo_scan")}
                   className="w-full max-w-xs"
                 >
                   <Camera className="mr-2 h-5 w-5" />
-                  Scan the room · {CREDIT_COSTS.photo_scan}
+                  {isGuest ? "Sign in to scan" : `Scan the room · ${CREDIT_COSTS.photo_scan}`}
                 </Button>
               </div>
             ) : (
@@ -1046,9 +1066,15 @@ function Scanner() {
                     size="lg"
                     variant="secondary"
                     onClick={() => setVideoPaused((p) => !p)}
+                    disabled={isGuest}
                     className="w-full max-w-xs"
                   >
-                    {videoPaused ? (
+                    {isGuest ? (
+                      <>
+                        <LogIn className="mr-2 h-5 w-5" />
+                        Sign in to scan live
+                      </>
+                    ) : videoPaused ? (
                       <>
                         <Play className="mr-2 h-5 w-5" />
                         Resume scanning
@@ -1060,10 +1086,13 @@ function Scanner() {
                       </>
                     )}
                   </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Tap a box for details. Press & hold 2s to save it as a .jpeg.
-                  </p>
+                  {!isGuest && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Tap a box for details. Press & hold 2s to save it as a .jpeg.
+                    </p>
+                  )}
                 </div>
+
 
                 <div className="rounded-2xl border border-border bg-card">
                   <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
