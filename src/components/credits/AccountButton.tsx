@@ -22,6 +22,8 @@ export function AccountButton({
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
+
 
   const stats = useQuery({
     queryKey: ["account-stats"],
