@@ -725,7 +725,7 @@ function Scanner() {
             <img
               src={logoAsset.url}
               alt="Scanything"
-              className="h-16 w-full object-contain sm:h-20"
+              className="h-20 w-full object-contain sm:h-[100px]"
               width={1024}
               height={512}
             />
