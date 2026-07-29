@@ -1575,6 +1575,7 @@ function DetailPanel({
         infoUrl: item.infoUrl,
       };
 
+  const panelCredits = useCreditsContext();
   const [deep, setDeep] = useState<DeepAnalysis | null>(null);
   const [deepLoading, setDeepLoading] = useState(false);
   const [deepError, setDeepError] = useState<string | null>(null);
@@ -1585,6 +1586,7 @@ function DetailPanel({
   const showTranslate = hasNonLatin(name);
 
   const runDeep = useCallback(async () => {
+    if (!panelCredits.spend("analyze_further")) return;
     if (!imageBase64) {
       setDeepError("No image available. Reopen from a scan.");
       return;
@@ -1601,9 +1603,10 @@ function DetailPanel({
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name]);
+  }, [imageBase64, name, panelCredits]);
 
   const runTranslate = useCallback(async () => {
+    if (!panelCredits.spend("translate")) return;
     setTranslating(true);
     setTranslateError(null);
     try {
@@ -1614,7 +1617,7 @@ function DetailPanel({
     } finally {
       setTranslating(false);
     }
-  }, [name]);
+  }, [name, panelCredits]);
 
   return (
     <div
