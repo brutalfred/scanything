@@ -124,3 +124,28 @@ export const claimSignupGrant = createServerFn({ method: "POST" })
       balance: Number(row?.balance ?? 0),
     };
   });
+
+export type AccountStats = {
+  photoScans: number;
+  creditsSpent: number;
+};
+
+/** Lifetime account totals derived from the credit ledger. */
+export const getAccountStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AccountStats> => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("credit_ledger")
+      .select("delta, reason")
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+
+    let photoScans = 0;
+    let creditsSpent = 0;
+    for (const row of data ?? []) {
+      if (row.reason === "photo_scan") photoScans += 1;
+      if (row.delta < 0) creditsSpent += -row.delta;
+    }
+    return { photoScans, creditsSpent };
+  });
