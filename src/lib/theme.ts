@@ -12,10 +12,10 @@ export const THEMES = [
     swatch: ["#000000", "#00ff41", "#0a2f14", "#7dffa8"],
   },
   {
-    key: "jungle",
-    label: "Jungle",
-    className: "theme-jungle",
-    swatch: ["#1a3c2a", "#2d5a3d", "#5a8a5c", "#a0c49d"],
+    key: "camo",
+    label: "Camo",
+    className: "theme-camo",
+    swatch: ["#4b5320", "#78866b", "#3b3126", "#1c1c15"],
   },
   {
     key: "peach",
