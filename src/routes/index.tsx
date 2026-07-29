@@ -18,8 +18,8 @@ import {
   Sparkles,
   Languages,
   User,
-  LogIn,
 } from "lucide-react";
+
 
 import {
   analyzeRoom,
