@@ -55,6 +55,12 @@ function getUserIdFromToken(token: string): string | null {
   }
 }
 
+/** Current signed-in user id from the request bearer token, if any. */
+export function getRequestUserId(): string | null {
+  const token = getBearerToken();
+  return token ? getUserIdFromToken(token) : null;
+}
+
 export async function withCredits<T>(reason: CreditReason, fn: () => Promise<T>): Promise<T> {
   const token = getBearerToken();
   if (!token) return fn();
