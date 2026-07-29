@@ -156,7 +156,7 @@ function PrivacyPage() {
           <section>
             <h2 className="mb-2 text-lg font-semibold text-foreground">Cookies</h2>
             <p>
-              {APP_NAME} uses essential cookies and similar technologies to keep you signed in and to operate the app. We do not use third-party marketing or analytics cookies without your consent.
+              {APP_NAME} uses essential cookies and similar technologies to keep you signed in, manage your credits, and operate the app. When you first visit, we ask for your consent to any non-essential cookies. You can change your choice at any time by clearing your browser storage for this site. We do not use third-party marketing or analytics cookies without your consent.
             </p>
           </section>
 
