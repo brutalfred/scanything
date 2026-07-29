@@ -93,6 +93,34 @@ export function AccountButton({
               </div>
             </dl>
 
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>
+              <div className="mt-2 grid grid-cols-5 gap-2">
+                {THEMES.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTheme(t.key)}
+                    aria-label={`${t.label} theme`}
+                    aria-pressed={theme === t.key}
+                    className={`rounded-lg border p-1 transition-transform hover:scale-105 ${
+                      theme === t.key ? "border-current" : "border-transparent opacity-70"
+                    }`}
+                  >
+                    <span className="flex h-6 w-full overflow-hidden rounded">
+                      {t.swatch.map((c) => (
+                        <span key={c} className="flex-1" style={{ backgroundColor: c }} />
+                      ))}
+                    </span>
+                    <span className="mt-1 block text-[9px] font-medium leading-tight">
+                      {t.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+
             <button
               type="button"
               onClick={signOut}
