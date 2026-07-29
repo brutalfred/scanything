@@ -56,11 +56,11 @@ function AuthPage() {
         if (error) throw error;
         if (!data.session) {
           setNotice(
-            `Almost there — confirm your email to activate the account and your ${SIGNUP_GRANT} credits.`,
+            `Almost there — confirm your email to activate the account and claim your ${SIGNUP_GRANT} free trial credits.`,
           );
           return;
         }
-        toast.success(`Account created — ${SIGNUP_GRANT} credits added.`);
+        toast.success(`Account created — ${SIGNUP_GRANT} free trial credits added.`);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -91,8 +91,8 @@ function AuthPage() {
       <div className="gold-line w-full max-w-sm rounded-2xl bg-card p-6">
         <h1 className="gold-text mb-1 text-2xl font-bold">Scanything</h1>
         <p className="mb-6 text-sm text-muted-foreground">
-          Sign in to keep your scan credits. New accounts start with {SIGNUP_GRANT} credits and top
-          up to {DAILY_FLOOR} every day.
+          Sign in to keep your scan credits. New accounts receive a one-time gift of {SIGNUP_GRANT}{" "}
+          free trial credits and top up to {DAILY_FLOOR} every day.
         </p>
 
         {notice && (
