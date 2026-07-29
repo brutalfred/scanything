@@ -101,7 +101,8 @@ async function callGateway(body: unknown): Promise<string> {
   if (!res.ok) {
     const text = await res.text();
     if (res.status === 429) throw new Error("Rate limit exceeded. Try again in a moment.");
-    if (res.status === 402) throw new Error("AI credits exhausted. Please add credits in workspace settings.");
+    if (res.status === 402)
+      throw new Error("AI credits exhausted. Please add credits in workspace settings.");
     throw new Error(`AI request failed (${res.status}): ${text.slice(0, 200)}`);
   }
   const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
@@ -128,20 +129,23 @@ function toDataUrl(b: string) {
 export const analyzeRoom = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<AnalyzeResult> => {
-    const content = await callGateway({
-      model: "google/gemini-3-flash-preview",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: FULL_SYSTEM },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Analyze this room photo. Return JSON only." },
-            { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
-          ],
-        },
-      ],
-    });
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits("photo_scan", () =>
+      callGateway({
+        model: "google/gemini-3-flash-preview",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: FULL_SYSTEM },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Analyze this room photo. Return JSON only." },
+              { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
+            ],
+          },
+        ],
+      }),
+    );
 
     const parsed = safeParse<AnalyzeResult>(content, { items: [] });
     const items = (parsed.items ?? [])
@@ -153,20 +157,23 @@ export const analyzeRoom = createServerFn({ method: "POST" })
 export const quickScan = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<QuickResult> => {
-    const content = await callGateway({
-      model: "google/gemini-3-flash-preview",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: QUICK_SYSTEM },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Spot objects. JSON only." },
-            { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
-          ],
-        },
-      ],
-    });
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits("quick_scan", () =>
+      callGateway({
+        model: "google/gemini-3-flash-preview",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: QUICK_SYSTEM },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Spot objects. JSON only." },
+              { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
+            ],
+          },
+        ],
+      }),
+    );
 
     const parsed = safeParse<QuickResult>(content, { items: [] });
     const items = (parsed.items ?? [])
@@ -192,20 +199,26 @@ const EnrichInput = z.object({
 export const enrichItem = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => EnrichInput.parse(data))
   .handler(async ({ data }): Promise<Omit<DetectedItem, "box" | "name">> => {
-    const content = await callGateway({
-      model: "google/gemini-3-flash-preview",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: ENRICH_SYSTEM },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: `Give details for: ${data.name}. It's the object in this photo. JSON only.` },
-            { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
-          ],
-        },
-      ],
-    });
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits("enrich", () =>
+      callGateway({
+        model: "google/gemini-3-flash-preview",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: ENRICH_SYSTEM },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Give details for: ${data.name}. It's the object in this photo. JSON only.`,
+              },
+              { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
+            ],
+          },
+        ],
+      }),
+    );
 
     const parsed = safeParse<Partial<DetectedItem>>(content, {});
     return {
@@ -215,8 +228,7 @@ export const enrichItem = createServerFn({ method: "POST" })
       priceMax: Number(parsed.priceMax ?? 0),
       currency: String(parsed.currency ?? "USD"),
       searchUrl:
-        parsed.searchUrl ||
-        `https://www.google.com/search?q=${encodeURIComponent(data.name)}`,
+        parsed.searchUrl || `https://www.google.com/search?q=${encodeURIComponent(data.name)}`,
       infoUrl:
         parsed.infoUrl ||
         `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(data.name)}`,
@@ -271,23 +283,26 @@ export type DeepAnalysis = {
 export const analyzeFurther = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => DeepInput.parse(data))
   .handler(async ({ data }): Promise<DeepAnalysis> => {
-    const content = await callGateway({
-      model: "google/gemini-2.5-pro",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: DEEP_SYSTEM },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Identify the EXACT product for: ${data.name}. Give best-guess brand, model, refined price. JSON only.`,
-            },
-            { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
-          ],
-        },
-      ],
-    });
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits("analyze_further", () =>
+      callGateway({
+        model: "google/gemini-2.5-pro",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: DEEP_SYSTEM },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Identify the EXACT product for: ${data.name}. Give best-guess brand, model, refined price. JSON only.`,
+              },
+              { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
+            ],
+          },
+        ],
+      }),
+    );
     const parsed = safeParse<Partial<DeepAnalysis>>(content, {});
     const q = [parsed.brand, parsed.product, data.name].filter(Boolean).join(" ").trim();
     return {
@@ -298,9 +313,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
       priceMin: Number(parsed.priceMin ?? 0),
       priceMax: Number(parsed.priceMax ?? 0),
       currency: String(parsed.currency ?? "USD"),
-      buyUrl:
-        parsed.buyUrl ||
-        `https://www.google.com/search?q=${encodeURIComponent(`buy ${q}`)}`,
+      buyUrl: parsed.buyUrl || `https://www.google.com/search?q=${encodeURIComponent(`buy ${q}`)}`,
       infoUrl:
         parsed.infoUrl ||
         `https://www.google.com/search?q=${encodeURIComponent(`${q} review specs`)}`,
@@ -321,14 +334,17 @@ export type Translation = {
 export const translateText = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => TranslateInput.parse(data))
   .handler(async ({ data }): Promise<Translation> => {
-    const content = await callGateway({
-      model: "google/gemini-3-flash-preview",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: TRANSLATE_SYSTEM },
-        { role: "user", content: `Translate to English: ${data.text}` },
-      ],
-    });
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits("translate", () =>
+      callGateway({
+        model: "google/gemini-3-flash-preview",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: TRANSLATE_SYSTEM },
+          { role: "user", content: `Translate to English: ${data.text}` },
+        ],
+      }),
+    );
     const parsed = safeParse<Partial<Translation>>(content, {});
     return {
       language: String(parsed.language ?? "Unknown"),
@@ -354,17 +370,20 @@ export type PersonInfo = {
 export const personInfo = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => PersonInput.parse(data))
   .handler(async ({ data }): Promise<PersonInfo> => {
-    const content = await callGateway({
-      model: "google/gemini-2.5-pro",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: PERSON_SYSTEM },
-        {
-          role: "user",
-          content: `Give a public info summary for: ${data.name}. Use only widely-known public information. If not publicly known, say so.`,
-        },
-      ],
-    });
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits("person_info", () =>
+      callGateway({
+        model: "google/gemini-2.5-pro",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: PERSON_SYSTEM },
+          {
+            role: "user",
+            content: `Give a public info summary for: ${data.name}. Use only widely-known public information. If not publicly known, say so.`,
+          },
+        ],
+      }),
+    );
     const parsed = safeParse<Partial<PersonInfo>>(content, {});
     return {
       known: Boolean(parsed.known),
