@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LogIn, LogOut, User2, X } from "lucide-react";
@@ -58,7 +59,7 @@ export function AccountButton({
         <User2 className="h-4 w-4" />
       </button>
 
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
           onClick={() => setOpen(false)}
@@ -67,25 +68,25 @@ export function AccountButton({
             role="dialog"
             aria-label="Account"
             onClick={(e) => e.stopPropagation()}
-            className="gold-line gold-glow w-full max-w-xs rounded-2xl bg-card p-5 text-sm text-foreground shadow-2xl"
+            className="gold-line gold-glow w-full max-w-xs rounded-2xl bg-[#f5e6b8] p-5 text-sm text-black shadow-2xl"
           >
-            <p className="truncate text-center text-base font-semibold text-primary">
+            <p className="truncate text-center text-base font-semibold text-black">
               {email ?? "Account"}
             </p>
 
             <dl className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Credits</dt>
-                <dd className="font-semibold text-primary">{balance}</dd>
+                <dt className="text-black/70">Credits</dt>
+                <dd className="font-semibold text-black">{balance}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Photo scans</dt>
+                <dt className="text-black/70">Photo scans</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.photoScans ?? 0)}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Credits spent</dt>
+                <dt className="text-black/70">Credits spent</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.creditsSpent ?? 0)}
                 </dd>
@@ -95,7 +96,7 @@ export function AccountButton({
             <button
               type="button"
               onClick={signOut}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-background px-3 py-2 font-semibold text-primary transition-colors hover:bg-accent"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-black/30 bg-black/5 px-3 py-2 font-semibold text-black transition-colors hover:bg-black/10"
             >
               <LogOut className="h-4 w-4" />
               Log out
@@ -112,7 +113,8 @@ export function AccountButton({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
