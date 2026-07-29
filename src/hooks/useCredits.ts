@@ -69,14 +69,40 @@ export function useCredits() {
     [signedIn, queryClient, query.data],
   );
 
+  const adQuery = useQuery({
+    queryKey: ["ad-reward-status"],
+    queryFn: () => getAdRewardStatus(),
+    enabled: signedIn,
+    staleTime: 30_000,
+  });
+
+  const claimAd = useCallback(async () => {
+    try {
+      const result = await claimAdReward();
+      queryClient.setQueryData(["credits"], (prev: typeof query.data) =>
+        prev ? { ...prev, balance: result.balance } : prev,
+      );
+      queryClient.invalidateQueries({ queryKey: ["credits"] });
+      queryClient.invalidateQueries({ queryKey: ["ad-reward-status"] });
+      toast.success("Credits added — enjoy your free scan");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not add credits";
+      toast.error(msg.includes("daily_limit") ? "No free ads left today" : msg);
+    }
+  }, [queryClient, query.data]);
+
   return {
     balance,
     signedIn,
     sessionReady,
+    userId: session?.user.id ?? null,
     email: session?.user.email ?? null,
     ledger: query.data?.ledger ?? [],
     lastDailyGrantAt: query.data?.lastDailyGrantAt ?? null,
     loading: signedIn && query.isLoading,
+    adClaimsToday: adQuery.data?.claimsToday ?? 0,
+    adDailyLimit: adQuery.data?.dailyLimit ?? AD_DAILY_LIMIT,
+    claimAdReward: claimAd,
     canAfford,
     noteSpend,
     refresh,
