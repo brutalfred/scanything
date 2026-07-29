@@ -173,6 +173,10 @@ export type Database = {
         Args: { _amount: number; _reason: string }
         Returns: number
       }
+      refund_credits_for: {
+        Args: { _amount: number; _reason: string; _user_id: string }
+        Returns: number
+      }
       spend_credits: {
         Args: { _amount: number; _metadata?: Json; _reason: string }
         Returns: number
