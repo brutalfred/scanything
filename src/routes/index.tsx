@@ -1480,7 +1480,7 @@ function Scanner() {
       {personResult && (
         <div
           className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
-          onClick={() => closePerson}
+          onClick={closePerson}
         >
           <div
             className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
@@ -1497,7 +1497,7 @@ function Scanner() {
                 )}
               </div>
               <button
-                onClick={() => closePerson}
+                onClick={closePerson}
                 className="rounded-full p-1 text-muted-foreground hover:bg-accent"
                 aria-label="Close"
               >
