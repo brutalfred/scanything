@@ -411,9 +411,11 @@ function Scanner() {
 
   const capture = useCallback(async () => {
     if (!credits.spend("photo_scan")) return;
+    void playSound("shutter");
     const dataUrl = grabFrame(1024, 0.8);
     if (!dataUrl) return;
     setSnapshot(dataUrl);
+
     try {
       sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
     } catch {
