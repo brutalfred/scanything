@@ -142,9 +142,9 @@ function toDataUrl(b: string) {
 export const analyzeRoom = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => InputSchema.parse(data))
-  .handler(async ({ data }): Promise<AnalyzeResult> => {
+  .handler(async ({ data, context }): Promise<AnalyzeResult> => {
     const { withCredits } = await import("./credits.server");
-    const content = await withCredits("photo_scan", () =>
+    const content = await withCredits("photo_scan", context.userId, () =>
       callGateway("photo_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
@@ -171,9 +171,9 @@ export const analyzeRoom = createServerFn({ method: "POST" })
 export const quickScan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => InputSchema.parse(data))
-  .handler(async ({ data }): Promise<QuickResult> => {
+  .handler(async ({ data, context }): Promise<QuickResult> => {
     const { withCredits } = await import("./credits.server");
-    const content = await withCredits("quick_scan", () =>
+    const content = await withCredits("quick_scan", context.userId, () =>
       callGateway("quick_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
@@ -214,9 +214,9 @@ const EnrichInput = z.object({
 export const enrichItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => EnrichInput.parse(data))
-  .handler(async ({ data }): Promise<Omit<DetectedItem, "box" | "name">> => {
+  .handler(async ({ data, context }): Promise<Omit<DetectedItem, "box" | "name">> => {
     const { withCredits } = await import("./credits.server");
-    const content = await withCredits("enrich", () =>
+    const content = await withCredits("enrich", context.userId, () =>
       callGateway("enrich", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
@@ -299,9 +299,9 @@ export type DeepAnalysis = {
 export const analyzeFurther = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => DeepInput.parse(data))
-  .handler(async ({ data }): Promise<DeepAnalysis> => {
+  .handler(async ({ data, context }): Promise<DeepAnalysis> => {
     const { withCredits } = await import("./credits.server");
-    const content = await withCredits("analyze_further", () =>
+    const content = await withCredits("analyze_further", context.userId, () =>
       callGateway("analyze_further", {
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
@@ -351,9 +351,9 @@ export type Translation = {
 export const translateText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => TranslateInput.parse(data))
-  .handler(async ({ data }): Promise<Translation> => {
+  .handler(async ({ data, context }): Promise<Translation> => {
     const { withCredits } = await import("./credits.server");
-    const content = await withCredits("translate", () =>
+    const content = await withCredits("translate", context.userId, () =>
       callGateway("translate", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
@@ -388,9 +388,9 @@ export type PersonInfo = {
 export const personInfo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => PersonInput.parse(data))
-  .handler(async ({ data }): Promise<PersonInfo> => {
+  .handler(async ({ data, context }): Promise<PersonInfo> => {
     const { withCredits } = await import("./credits.server");
-    const content = await withCredits("person_info", () =>
+    const content = await withCredits("person_info", context.userId, () =>
       callGateway("person_info", {
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
