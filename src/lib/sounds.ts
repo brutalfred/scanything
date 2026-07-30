@@ -1,9 +1,15 @@
 const MUTE_STORAGE_KEY = "scanything:sounds-muted";
+const VOLUME_STORAGE_KEY = "scanything:sounds-volume";
+export const SOUND_SETTINGS_EVENT = "scanything:sound-settings";
 
 export type SoundType = "bubble" | "shutter" | "sweep";
 
-
 let ctx: AudioContext | null = null;
+
+function clampVolume(n: number) {
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(0, Math.min(1, n));
+}
 
 export function isSoundMuted(): boolean {
   if (typeof window === "undefined") return false;
@@ -14,10 +20,58 @@ export function isSoundMuted(): boolean {
   }
 }
 
+export function getSoundVolume(): number {
+  if (typeof window === "undefined") return 1;
+  try {
+    const raw = window.localStorage.getItem(VOLUME_STORAGE_KEY);
+    if (raw === null) return 1;
+    return clampVolume(Number(raw));
+  } catch {
+    return 1;
+  }
+}
+
+function notifyChange() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(SOUND_SETTINGS_EVENT));
+}
+
+export function setSoundMuted(muted: boolean) {
+  try {
+    window.localStorage.setItem(MUTE_STORAGE_KEY, String(muted));
+  } catch {
+    /* ignore */
+  }
+  notifyChange();
+}
+
+export function setSoundVolume(volume: number) {
+  const v = clampVolume(volume);
+  try {
+    window.localStorage.setItem(VOLUME_STORAGE_KEY, String(v));
+  } catch {
+    /* ignore */
+  }
+  notifyChange();
+}
+
+/** Effective peak gain for a sound layer, scaled by the saved volume. */
+function peak(base: number) {
+  return Math.max(0.0001, base * getSoundVolume());
+}
+
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
-    const Ctx = (window as typeof window & { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const Ctx =
+      (
+        window as typeof window & {
+          AudioContext?: typeof AudioContext;
+          webkitAudioContext?: typeof AudioContext;
+        }
+      ).AudioContext ??
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
     if (!Ctx) return null;
     ctx = new Ctx();
   }
@@ -37,7 +91,6 @@ async function resumeIfNeeded(): Promise<boolean> {
   return true;
 }
 
-
 export async function playBubblePop() {
   const c = getAudioContext();
   if (!c || !(await resumeIfNeeded())) return;
@@ -51,7 +104,7 @@ export async function playBubblePop() {
   osc.frequency.exponentialRampToValueAtTime(1760, t + 0.04);
 
   gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.25, t + 0.01);
+  gain.gain.linearRampToValueAtTime(peak(0.25), t + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
 
   osc.connect(gain).connect(c.destination);
@@ -70,7 +123,7 @@ export async function playCameraShutter() {
   clickOsc.type = "square";
   clickOsc.frequency.setValueAtTime(150, t);
   clickGain.gain.setValueAtTime(0, t);
-  clickGain.gain.linearRampToValueAtTime(0.25, t + 0.002);
+  clickGain.gain.linearRampToValueAtTime(peak(0.25), t + 0.002);
   clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
   clickOsc.connect(clickGain).connect(c.destination);
   clickOsc.start(t);
@@ -94,7 +147,7 @@ export async function playCameraShutter() {
 
   const noiseGain = c.createGain();
   noiseGain.gain.setValueAtTime(0, t);
-  noiseGain.gain.linearRampToValueAtTime(0.2, t + 0.005);
+  noiseGain.gain.linearRampToValueAtTime(peak(0.2), t + 0.005);
   noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
 
   noise.connect(noiseFilter).connect(noiseGain).connect(c.destination);
@@ -125,7 +178,7 @@ export async function playSweepClear() {
 
   const gain = c.createGain();
   gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.2, t + 0.03);
+  gain.gain.linearRampToValueAtTime(peak(0.2), t + 0.03);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
 
   noise.connect(filter).connect(gain).connect(c.destination);
@@ -134,7 +187,7 @@ export async function playSweepClear() {
 }
 
 export async function playSound(type: SoundType) {
-  if (isSoundMuted()) return;
+  if (isSoundMuted() || getSoundVolume() <= 0) return;
   switch (type) {
     case "bubble":
       await playBubblePop();
@@ -147,4 +200,3 @@ export async function playSound(type: SoundType) {
       break;
   }
 }
-

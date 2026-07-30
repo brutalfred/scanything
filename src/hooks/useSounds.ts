@@ -1,37 +1,47 @@
 import { useCallback, useEffect, useState } from "react";
-import { playSound, type SoundType } from "@/lib/sounds";
-
-const MUTE_STORAGE_KEY = "scanything:sounds-muted";
+import {
+  getSoundVolume,
+  isSoundMuted,
+  playSound,
+  setSoundMuted,
+  setSoundVolume,
+  SOUND_SETTINGS_EVENT,
+  type SoundType,
+} from "@/lib/sounds";
 
 export function useSounds() {
-  const [muted, setMuted] = useState(false);
+  const [muted, setMutedState] = useState(false);
+  const [volume, setVolumeState] = useState(1);
 
+  // Hydrate from localStorage after mount (avoids SSR mismatch) and keep every
+  // hook instance / tab in sync.
   useEffect(() => {
-    let stored: string | null = null;
-    try {
-      stored = window.localStorage.getItem(MUTE_STORAGE_KEY);
-    } catch {
-      stored = null;
-    }
-    setMuted(stored === "true");
+    const sync = () => {
+      setMutedState(isSoundMuted());
+      setVolumeState(getSoundVolume());
+    };
+    sync();
+    window.addEventListener(SOUND_SETTINGS_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(SOUND_SETTINGS_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   const toggleMute = useCallback(() => {
-    setMuted((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem(MUTE_STORAGE_KEY, String(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
+    setSoundMuted(!isSoundMuted());
+  }, []);
+
+  const changeVolume = useCallback((next: number) => {
+    setSoundVolume(next);
+    // Unmute automatically when the user raises the volume.
+    if (next > 0 && isSoundMuted()) setSoundMuted(false);
   }, []);
 
   const play = useCallback((type: SoundType) => {
     void playSound(type);
   }, []);
 
-  return { muted, toggleMute, play };
+  return { muted, volume, toggleMute, setVolume: changeVolume, play };
 }
-
