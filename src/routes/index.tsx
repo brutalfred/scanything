@@ -1962,10 +1962,12 @@ function TrackedRow({
             <div className="text-[11px] text-muted-foreground">analyzing…</div>
           )}
         </div>
-        {item.enrichment ? (
+        {item.enrichment && item.enrichment.category !== "person" ? (
           <div className="shrink-0 text-xs font-semibold text-primary">
             ${item.enrichment.priceMin}–${item.enrichment.priceMax}
           </div>
+        ) : item.enrichment ? (
+          <div className="shrink-0 text-xs font-semibold text-muted-foreground">Person</div>
         ) : (
           <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
         )}
