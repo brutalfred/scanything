@@ -11,13 +11,17 @@ export const Route = createFileRoute("/economics")({
       { title: "Scan Economics — Scanything" },
       {
         name: "description",
-        content: "Owner report on the AI cost of Scanything scans.",
+        content:
+          "Owner-only report on Scanything AI processing costs: token usage, average cost per photo and video scan, and how credit pricing compares.",
       },
+      { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Scan Economics — Scanything" },
       {
         property: "og:description",
-        content: "Owner report on the AI cost of Scanything scans.",
+        content:
+          "Owner-only report on Scanything AI token usage and the real cost of each photo and video scan.",
       },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

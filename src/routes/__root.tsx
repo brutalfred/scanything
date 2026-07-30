@@ -105,7 +105,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://scanything.app/#organization",
+              name: "Scanything",
+              url: "https://scanything.app",
+              email: "scanythingapp@gmail.com",
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://scanything.app/#website",
+              name: "Scanything",
+              url: "https://scanything.app",
+              description:
+                "Scan any room with your camera and Scanything names every object, with prices, links and instant details.",
+              publisher: { "@id": "https://scanything.app/#organization" },
+            },
+          ],
+        }),
+      },
+    ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

@@ -6,13 +6,16 @@ export const Route = createFileRoute("/terms")({
       { title: "Terms & Conditions — Scanything" },
       {
         name: "description",
-        content: "Terms and conditions for using Scanything.",
+        content:
+          "The terms for using Scanything: acceptable use of AI camera scanning, scan credit purchases, account rules, liability limits and how the service may change.",
       },
       { property: "og:title", content: "Terms & Conditions — Scanything" },
       {
         property: "og:description",
-        content: "Terms and conditions for using Scanything.",
+        content:
+          "Acceptable use, scan credit purchases, account rules and liability limits for the Scanything AI scanning service.",
       },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
