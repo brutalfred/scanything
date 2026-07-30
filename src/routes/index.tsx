@@ -586,6 +586,11 @@ function Scanner() {
 
 
   const reset = useCallback(() => {
+    try {
+      sessionStorage.removeItem(LAST_SCAN_KEY);
+    } catch {
+      /* ignore */
+    }
     setSnapshot(null);
     setItems([]);
     setSelected(null);
@@ -594,6 +599,7 @@ function Scanner() {
     setVideoPaused(false);
     setPhase("camera");
   }, []);
+
 
   const switchMode = useCallback((m: Mode) => {
     setMode(m);
