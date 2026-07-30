@@ -34,7 +34,7 @@ export type QuickResult = {
   items: QuickItem[];
 };
 
-const FULL_SYSTEM = `You are a fast visual room-analyzer. Identify DISTINCT physical objects visible in the photo that are LARGER than an apple (roughly >10cm across).
+const FULL_SYSTEM = `You are a fast visual room-analyzer. Identify EVERY DISTINCT physical object visible in the photo, at any size. Do not skip small objects.
 
 PRIORITY — focus almost entirely on everyday human-use objects:
 furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, kitchenware, decor, instruments, sports gear, pets/pet items, food items, doors, windows.
@@ -67,9 +67,9 @@ For each object, respond with a compact JSON object matching:
 
 box is the object's bounding box in NORMALIZED image coordinates where (0,0) is the TOP-LEFT of the image and (1,1) is the bottom-right. x,y is the top-left corner of the box. Be accurate with boxes.
 
-Keep it under 12 items. Prefer confident guesses. Output ONLY JSON, no markdown.`;
+There is NO maximum number of items — list everything you can identify. Prefer confident guesses. Output ONLY JSON, no markdown.`;
 
-const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name up to 10 distinct objects LARGER than an apple. Focus on objects near the CENTER of the frame first.
+const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name every distinct object you can identify, at any size. There is no maximum — name as many as you can see, starting with objects near the CENTER of the frame.
 
 PRIORITY — spot everyday human-use items: furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, kitchenware, decor, instruments, sports gear, doors, windows.
 ALSO include any visible writing/sign/logo that is NOT in the Latin alphabet (Chinese, Japanese, Korean, Arabic, Hebrew, Cyrillic, Thai, Devanagari, Greek). Use the actual characters as the name (short).
@@ -83,7 +83,7 @@ Respond with ONLY compact JSON:
 
 confidence is an integer 0-100 for how sure you are about the name.
 
-box is normalized image coords (top-left origin). Be tight around the object. Max 10 items. NO markdown, NO extra text. Be fast.`;
+box is normalized image coords (top-left origin). Be tight around the object. No item limit. NO markdown, NO extra text. Be fast.`;
 
 const ENRICH_SYSTEM = `You are giving quick shopping info for a single household item. Respond ONLY with compact JSON:
 {"category":"furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|other","description":"1-2 sentence plain description","priceMin":<usd number>,"priceMax":<usd number>,"currency":"USD","searchUrl":"https://www.google.com/search?q=<url-encoded>","infoUrl":"https://en.wikipedia.org/wiki/<topic> or relevant homepage","confidence":<integer 0-100 certainty of the identification>}`;
@@ -199,7 +199,6 @@ export const quickScan = createServerFn({ method: "POST" })
     const parsed = safeParse<QuickResult>(content, { items: [] });
     const items = (parsed.items ?? [])
       .filter((it) => it && it.box && typeof it.box.x === "number")
-      .slice(0, 10)
       .map((it) => ({
         name: String(it.name ?? "Object").trim(),
         confidence: clampPct(it.confidence),
