@@ -598,6 +598,7 @@ function Scanner() {
 
 
   const reset = useCallback(() => {
+    void playSound("sweep");
     try {
       sessionStorage.removeItem(LAST_SCAN_KEY);
     } catch {
@@ -611,6 +612,7 @@ function Scanner() {
     setVideoPaused(false);
     setPhase("camera");
   }, []);
+
 
 
   const switchMode = useCallback((m: Mode) => {
