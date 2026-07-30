@@ -614,6 +614,9 @@ function Scanner() {
       }
       if (isPersonItem(item)) {
         setPersonName("");
+        setPersonLocation("");
+        setPersonMatches(null);
+        setPersonResult(null);
         setPersonError(null);
         setPersonPrompt({ item });
         return;
@@ -626,6 +629,13 @@ function Scanner() {
     [openAddressSearch, snapshot],
   );
 
+  const closePerson = useCallback(() => {
+    setPersonPrompt(null);
+    setPersonMatches(null);
+    setPersonResult(null);
+    setPersonError(null);
+  }, []);
+
   const submitPerson = useCallback(async () => {
     const name = personName.trim();
     if (!name) return;
@@ -633,15 +643,35 @@ function Scanner() {
     setPersonLoading(true);
     setPersonError(null);
     try {
-      const info = await personInfo({ data: { name } });
-      setPersonResult({ name, info });
-      setPersonPrompt(null);
+      const { matches } = await personSearch({
+        data: { name, location: personLocation.trim() },
+      });
+      if (matches.length === 0) {
+        setPersonError("No public information found for that name.");
+      } else if (matches.length === 1) {
+        const m = matches[0];
+        setPersonResult({
+          name: m.name,
+          info: {
+            known: true,
+            summary: m.summary,
+            bullets: m.bullets,
+            occupation: m.occupation,
+            nationality: [m.nationality, m.location].filter(Boolean).join(" · "),
+            wikipediaUrl: m.wikipediaUrl,
+          },
+        });
+        setPersonPrompt(null);
+      } else {
+        setPersonMatches(matches);
+      }
     } catch (e) {
       setPersonError(e instanceof Error ? e.message : "Lookup failed.");
     } finally {
       setPersonLoading(false);
     }
-  }, [personName, credits]);
+  }, [personName, personLocation, credits]);
+
 
 
   const submitAddress = useCallback(
