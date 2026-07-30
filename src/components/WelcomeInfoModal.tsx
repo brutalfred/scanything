@@ -46,10 +46,7 @@ export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; user
             In Videomode, the credits will burn fast.
           </li>
           <li>
-            My intention with this app is to help people identify things. For example the brand of a
-            dress, a specific carmodel, a specific animal, maybe find out what a specific gadget is
-            through deep analysis, translate a restaurants logo from chinese or arabic letters to
-            latin alphabet, identify plants etc.
+            My intention with this app is to help people identify items with ease, price estimations and fun.
           </li>
           <li>
             Contact:{" "}
