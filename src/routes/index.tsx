@@ -1855,7 +1855,7 @@ function DetailPanel({
                 {deep.description && (
                   <p className="mt-1 text-sm leading-relaxed">{deep.description}</p>
                 )}
-                {(deep.priceMin > 0 || deep.priceMax > 0) && (
+                {enrichment && enrichment.category !== "person" && (deep.priceMin > 0 || deep.priceMax > 0) && (
                   <div className="mt-2 text-sm font-medium text-primary">
                     ${deep.priceMin}–${deep.priceMax} {deep.currency}
                   </div>
