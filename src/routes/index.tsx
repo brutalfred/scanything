@@ -1342,10 +1342,10 @@ function Scanner() {
         </div>
       )}
 
-      {personPrompt && !personResult && (
+      {personPrompt && !personResult && !personMatches && (
         <div
           className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
-          onClick={() => !personLoading && setPersonPrompt(null)}
+          onClick={() => !personLoading && closePerson()}
         >
           <div
             className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
@@ -1355,11 +1355,11 @@ function Scanner() {
               <div>
                 <h2 className="text-lg font-semibold gold-text">Who is this person?</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Type their name — we’ll pull together a quick public summary.
+                  Add a name and location — we’ll gather public info from the web.
                 </p>
               </div>
               <button
-                onClick={() => !personLoading && setPersonPrompt(null)}
+                onClick={() => !personLoading && closePerson()}
                 className="rounded-full p-1 text-muted-foreground hover:bg-accent"
                 aria-label="Close"
               >
@@ -1373,14 +1373,29 @@ function Scanner() {
               }}
               className="mt-4 space-y-3"
             >
-              <input
-                autoFocus
-                type="text"
-                value={personName}
-                onChange={(e) => setPersonName(e.target.value)}
-                placeholder="e.g. Marie Curie"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-              />
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Name</label>
+                <input
+                  autoFocus
+                  type="text"
+                  value={personName}
+                  onChange={(e) => setPersonName(e.target.value)}
+                  placeholder="e.g. Marie Curie"
+                  maxLength={120}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Location</label>
+                <input
+                  type="text"
+                  value={personLocation}
+                  onChange={(e) => setPersonLocation(e.target.value)}
+                  placeholder="e.g. Paris, France (optional)"
+                  maxLength={160}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
               {personError && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
                   {personError}
@@ -1395,7 +1410,7 @@ function Scanner() {
                 ) : (
                   <>
                     <User className="mr-2 h-4 w-4" />
-                    Search
+                    Submit
                   </>
                 )}
               </Button>
@@ -1403,6 +1418,64 @@ function Scanner() {
           </div>
         </div>
       )}
+
+      {personMatches && !personResult && (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          onClick={closePerson}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold gold-text">
+                  {personMatches.length} matches found
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Pick the right person to see their public info.
+                </p>
+              </div>
+              <button
+                onClick={closePerson}
+                className="rounded-full p-1 text-muted-foreground hover:bg-accent"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-4 space-y-2">
+              {personMatches.map((m, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() =>
+                    setPersonResult({
+                      name: m.name,
+                      info: {
+                        known: true,
+                        summary: m.summary,
+                        bullets: m.bullets,
+                        occupation: m.occupation,
+                        nationality: [m.nationality, m.location].filter(Boolean).join(" · "),
+                        wikipediaUrl: m.wikipediaUrl,
+                      },
+                    })
+                  }
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-left hover:bg-accent"
+                >
+                  <div className="text-sm font-semibold text-primary">{m.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {[m.occupation, m.location || m.nationality].filter(Boolean).join(" · ")}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {personResult && (
         <div
