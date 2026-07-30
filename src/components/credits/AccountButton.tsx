@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
+import { Download, LogIn, LogOut, ShieldCheck, User2, Volume2, VolumeX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
@@ -10,7 +10,9 @@ import { getIsAdmin } from "@/lib/admin.functions";
 import { THEMES } from "@/lib/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { useSounds } from "@/hooks/useSounds";
 import { DailyCheckin } from "./DailyCheckin";
+
 
 
 export function AccountButton({
