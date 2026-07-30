@@ -43,16 +43,16 @@ import { CREDIT_COSTS } from "@/lib/credits";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Scanything — AI camera room analyzer" },
+      { title: "Scanything — AI analysis" },
       {
         name: "description",
         content:
-          "Point your camera at a room. Scanything's AI identifies every item bigger than an apple with prices and info.",
+          "Scan anything and get identification, information, price estimations and links",
       },
-      { property: "og:title", content: "Scanything — AI camera room analyzer" },
+      { property: "og:title", content: "Scanything — AI analysis" },
       {
         property: "og:description",
-        content: "Scan anything in your room instantly with AI.",
+        content: "Scan anything and get identification, information, price estimations and links",
       },
     ],
   }),

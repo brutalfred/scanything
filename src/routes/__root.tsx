@@ -87,17 +87,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "9Itb-TonHpL4_F4ZhzC9hyBPd9QZgjtOqasOve0NXsA",
       },
 
-      { title: "Scanything — AI camera room scanner" },
+      { title: "Scanything — AI analysis" },
       {
         name: "description",
         content:
-          "Scan any room with your camera and Scanything names every object, with prices, links and instant details.",
+          "Scan anything and get identification, information, price estimations and links",
       },
       { name: "author", content: "Scanything" },
-      { property: "og:title", content: "Scanything — AI camera room scanner" },
+      { property: "og:title", content: "Scanything — AI analysis" },
       {
         property: "og:description",
-        content: "Point your camera at a room and get instant AI identification of everything in it.",
+        content: "Scan anything and get identification, information, price estimations and links",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -108,7 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
     scripts: [
       {
