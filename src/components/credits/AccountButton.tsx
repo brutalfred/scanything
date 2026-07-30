@@ -129,6 +129,8 @@ export function AccountButton({
 
             </dl>
 
+            <DailyCheckin enabled={signedIn && open} />
+
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>
               <div className="mt-2 grid grid-cols-5 gap-2">
