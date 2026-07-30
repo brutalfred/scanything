@@ -1,45 +1,51 @@
-## Goal
+Plan: Add camera-themed UI sound effects to Scanything
 
-An owner-only page where you can add credits to any account by email, any time — plus an immediate 1000-credit top-up to your own account.
+Goal
+Give the app subtle, camera-themed audio feedback for three key interactions: a bubble pop when a new item appears, a shutter click when a photo scan is captured, and a sweep/clear sound when the user resets with "New scan". Sounds will be enabled by default and can be muted from the signed-in account tab.
 
-## 1. Admin role (secure, not email-hardcoded)
+Prerequisite
+ElevenLabs is available as a workspace connector but not yet linked to this project. The first step is to link it so the server function can call the ElevenLabs Sound Effects API.
 
-Add a proper roles table so admin access can't be spoofed from the browser:
+Steps
 
-- `app_role` enum (`admin`, `user`) and a `user_roles` table (user_id + role, unique).
-- Grants + RLS: signed-in users can read their own roles; only the backend can write them.
-- `has_role(_user_id, _role)` security-definer function for checks.
-- Seed your account (`frepaulsson@gmail.com`) as `admin`.
+1. Link ElevenLabs
+   - Call `standard_connectors--connect` with `connector_id: "elevenlabs"`.
+   - This injects `ELEVENLABS_API_KEY` for direct provider API calls (not gateway-backed).
 
-## 2. Credit top-up now
+2. Create a sound-generation server function
+   - Add `src/lib/sounds.functions.ts` that wraps `createServerFn`.
+   - Handler calls `https://api.elevenlabs.io/v1/sound-generation` with a prompt and duration, returning the raw MP3 bytes.
+   - Keep prompts focused on the camera theme, e.g.:
+     - "soft camera bubble pop, short, subtle"
+     - "vintage camera shutter click, crisp, short"
+     - "gentle sweep or clear slate sound, short, whoosh"
 
-Grant **1000 credits** to your account through the existing `grant_credits` function, logged in the credit ledger as an admin grant.
+3. Generate and store the three sounds
+   - Generate one sound for each prompt using the server function.
+   - Upload each MP3 as a Lovable asset via `lovable-assets create` so it is served from `/__l5e/assets-v1/...` and kept out of the repo.
+   - Write the `.asset.json` pointer files under `src/assets/sounds/`.
 
-## 3. Owner-only admin page (`/admin`)
+4. Build a lightweight sound manager
+   - Create `src/hooks/useSounds.ts`:
+     - Loads the three assets into `<audio>` elements on first interaction.
+     - Reads/writes a `scanything:sounds-muted` flag to `localStorage`.
+     - Exposes `playSound(type)` and `toggleMute()`.
+   - Sounds start enabled by default.
 
-A themed page matching the current app theme, reachable only when your account has the admin role (non-admins get a "not authorized" message; no link is shown to anyone else).
+5. Add a mute toggle in the account tab
+   - In `src/components/credits/AccountButton.tsx`, add a "Sound effects" row with a mute/unmute toggle button.
+   - Use the current theme colors for the control.
 
-Contents:
-- Email field + credit amount field + "Grant credits" button.
-- Result feedback: new balance, or a clear error if the email has no account.
-- A short list of the most recent admin grants for reference.
+6. Wire sounds to the UI
+   - Photo scan capture: play the shutter click when the user takes a photo scan.
+   - New item detected: play the bubble pop when a new item box/cards first appear in the list.
+   - New scan reset: play the sweep/clear sound when the user taps "New scan" and the current snapshot/items are cleared.
 
-## 4. Backend server function
+7. Verify
+   - Typecheck and build the project.
+   - Confirm the sounds play on the three interactions and the mute toggle works.
 
-New authenticated server function `adminGrantCredits`:
-- Verifies the caller is signed in, then verifies `has_role(caller, 'admin')` — refuses otherwise.
-- Looks up the target user by email via the admin auth API.
-- Calls the existing `grant_credits` function with a reason like `admin_grant`.
-- Validates amount (1–100000) and returns the new balance.
-
-Also a small `getIsAdmin` check so the page can render the right state.
-
-## 5. Entry point
-
-Add an "Admin" link inside the account modal, visible only when the signed-in account has the admin role.
-
-## Technical notes
-
-- Roles live in a dedicated `user_roles` table (never on a profile row) to avoid privilege-escalation.
-- The grant path uses the service-role client only after the admin role check passes, inside the handler.
-- No changes to the purchase/Paddle flow; admin grants are recorded in `credit_ledger` so they show in the credits sheet history.
+Technical notes
+- ElevenLabs Sound Effects API returns raw MP3 bytes; the server function will return the binary and the client will play via HTML5 `<audio>` or `Audio` objects.
+- No direct API calls from the browser; the sound files are served through Lovable assets after generation.
+- If ElevenLabs generation fails, the app will fall back to silent operation so it never blocks the scan flow.
