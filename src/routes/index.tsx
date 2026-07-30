@@ -28,11 +28,14 @@ import {
   analyzeFurther,
   translateText,
   personInfo,
+  personSearch,
   type DetectedItem,
   type QuickItem,
   type DeepAnalysis,
   type Translation,
   type PersonInfo,
+  type PersonMatch,
+
 } from "@/lib/analyze-room.functions";
 import { Button } from "@/components/ui/button";
 import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
