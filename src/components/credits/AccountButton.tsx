@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
+import { Download, LogIn, LogOut, ShieldCheck, User2, Volume2, VolumeX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
@@ -10,7 +10,9 @@ import { getIsAdmin } from "@/lib/admin.functions";
 import { THEMES } from "@/lib/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { useSounds } from "@/hooks/useSounds";
 import { DailyCheckin } from "./DailyCheckin";
+
 
 
 export function AccountButton({
@@ -27,8 +29,10 @@ export function AccountButton({
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
+  const { muted, toggleMute } = useSounds();
 
   async function handleInstall() {
+
     if (installed) {
       toast.info("Scanything is already installed on this device");
       return;
@@ -126,10 +130,24 @@ export function AccountButton({
                   {stats.isLoading ? "…" : (stats.data?.creditsSpent ?? 0)}
                 </dd>
               </div>
-
             </dl>
 
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="mt-4 flex w-full items-center justify-between rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
+            >
+              <span className="flex items-center gap-2">
+                {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                Sound effects
+              </span>
+              <span className="text-xs font-medium opacity-70">
+                {muted ? "Muted" : "On"}
+              </span>
+            </button>
+
             <DailyCheckin enabled={signedIn && open} />
+
 
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>

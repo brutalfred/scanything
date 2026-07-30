@@ -42,6 +42,9 @@ import { CreditsProvider, useCreditsContext } from "@/components/credits/Credits
 import { CreditMeter } from "@/components/credits/CreditMeter";
 import { AccountButton } from "@/components/credits/AccountButton";
 import { CREDIT_COSTS } from "@/lib/credits";
+import { playSound } from "@/lib/sounds";
+
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -203,6 +206,8 @@ function Scanner() {
   const credits = useCreditsContext();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
   const [mode, setMode] = useState<Mode>("photo");
@@ -310,6 +315,29 @@ function Scanner() {
     trackedRef.current = tracked;
   }, [tracked]);
 
+  // Bubble sound when new video-mode items appear.
+  const trackedSoundIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const newIds = tracked.filter((t) => !trackedSoundIdsRef.current.has(t.id));
+    if (newIds.length > 0) {
+      void playSound("bubble");
+    }
+    tracked.forEach((t) => trackedSoundIdsRef.current.add(t.id));
+  }, [tracked]);
+
+  // Bubble sound when photo-mode results first show items.
+  const photoItemsSoundPlayedRef = useRef(false);
+  useEffect(() => {
+    if (phase === "results" && items.length > 0 && !photoItemsSoundPlayedRef.current) {
+      photoItemsSoundPlayedRef.current = true;
+      void playSound("bubble");
+    }
+    if (phase === "camera" || items.length === 0) {
+      photoItemsSoundPlayedRef.current = false;
+    }
+  }, [phase, items]);
+
+
   const startCamera = useCallback(async () => {
     setError(null);
     try {
@@ -406,9 +434,11 @@ function Scanner() {
 
   const capture = useCallback(async () => {
     if (!credits.spend("photo_scan")) return;
+    void playSound("shutter");
     const dataUrl = grabFrame(1024, 0.8);
     if (!dataUrl) return;
     setSnapshot(dataUrl);
+
     try {
       sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
     } catch {
@@ -591,6 +621,9 @@ function Scanner() {
 
 
   const reset = useCallback(() => {
+    void playSound("sweep");
+    trackedSoundIdsRef.current.clear();
+    photoItemsSoundPlayedRef.current = false;
     try {
       sessionStorage.removeItem(LAST_SCAN_KEY);
     } catch {
@@ -604,6 +637,8 @@ function Scanner() {
     setVideoPaused(false);
     setPhase("camera");
   }, []);
+
+
 
 
   const switchMode = useCallback((m: Mode) => {
