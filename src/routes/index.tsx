@@ -573,11 +573,14 @@ function Scanner() {
     null,
   );
   const [personName, setPersonName] = useState("");
+  const [personLocation, setPersonLocation] = useState("");
   const [personLoading, setPersonLoading] = useState(false);
+  const [personMatches, setPersonMatches] = useState<PersonMatch[] | null>(null);
   const [personResult, setPersonResult] = useState<{ name: string; info: PersonInfo } | null>(
     null,
   );
   const [personError, setPersonError] = useState<string | null>(null);
+
 
   // List tab (Items / Categories)
   const [listTab, setListTab] = useState<"items" | "categories">("items");
