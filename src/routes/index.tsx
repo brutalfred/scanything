@@ -1566,7 +1566,29 @@ function Scanner() {
                     ))}
                   </ul>
                 )}
+                {personResult.info.sources && personResult.info.sources.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Sources from web search
+                    </p>
+                    <div className="mt-2 flex flex-col gap-1">
+                      {personResult.info.sources.map((s, i) => (
+                        <a
+                          key={i}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-between gap-2 text-sm text-primary hover:underline"
+                        >
+                          <span className="truncate">{s.title || s.url}</span>
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
+
             ) : (
               <p className="mt-3 text-sm text-muted-foreground">
                 No widely-known public info for that name. Try a more complete spelling.
