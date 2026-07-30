@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const InputSchema = z.object({
   imageBase64: z.string().min(100),
@@ -139,6 +140,7 @@ function toDataUrl(b: string) {
 }
 
 export const analyzeRoom = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<AnalyzeResult> => {
     const { withCredits } = await import("./credits.server");
@@ -167,6 +169,7 @@ export const analyzeRoom = createServerFn({ method: "POST" })
   });
 
 export const quickScan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<QuickResult> => {
     const { withCredits } = await import("./credits.server");
@@ -209,6 +212,7 @@ const EnrichInput = z.object({
 });
 
 export const enrichItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => EnrichInput.parse(data))
   .handler(async ({ data }): Promise<Omit<DetectedItem, "box" | "name">> => {
     const { withCredits } = await import("./credits.server");
@@ -293,6 +297,7 @@ export type DeepAnalysis = {
 };
 
 export const analyzeFurther = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => DeepInput.parse(data))
   .handler(async ({ data }): Promise<DeepAnalysis> => {
     const { withCredits } = await import("./credits.server");
@@ -344,6 +349,7 @@ export type Translation = {
 };
 
 export const translateText = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => TranslateInput.parse(data))
   .handler(async ({ data }): Promise<Translation> => {
     const { withCredits } = await import("./credits.server");
@@ -380,6 +386,7 @@ export type PersonInfo = {
 };
 
 export const personInfo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => PersonInput.parse(data))
   .handler(async ({ data }): Promise<PersonInfo> => {
     const { withCredits } = await import("./credits.server");

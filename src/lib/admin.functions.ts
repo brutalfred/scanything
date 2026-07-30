@@ -21,7 +21,8 @@ export type AdminGrantEntry = {
 export const getIsAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<boolean> => {
-    const { data } = await context.supabase.rpc("has_role", {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
@@ -43,13 +44,12 @@ export const adminGrantCredits = createServerFn({ method: "POST" })
     return { email, amount };
   })
   .handler(async ({ data, context }): Promise<AdminGrantResult> => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
     if (isAdmin !== true) throw new Error("Not authorized");
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Find the target account by email.
     let targetId: string | null = null;
@@ -80,13 +80,12 @@ export const adminGrantCredits = createServerFn({ method: "POST" })
 export const getAdminGrants = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminGrantEntry[]> => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
     if (isAdmin !== true) throw new Error("Not authorized");
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: rows, error } = await supabaseAdmin
       .from("credit_ledger")
