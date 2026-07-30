@@ -12,7 +12,7 @@ function getAudioContext(): AudioContext | null {
   return ctx;
 }
 
-async function resumeIfNeeded() {
+async function resumeIfNeeded(): Promise<boolean> {
   const c = getAudioContext();
   if (!c) return false;
   if (c.state === "suspended") {
@@ -25,13 +25,9 @@ async function resumeIfNeeded() {
   return true;
 }
 
-function now() {
-  return getAudioContext()?.currentTime ?? 0;
-}
-
-export function playBubblePop() {
+export async function playBubblePop() {
   const c = getAudioContext();
-  if (!c || !resumeIfNeeded()) return;
+  if (!c || !(await resumeIfNeeded())) return;
   const t = c.currentTime;
 
   const osc = c.createOscillator();
@@ -50,9 +46,9 @@ export function playBubblePop() {
   osc.stop(t + 0.13);
 }
 
-export function playCameraShutter() {
+export async function playCameraShutter() {
   const c = getAudioContext();
-  if (!c || !resumeIfNeeded()) return;
+  if (!c || !(await resumeIfNeeded())) return;
   const t = c.currentTime;
 
   // Mechanical click: short low-frequency impulse
@@ -93,9 +89,9 @@ export function playCameraShutter() {
   noise.stop(t + 0.09);
 }
 
-export function playSweepClear() {
+export async function playSweepClear() {
   const c = getAudioContext();
-  if (!c || !resumeIfNeeded()) return;
+  if (!c || !(await resumeIfNeeded())) return;
   const t = c.currentTime;
 
   const bufferSize = c.sampleRate * 0.25;
@@ -124,16 +120,16 @@ export function playSweepClear() {
   noise.stop(t + 0.26);
 }
 
-export function playSound(type: SoundType) {
+export async function playSound(type: SoundType) {
   switch (type) {
     case "bubble":
-      playBubblePop();
+      await playBubblePop();
       break;
     case "shutter":
-      playCameraShutter();
+      await playCameraShutter();
       break;
     case "sweep":
-      playSweepClear();
+      await playSweepClear();
       break;
   }
 }
