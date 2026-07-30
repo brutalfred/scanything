@@ -99,6 +99,8 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
 ];
 const DEFAULT_FILTERS = new Set(CATEGORY_FILTERS.map((c) => c.key));
 const FILTER_STORAGE_KEY = "roomscan:filters";
+const LAST_SCAN_KEY = "scanything:last-scan";
+
 
 function normName(n: string) {
   return n.toLowerCase().trim();
