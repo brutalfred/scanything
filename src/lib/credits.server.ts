@@ -61,11 +61,15 @@ export function getRequestUserId(): string | null {
   return token ? getUserIdFromToken(token) : null;
 }
 
-export async function withCredits<T>(reason: CreditReason, fn: () => Promise<T>): Promise<T> {
-  const token = getBearerToken();
-  const userId = token ? getUserIdFromToken(token) : null;
-  // Every AI call must be attributable to a signed-in account and charged.
-  if (!token || !userId) throw new Error("Unauthorized");
+export async function withCredits<T>(
+  reason: CreditReason,
+  userId: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  // The caller must pass the identity verified by `requireSupabaseAuth`.
+  // Never derive it from an unverified bearer token here.
+  if (!userId) throw new Error("Unauthorized");
+
 
   const amount = CREDIT_COSTS[reason];
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
