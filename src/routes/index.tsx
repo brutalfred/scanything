@@ -315,6 +315,29 @@ function Scanner() {
     trackedRef.current = tracked;
   }, [tracked]);
 
+  // Bubble sound when new video-mode items appear.
+  const trackedSoundIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const newIds = tracked.filter((t) => !trackedSoundIdsRef.current.has(t.id));
+    if (newIds.length > 0) {
+      void playSound("bubble");
+    }
+    tracked.forEach((t) => trackedSoundIdsRef.current.add(t.id));
+  }, [tracked]);
+
+  // Bubble sound when photo-mode results first show items.
+  const photoItemsSoundPlayedRef = useRef(false);
+  useEffect(() => {
+    if (phase === "results" && items.length > 0 && !photoItemsSoundPlayedRef.current) {
+      photoItemsSoundPlayedRef.current = true;
+      void playSound("bubble");
+    }
+    if (phase === "camera" || items.length === 0) {
+      photoItemsSoundPlayedRef.current = false;
+    }
+  }, [phase, items]);
+
+
   const startCamera = useCallback(async () => {
     setError(null);
     try {
