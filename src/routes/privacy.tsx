@@ -6,13 +6,16 @@ export const Route = createFileRoute("/privacy")({
       { title: "Privacy Notice — Scanything" },
       {
         name: "description",
-        content: "Privacy notice for Scanything users.",
+        content:
+          "How Scanything handles your personal data, camera images and scan history, including storage, AI processing, cookies and your privacy rights.",
       },
       { property: "og:title", content: "Privacy Notice — Scanything" },
       {
         property: "og:description",
-        content: "Privacy notice for Scanything users.",
+        content:
+          "How Scanything handles your personal data, camera images and scan history, including AI processing and your privacy rights.",
       },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
