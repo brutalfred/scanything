@@ -130,10 +130,24 @@ export function AccountButton({
                   {stats.isLoading ? "…" : (stats.data?.creditsSpent ?? 0)}
                 </dd>
               </div>
-
             </dl>
 
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="mt-4 flex w-full items-center justify-between rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
+            >
+              <span className="flex items-center gap-2">
+                {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                Sound effects
+              </span>
+              <span className="text-xs font-medium opacity-70">
+                {muted ? "Muted" : "On"}
+              </span>
+            </button>
+
             <DailyCheckin enabled={signedIn && open} />
+
 
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>
