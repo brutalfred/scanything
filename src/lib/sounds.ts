@@ -134,6 +134,7 @@ export async function playSweepClear() {
 }
 
 export async function playSound(type: SoundType) {
+  if (isSoundMuted()) return;
   switch (type) {
     case "bubble":
       await playBubblePop();
@@ -146,3 +147,4 @@ export async function playSound(type: SoundType) {
       break;
   }
 }
+
