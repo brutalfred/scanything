@@ -42,6 +42,9 @@ import { CreditsProvider, useCreditsContext } from "@/components/credits/Credits
 import { CreditMeter } from "@/components/credits/CreditMeter";
 import { AccountButton } from "@/components/credits/AccountButton";
 import { CREDIT_COSTS } from "@/lib/credits";
+import { useSounds } from "@/hooks/useSounds";
+import { playSound } from "@/lib/sounds";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
