@@ -791,7 +791,7 @@ function Scanner() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold gold-text">Scan filters</h3>
+              <h2 className="text-sm font-semibold gold-text">Scan filters</h2>
               <div className="flex gap-1">
                 <button
                   onClick={() => setFilters(new Set(CATEGORY_FILTERS.map((c) => c.key)))}
@@ -1247,7 +1247,7 @@ function Scanner() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold gold-text">Which address is this?</h3>
+                <h2 className="text-lg font-semibold gold-text">Which address is this?</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   You scanned a door. Enter the address to look it up on the web.
                 </p>
@@ -1310,7 +1310,7 @@ function Scanner() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold gold-text">Who is this person?</h3>
+                <h2 className="text-lg font-semibold gold-text">Who is this person?</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Type their name — we’ll pull together a quick public summary.
                 </p>
@@ -1375,7 +1375,7 @@ function Scanner() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold gold-text">{personResult.name}</h3>
+                <h2 className="text-lg font-semibold gold-text">{personResult.name}</h2>
                 {personResult.info.occupation && (
                   <p className="text-xs text-muted-foreground">
                     {personResult.info.occupation}
@@ -1522,7 +1522,7 @@ function DetailPanel({
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold gold-text">{name}</h3>
+            <h2 className="text-lg font-semibold gold-text">{name}</h2>
             {enrichment ? (
               <p className="text-xs capitalize text-muted-foreground">
                 {enrichment.category}
