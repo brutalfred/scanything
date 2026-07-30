@@ -6,13 +6,16 @@ export const Route = createFileRoute("/refund-policy")({
       { title: "Refund Policy — Scanything" },
       {
         name: "description",
-        content: "Refund policy for Scanything credit purchases.",
+        content:
+          "Scanything offers a 30-day money-back guarantee on scan credit purchases. Learn how to request a refund through Paddle and how long refunds take.",
       },
       { property: "og:title", content: "Refund Policy — Scanything" },
       {
         property: "og:description",
-        content: "Refund policy for Scanything credit purchases.",
+        content:
+          "A 30-day money-back guarantee on Scanything scan credits, plus how to request a refund and when it arrives.",
       },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
