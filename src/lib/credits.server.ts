@@ -63,12 +63,15 @@ export function getRequestUserId(): string | null {
 
 export async function withCredits<T>(reason: CreditReason, fn: () => Promise<T>): Promise<T> {
   const token = getBearerToken();
-  if (!token) return fn();
+  const userId = token ? getUserIdFromToken(token) : null;
+  // Every AI call must be attributable to a signed-in account and charged.
+  if (!token || !userId) throw new Error("Unauthorized");
 
   const amount = CREDIT_COSTS[reason];
-  const supabase = createUserClient(token);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { error } = await supabase.rpc("spend_credits", {
+  const { error } = await supabaseAdmin.rpc("spend_credits_for", {
+    _user_id: userId,
     _amount: amount,
     _reason: reason,
     _metadata: {},
@@ -85,15 +88,12 @@ export async function withCredits<T>(reason: CreditReason, fn: () => Promise<T>)
     return await fn();
   } catch (err) {
     // Failed AI calls are free — refund through the backend-only refund path.
-    const userId = getUserIdFromToken(token);
-    if (userId) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.rpc("refund_credits_for", {
-        _user_id: userId,
-        _amount: amount,
-        _reason: `refund:${reason}`,
-      });
-    }
+    await supabaseAdmin.rpc("refund_credits_for", {
+      _user_id: userId,
+      _amount: amount,
+      _reason: `refund:${reason}`,
+    });
     throw err;
   }
 }
+
