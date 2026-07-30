@@ -2001,9 +2001,11 @@ function PhotoItemCard({
       >
         <div className="text-sm font-medium">{item.name}</div>
         <div className="text-xs text-muted-foreground capitalize">{item.category}</div>
-        <div className="mt-1 text-xs font-medium text-primary">
-          ${item.priceMin}–${item.priceMax}
-        </div>
+        {item.category !== "person" && (
+          <div className="mt-1 text-xs font-medium text-primary">
+            ${item.priceMin}–${item.priceMax}
+          </div>
+        )}
       </button>
       <button
         onClick={onBlock}
