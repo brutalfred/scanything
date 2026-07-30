@@ -994,7 +994,7 @@ function Scanner() {
                       >
                         <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
                           {it.name}
-                          {it.enrichment && (
+                          {it.enrichment && it.enrichment.category !== "person" && (
                             <span className="ml-1 opacity-90">
                               ${it.enrichment.priceMin}–${it.enrichment.priceMax}
                             </span>
@@ -1763,18 +1763,20 @@ function DetailPanel({
           <>
             <p className="mt-3 text-sm leading-relaxed">{enrichment.description}</p>
 
-            <div className="mt-4 rounded-lg bg-secondary p-3">
-              <div className="text-xs font-medium text-muted-foreground">
-                Estimated price range
+            {enrichment.category !== "person" && (
+              <div className="mt-4 rounded-lg bg-secondary p-3">
+                <div className="text-xs font-medium text-muted-foreground">
+                  Estimated price range
+                </div>
+                <div className="text-xl font-semibold text-foreground">
+                  ${enrichment.priceMin}
+                  <span className="text-muted-foreground"> – </span>${enrichment.priceMax}
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    {enrichment.currency}
+                  </span>
+                </div>
               </div>
-              <div className="text-xl font-semibold text-foreground">
-                ${enrichment.priceMin}
-                <span className="text-muted-foreground"> – </span>${enrichment.priceMax}
-                <span className="ml-1 text-xs text-muted-foreground">
-                  {enrichment.currency}
-                </span>
-              </div>
-            </div>
+            )}
 
             <div className="mt-4 flex flex-col gap-2">
               <a
@@ -1853,7 +1855,7 @@ function DetailPanel({
                 {deep.description && (
                   <p className="mt-1 text-sm leading-relaxed">{deep.description}</p>
                 )}
-                {(deep.priceMin > 0 || deep.priceMax > 0) && (
+                {enrichment && enrichment.category !== "person" && (deep.priceMin > 0 || deep.priceMax > 0) && (
                   <div className="mt-2 text-sm font-medium text-primary">
                     ${deep.priceMin}–${deep.priceMax} {deep.currency}
                   </div>
@@ -1960,10 +1962,12 @@ function TrackedRow({
             <div className="text-[11px] text-muted-foreground">analyzing…</div>
           )}
         </div>
-        {item.enrichment ? (
+        {item.enrichment && item.enrichment.category !== "person" ? (
           <div className="shrink-0 text-xs font-semibold text-primary">
             ${item.enrichment.priceMin}–${item.enrichment.priceMax}
           </div>
+        ) : item.enrichment ? (
+          <div className="shrink-0 text-xs font-semibold text-muted-foreground">Person</div>
         ) : (
           <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
         )}
@@ -1997,9 +2001,11 @@ function PhotoItemCard({
       >
         <div className="text-sm font-medium">{item.name}</div>
         <div className="text-xs text-muted-foreground capitalize">{item.category}</div>
-        <div className="mt-1 text-xs font-medium text-primary">
-          ${item.priceMin}–${item.priceMax}
-        </div>
+        {item.category !== "person" && (
+          <div className="mt-1 text-xs font-medium text-primary">
+            ${item.priceMin}–${item.priceMax}
+          </div>
+        )}
       </button>
       <button
         onClick={onBlock}
