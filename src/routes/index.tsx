@@ -1173,8 +1173,14 @@ function Scanner() {
         {snapshot && (
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
-              <div {...photoZoom.handlers} className="relative">
-                <div style={photoZoom.transformStyle}>
+              <div {...photoZoom.handlers} className="relative overflow-hidden">
+                <div
+                  className="relative w-full origin-center"
+                  style={{
+                    transform: `scale(${photoZoom.scale})`,
+                    transition: photoZoom.pinching ? "none" : "transform 200ms ease-out",
+                  }}
+                >
                   <img
                     src={snapshot}
                     alt="Captured room"
@@ -1205,7 +1211,7 @@ function Scanner() {
                 </div>
               </div>
               {phase === "analyzing" && (
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 text-white">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-background/80 p-3 text-foreground backdrop-blur-sm">
                   <Loader2 className="h-8 w-8 animate-spin" />
                   <p className="text-sm">Analyzing room…</p>
                 </div>
@@ -1244,7 +1250,7 @@ function Scanner() {
                     </button>
                   </div>
                   <span className="text-[11px] text-muted-foreground">
-                    {visibleItems.length} · tap to explore, hold 2s to save
+                    {visibleItems.length} · tap to explore
                   </span>
                 </div>
                 {listTab === "items" ? (
