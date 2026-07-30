@@ -366,7 +366,7 @@ function Scanner() {
   }, [torchOn]);
 
   useEffect(() => {
-    if (phase !== "camera") return;
+    if (phase !== "camera" || snapshot) return;
     let cancelled = false;
     let timer: number | null = null;
 
@@ -385,7 +385,7 @@ function Scanner() {
       stopCamera();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+  }, [phase, snapshot]);
 
 
   const grabFrame = useCallback((maxDim = 1024, quality = 0.8): string | null => {
@@ -409,6 +409,11 @@ function Scanner() {
     const dataUrl = grabFrame(1024, 0.8);
     if (!dataUrl) return;
     setSnapshot(dataUrl);
+    try {
+      sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
+    } catch {
+      /* storage full — keep the in-memory view */
+    }
     stopCamera();
     setPhase("analyzing");
     setError(null);
@@ -848,7 +853,7 @@ function Scanner() {
               </button>
             )}
 
-            {phase === "results" && (
+            {snapshot && (
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 New scan
@@ -922,7 +927,7 @@ function Scanner() {
       )}
 
       <main className="mx-auto max-w-4xl px-4 py-4">
-        {phase === "camera" && (
+        {phase === "camera" && !snapshot && (
           <div className="space-y-3">
             {/* Mode toggle */}
             <div className="flex items-center justify-center gap-2">
@@ -1163,7 +1168,7 @@ function Scanner() {
           </div>
         )}
 
-        {(phase === "analyzing" || phase === "results") && snapshot && (
+        {snapshot && (
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
               <div {...photoZoom.handlers} className="relative">
