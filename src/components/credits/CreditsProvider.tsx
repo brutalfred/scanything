@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import { toast } from "sonner";
 import { useCredits, type CreditsApi } from "@/hooks/useCredits";
 import { CreditsSheet } from "./CreditsSheet";
+import { WelcomeInfoModal } from "@/components/WelcomeInfoModal";
 import { CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 
 type CreditsContextValue = CreditsApi & {
@@ -69,6 +70,7 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
         </div>
       )}
       {children}
+      <WelcomeInfoModal signedIn={credits.signedIn} userId={credits.userId} />
       {open && <CreditsSheet credits={credits} onClose={() => setOpen(false)} />}
     </Ctx.Provider>
   );
