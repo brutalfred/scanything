@@ -413,3 +413,56 @@ export const personInfo = createServerFn({ method: "POST" })
       wikipediaUrl: String(parsed.wikipediaUrl ?? ""),
     };
   });
+
+const PersonSearchInput = z.object({
+  name: z.string().min(1).max(120),
+  location: z.string().max(160).optional().default(""),
+});
+
+export type PersonMatch = {
+  name: string;
+  occupation: string;
+  location: string;
+  nationality: string;
+  summary: string;
+  bullets: string[];
+  wikipediaUrl: string;
+};
+
+export type PersonSearchResult = { matches: PersonMatch[] };
+
+const PERSON_SEARCH_SYSTEM = `You identify publicly-known people matching a given name (and optional location) using widely-known public information only. Never invent facts and never include private/personal data about non-public individuals.
+If several public people share the name, list each as a separate match (max 6), most likely first. If a location is given, prioritize matches connected to that place. If nobody public matches, return an empty list.
+Respond ONLY with compact JSON:
+{"matches":[{"name":"full name","occupation":"","location":"city/country most associated with, else empty","nationality":"","summary":"2-4 neutral sentences","bullets":["short public fact","..."],"wikipediaUrl":"https://en.wikipedia.org/wiki/<topic> if plausible else empty"}]}`;
+
+export const personSearch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => PersonSearchInput.parse(data))
+  .handler(async ({ data, context }): Promise<PersonSearchResult> => {
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits("person_info", context.userId, () =>
+      callGateway("person_search", {
+        model: "google/gemini-2.5-pro",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: PERSON_SEARCH_SYSTEM },
+          {
+            role: "user",
+            content: `Name: ${data.name}\nLocation: ${data.location || "(not provided)"}\nList all publicly-known people matching. JSON only.`,
+          },
+        ],
+      }),
+    );
+    const parsed = safeParse<{ matches?: Partial<PersonMatch>[] }>(content, {});
+    const matches = (parsed.matches ?? []).slice(0, 6).map((m) => ({
+      name: String(m.name ?? data.name),
+      occupation: String(m.occupation ?? ""),
+      location: String(m.location ?? ""),
+      nationality: String(m.nationality ?? ""),
+      summary: String(m.summary ?? ""),
+      bullets: Array.isArray(m.bullets) ? m.bullets.map(String).slice(0, 10) : [],
+      wikipediaUrl: String(m.wikipediaUrl ?? ""),
+    }));
+    return { matches };
+  });
