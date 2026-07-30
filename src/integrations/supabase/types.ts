@@ -181,8 +181,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      claim_signup_grant: {
-        Args: { _device_hash: string }
+      claim_signup_grant_for: {
+        Args: { _device_hash: string; _user_id: string }
         Returns: {
           balance: number
           status: string
@@ -204,8 +204,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      get_credit_state: {
-        Args: never
+      get_credit_state_for: {
+        Args: { _user_id: string }
         Returns: {
           balance: number
           last_daily_grant_at: string
@@ -230,16 +230,17 @@ export type Database = {
         }
         Returns: boolean
       }
-      refund_credits: {
-        Args: { _amount: number; _reason: string }
-        Returns: number
-      }
       refund_credits_for: {
         Args: { _amount: number; _reason: string; _user_id: string }
         Returns: number
       }
-      spend_credits: {
-        Args: { _amount: number; _metadata?: Json; _reason: string }
+      spend_credits_for: {
+        Args: {
+          _amount: number
+          _metadata?: Json
+          _reason: string
+          _user_id: string
+        }
         Returns: number
       }
     }

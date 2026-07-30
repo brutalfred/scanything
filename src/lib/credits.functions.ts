@@ -19,11 +19,15 @@ export const getCreditState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CreditState> => {
     const { supabase, userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data, error } = await supabase.rpc("get_credit_state");
+    const { data, error } = await supabaseAdmin.rpc("get_credit_state_for", {
+      _user_id: userId,
+    });
     if (error) throw new Error(error.message);
 
     const row = Array.isArray(data) ? data[0] : data;
+
 
     const { data: ledger } = await supabase
       .from("credit_ledger")
@@ -67,7 +71,9 @@ export const claimSignupGrant = createServerFn({ method: "POST" })
       return { status: "blocked_email", balance: 0 };
     }
 
-    const { data: rpcData, error } = await context.supabase.rpc("claim_signup_grant", {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rpcData, error } = await supabaseAdmin.rpc("claim_signup_grant_for", {
+      _user_id: context.userId,
       _device_hash: data.deviceHash,
     });
     if (error) throw new Error(error.message);
