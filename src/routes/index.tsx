@@ -994,7 +994,7 @@ function Scanner() {
                       >
                         <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
                           {it.name}
-                          {it.enrichment && (
+                          {it.enrichment && it.enrichment.category !== "person" && (
                             <span className="ml-1 opacity-90">
                               ${it.enrichment.priceMin}–${it.enrichment.priceMax}
                             </span>
