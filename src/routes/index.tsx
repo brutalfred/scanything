@@ -208,6 +208,22 @@ function Scanner() {
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
+
+  // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(LAST_SCAN_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { snapshot: string; items: DetectedItem[] };
+      if (!saved?.snapshot) return;
+      setSnapshot(saved.snapshot);
+      setItems(Array.isArray(saved.items) ? saved.items : []);
+      setPhase("results");
+    } catch {
+      /* ignore corrupt cache */
+    }
+  }, []);
+
   const [selected, setSelected] = useState<TrackedItem | DetectedItem | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
