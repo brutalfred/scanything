@@ -2,13 +2,14 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
+import { Download, LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
 import { THEMES } from "@/lib/theme";
 import { useTheme } from "@/hooks/useTheme";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 
 export function AccountButton({
@@ -24,6 +25,25 @@ export function AccountButton({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
+  const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
+
+  async function handleInstall() {
+    if (installed) {
+      toast.info("Scanything is already installed on this device");
+      return;
+    }
+    const outcome = await promptInstall();
+    if (outcome === "unavailable") {
+      toast.info(
+        isIos
+          ? "On iPhone/iPad: tap the Share button in Safari, then \"Add to Home Screen\"."
+          : "In your browser menu choose \"Install app\" or \"Add to Home screen\" to add Scanything.",
+        { duration: 8000 },
+      );
+    } else if (outcome === "accepted") {
+      toast.success("Scanything added to your device");
+    }
+  }
 
 
   const stats = useQuery({
@@ -135,6 +155,15 @@ export function AccountButton({
               </div>
             </div>
 
+
+            <button
+              type="button"
+              onClick={handleInstall}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
+            >
+              <Download className="h-4 w-4" />
+              {installed ? "App installed" : canInstall ? "Install app" : "Add to desktop / home screen"}
+            </button>
 
             {admin.data === true && (
               <Link
