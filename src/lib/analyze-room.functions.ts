@@ -59,6 +59,7 @@ For each object, respond with a compact JSON object matching:
       "currency": "USD",
       "searchUrl": "https://www.google.com/search?q=<url-encoded query to buy the item>",
       "infoUrl": "https://en.wikipedia.org/wiki/<topic>  OR a relevant homepage/wikipedia URL",
+      "confidence": integer 0-100 — how certain you are that this identification is correct,
       "box": { "x": 0..1, "y": 0..1, "w": 0..1, "h": 0..1 }
     }
   ]
@@ -78,15 +79,17 @@ IGNORE walls, wall paint, floor, ceiling, beams, pillars, concrete, tiles, carpe
 Use the shortest possible common name (1-2 words: "TV", "Bed", "Lamp", "Chair", "Plant", "Door"). For non-Latin text, use the actual characters.
 
 Respond with ONLY compact JSON:
-{"items":[{"name":"TV","box":{"x":0.2,"y":0.3,"w":0.4,"h":0.3}}]}
+{"items":[{"name":"TV","confidence":88,"box":{"x":0.2,"y":0.3,"w":0.4,"h":0.3}}]}
+
+confidence is an integer 0-100 for how sure you are about the name.
 
 box is normalized image coords (top-left origin). Be tight around the object. Max 10 items. NO markdown, NO extra text. Be fast.`;
 
 const ENRICH_SYSTEM = `You are giving quick shopping info for a single household item. Respond ONLY with compact JSON:
-{"category":"furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|other","description":"1-2 sentence plain description","priceMin":<usd number>,"priceMax":<usd number>,"currency":"USD","searchUrl":"https://www.google.com/search?q=<url-encoded>","infoUrl":"https://en.wikipedia.org/wiki/<topic> or relevant homepage"}`;
+{"category":"furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|other","description":"1-2 sentence plain description","priceMin":<usd number>,"priceMax":<usd number>,"currency":"USD","searchUrl":"https://www.google.com/search?q=<url-encoded>","infoUrl":"https://en.wikipedia.org/wiki/<topic> or relevant homepage","confidence":<integer 0-100 certainty of the identification>}`;
 
 const DEEP_SYSTEM = `You are a product identification expert. Given a photo (or crop) of a single item and a rough name, do your best to identify the EXACT product: guess brand, model, materials, generation/year if possible. Give a refined price range in USD based on that specific guess. Respond ONLY with compact JSON:
-{"brand":"best-guess brand or empty","product":"best-guess specific product name or empty","confidence":"low|medium|high","description":"2-4 sentences with concrete details (materials, features, distinguishing marks)","priceMin":<usd>,"priceMax":<usd>,"currency":"USD","buyUrl":"https://www.google.com/search?q=<url-encoded specific product query>","infoUrl":"https://www.google.com/search?q=<url-encoded review/spec query>"}`;
+{"brand":"best-guess brand or empty","product":"best-guess specific product name or empty","confidence":<integer 0-100 certainty of this exact product identification>,"description":"2-4 sentences with concrete details (materials, features, distinguishing marks)","priceMin":<usd>,"priceMax":<usd>,"currency":"USD","buyUrl":"https://www.google.com/search?q=<url-encoded specific product query>","infoUrl":"https://www.google.com/search?q=<url-encoded review/spec query>"}`;
 
 const TRANSLATE_SYSTEM = `You translate short pieces of text (signs, logos, labels) into English. Respond ONLY with compact JSON:
 {"language":"detected language name in English (e.g. 'Japanese', 'Arabic') or 'Unknown'","languageCode":"ISO 639-1 code if known, else empty","script":"script name (e.g. 'Han', 'Arabic', 'Cyrillic') or empty","translation":"best English translation, or empty if you truly cannot translate","transliteration":"Latin-alphabet phonetic reading if applicable, else empty","note":"short note on ambiguity if any, else empty"}`;
@@ -199,6 +202,7 @@ export const quickScan = createServerFn({ method: "POST" })
       .slice(0, 10)
       .map((it) => ({
         name: String(it.name ?? "Object").trim(),
+        confidence: clampPct(it.confidence),
         box: {
           x: clamp01(it.box.x),
           y: clamp01(it.box.y),
@@ -251,6 +255,7 @@ export const enrichItem = createServerFn({ method: "POST" })
       infoUrl:
         parsed.infoUrl ||
         `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(data.name)}`,
+      confidence: clampPct(parsed.confidence),
     };
   });
 
@@ -268,6 +273,7 @@ function normalizeFull(it: DetectedItem): DetectedItem {
     infoUrl:
       it.infoUrl ||
       `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(String(it.name ?? ""))}`,
+    confidence: clampPct(it.confidence),
     box: {
       x: clamp01(it.box.x),
       y: clamp01(it.box.y),
@@ -275,6 +281,12 @@ function normalizeFull(it: DetectedItem): DetectedItem {
       h: clamp01(it.box.h),
     },
   };
+}
+
+function clampPct(n: unknown) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return 70;
+  return Math.max(0, Math.min(100, Math.round(v <= 1 ? v * 100 : v)));
 }
 
 function clamp01(n: number) {
@@ -290,7 +302,7 @@ const DeepInput = z.object({
 export type DeepAnalysis = {
   brand: string;
   product: string;
-  confidence: "low" | "medium" | "high";
+  confidence: number; // 0..100
   description: string;
   priceMin: number;
   priceMax: number;
@@ -328,7 +340,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
     return {
       brand: String(parsed.brand ?? ""),
       product: String(parsed.product ?? ""),
-      confidence: (parsed.confidence as DeepAnalysis["confidence"]) ?? "low",
+      confidence: clampPct(parsed.confidence),
       description: String(parsed.description ?? ""),
       priceMin: Number(parsed.priceMin ?? 0),
       priceMax: Number(parsed.priceMax ?? 0),
