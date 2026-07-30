@@ -75,6 +75,7 @@ type TrackedItem = {
   id: string;
   name: string;
   box: Box;
+  confidence?: number; // 0..100 from the quick scan
   enrichment?: Enrichment;
   enriching?: boolean;
   firstSeen: number;
@@ -512,11 +513,13 @@ function Scanner() {
           usedIdx.add(bestIdx);
           next[bestIdx].box = det.box;
           next[bestIdx].lastSeen = now;
+          if (typeof det.confidence === "number") next[bestIdx].confidence = det.confidence;
         } else {
           next.push({
             id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
             name: det.name,
             box: det.box,
+            confidence: det.confidence,
             firstSeen: now,
             lastSeen: now,
           });
@@ -1029,6 +1032,9 @@ function Scanner() {
                       >
                         <span className="absolute -top-4 left-0 max-w-full truncate rounded bg-emerald-500 px-1 py-[1px] text-[9px] font-medium leading-tight text-white shadow">
                           {it.name}
+                          {typeof it.confidence === "number" && (
+                            <span className="ml-1 opacity-80">{Math.round(it.confidence)}%</span>
+                          )}
                           {it.enrichment && it.enrichment.category !== "person" && (
                             <span className="ml-1 opacity-90">
                               ${it.enrichment.priceMin}–${it.enrichment.priceMax}
@@ -1240,6 +1246,9 @@ function Scanner() {
                       >
                         <span className="absolute -top-6 left-0 max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
                           {it.name}
+                          {typeof it.confidence === "number" && (
+                            <span className="ml-1 opacity-80">{Math.round(it.confidence)}%</span>
+                          )}
                         </span>
                       </button>
                     ))}
@@ -1725,6 +1734,7 @@ function DetailPanel({
         currency: item.currency,
         searchUrl: item.searchUrl,
         infoUrl: item.infoUrl,
+        confidence: item.confidence,
       };
 
   const panelCredits = useCreditsContext();
@@ -1782,7 +1792,12 @@ function DetailPanel({
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold gold-text">{name}</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-semibold gold-text">{name}</h2>
+              <ConfidenceBadge
+                value={isTracked(item) ? (item.confidence ?? item.enrichment?.confidence) : item.confidence}
+              />
+            </div>
             {enrichment ? (
               <p className="text-xs capitalize text-muted-foreground">
                 {enrichment.category}
@@ -1888,7 +1903,7 @@ function DetailPanel({
             {deep && (
               <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                  Deep analysis · {deep.confidence} confidence
+                  Deep analysis · {Math.round(deep.confidence)}% confidence
                 </div>
                 <div className="mt-1 text-sm font-semibold">
                   {[deep.brand, deep.product].filter(Boolean).join(" — ") || "Best guess"}
@@ -1994,7 +2009,10 @@ function TrackedRow({
         className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
       >
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium">{item.name}</div>
+          <div className="flex items-center gap-1.5">
+            <div className="truncate text-sm font-medium">{item.name}</div>
+            <ConfidenceBadge value={item.confidence} />
+          </div>
           {item.enrichment ? (
             <div className="truncate text-[11px] capitalize text-muted-foreground">
               {item.enrichment.category}
@@ -2040,7 +2058,10 @@ function PhotoItemCard({
         onClick={onOpen}
         className="block w-full rounded-lg p-3 pr-8 text-left transition-colors hover:bg-accent"
       >
-        <div className="text-sm font-medium">{item.name}</div>
+        <div className="flex items-center gap-1.5">
+          <div className="text-sm font-medium">{item.name}</div>
+          <ConfidenceBadge value={item.confidence} />
+        </div>
         <div className="text-xs text-muted-foreground capitalize">{item.category}</div>
         {item.category !== "person" && (
           <div className="mt-1 text-xs font-medium text-primary">
@@ -2060,3 +2081,22 @@ function PhotoItemCard({
   );
 }
 
+
+function ConfidenceBadge({ value, className = "" }: { value?: number; className?: string }) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  const tone =
+    v >= 75
+      ? "border-primary/50 bg-primary/15 text-primary"
+      : v >= 50
+        ? "border-border bg-secondary text-foreground"
+        : "border-destructive/40 bg-destructive/10 text-destructive";
+  return (
+    <span
+      title={`AI confidence: ${v}%`}
+      className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-[1px] text-[10px] font-semibold leading-none tabular-nums ${tone} ${className}`}
+    >
+      {v}%
+    </span>
+  );
+}
