@@ -376,6 +376,8 @@ export const translateText = createServerFn({ method: "POST" })
 
 const PersonInput = z.object({ name: z.string().min(1).max(120) });
 
+export type WebSource = { title: string; url: string };
+
 export type PersonInfo = {
   known: boolean;
   summary: string;
@@ -383,7 +385,9 @@ export type PersonInfo = {
   occupation: string;
   nationality: string;
   wikipediaUrl: string;
+  sources?: WebSource[];
 };
+
 
 export const personInfo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
