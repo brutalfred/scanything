@@ -204,9 +204,9 @@ function Index() {
 
 function Scanner() {
   const credits = useCreditsContext();
-  const { play } = useSounds();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
 
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
