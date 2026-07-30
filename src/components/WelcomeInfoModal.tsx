@@ -46,7 +46,7 @@ export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; user
             In Videomode, the credits will burn fast.
           </li>
           <li>
-            My intention with this app is to help people identify items with ease, price estimations and having fun. I hope you find this app helpful. Enjoy!
+            This app is created to help people identify items, animals, plants etc with ease, price estimations, translations and having fun. I hope you find this app helpful. Enjoy!
           </li>
           <li>
             Contact:{" "}
