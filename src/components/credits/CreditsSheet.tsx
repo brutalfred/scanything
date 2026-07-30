@@ -108,6 +108,15 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           ))}
         </div>
 
+        <div className="mb-5 text-right">
+          <Link
+            to="/pricing"
+            className="text-xs font-medium text-primary underline hover:text-primary/80"
+          >
+            View full pricing page
+          </Link>
+        </div>
+
         {credits.signedIn && (
           <p className="mb-5 text-xs text-muted-foreground">
             Credits never expire. Top up any time.
