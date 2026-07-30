@@ -1508,6 +1508,8 @@ function Scanner() {
                         occupation: m.occupation,
                         nationality: [m.nationality, m.location].filter(Boolean).join(" · "),
                         wikipediaUrl: m.wikipediaUrl,
+                        sources: m.sources,
+
                       },
                     })
                   }
