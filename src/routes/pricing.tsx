@@ -18,9 +18,34 @@ export const Route = createFileRoute("/pricing")({
         content: "Simple pay-per-scan credit packs for Scanything.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://scanything.app/pricing" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://scanything.app/pricing" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: "Scanything scan credits",
+          description:
+            "Prepaid credit packs used for AI photo scans, live video scans, translation and deeper item analysis in Scanything.",
+          brand: { "@type": "Brand", name: "Scanything" },
+          url: "https://scanything.app/pricing",
+          offers: CREDIT_PACKS.map((pack) => ({
+            "@type": "Offer",
+            name: `${pack.label} — ${pack.credits} credits`,
+            price: pack.priceLabel.replace("$", ""),
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url: "https://scanything.app/pricing",
+          })),
+        }),
+      },
+    ],
   }),
+
   component: PricingPage,
 });
 
