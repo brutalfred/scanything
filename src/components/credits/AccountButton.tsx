@@ -10,6 +10,7 @@ import { getIsAdmin } from "@/lib/admin.functions";
 import { THEMES } from "@/lib/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { DailyCheckin } from "./DailyCheckin";
 
 
 export function AccountButton({
@@ -127,6 +128,8 @@ export function AccountButton({
               </div>
 
             </dl>
+
+            <DailyCheckin enabled={signedIn && open} />
 
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>

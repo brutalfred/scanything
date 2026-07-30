@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      checkin_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          last_checkin_date: string | null
+          longest_streak: number
+          total_rewards: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          last_checkin_date?: string | null
+          longest_streak?: number
+          total_rewards?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          last_checkin_date?: string | null
+          longest_streak?: number
+          total_rewards?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_accounts: {
         Row: {
           balance: number
@@ -181,6 +211,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_daily_checkin_for: {
+        Args: { _user_id: string }
+        Returns: {
+          balance: number
+          current_streak: number
+          rewarded: number
+          status: string
+        }[]
+      }
       claim_signup_grant_for: {
         Args: { _device_hash: string; _user_id: string }
         Returns: {
@@ -203,6 +242,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_checkin_state_for: {
+        Args: { _user_id: string }
+        Returns: {
+          checked_in_today: boolean
+          current_streak: number
+          last_checkin_date: string
+          longest_streak: number
+          total_rewards: number
+        }[]
       }
       get_credit_state_for: {
         Args: { _user_id: string }
