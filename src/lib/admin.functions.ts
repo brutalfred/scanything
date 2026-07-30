@@ -14,14 +14,8 @@ export type AdminGrantEntry = {
   createdAt: string;
 };
 
-async function assertAdmin(context: { supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> }; userId: string }) {
-  const { data, error } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (error) throw new Error("Not authorized");
-  if (data !== true) throw new Error("Not authorized");
-}
+
+
 
 /** True when the signed-in caller has the admin role. */
 export const getIsAdmin = createServerFn({ method: "POST" })
