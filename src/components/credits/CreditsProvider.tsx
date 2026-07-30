@@ -70,6 +70,7 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
         </div>
       )}
       {children}
+      <WelcomeInfoModal signedIn={credits.signedIn} userId={credits.userId} />
       {open && <CreditsSheet credits={credits} onClose={() => setOpen(false)} />}
     </Ctx.Provider>
   );
