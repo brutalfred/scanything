@@ -721,15 +721,17 @@ function Scanner() {
               balance={credits.balance}
             />
           </div>
-          <div className="flex min-w-0 flex-1 items-center justify-center select-none">
+          <h1 className="flex min-w-0 flex-1 items-center justify-center select-none">
+            <span className="sr-only">Scanything — AI camera room analyzer</span>
             <img
               src={logoAsset.url}
-              alt="Scanything"
+              alt="Scanything logo"
               className="h-20 w-full object-contain sm:h-[100px]"
               width={1024}
               height={512}
             />
-          </div>
+          </h1>
+
           <div className="flex flex-shrink-0 items-center justify-end gap-2">
             <CreditMeter
               balance={credits.balance}
