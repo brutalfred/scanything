@@ -2,10 +2,11 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogIn, LogOut, User2, X } from "lucide-react";
+import { LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
+import { getIsAdmin } from "@/lib/admin.functions";
 import { THEMES } from "@/lib/theme";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -30,6 +31,14 @@ export function AccountButton({
     queryFn: () => getAccountStats(),
     enabled: signedIn && open,
     staleTime: 15_000,
+  });
+
+  const admin = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: () => getIsAdmin(),
+    enabled: signedIn && open,
+    retry: false,
+    staleTime: 5 * 60_000,
   });
 
   async function signOut() {
@@ -126,6 +135,17 @@ export function AccountButton({
               </div>
             </div>
 
+
+            {admin.data === true && (
+              <Link
+                to="/admin"
+                onClick={() => setOpen(false)}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
 
             <button
               type="button"

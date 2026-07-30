@@ -1,0 +1,114 @@
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+export type AdminGrantResult = {
+  email: string;
+  credits: number;
+  balance: number;
+};
+
+export type AdminGrantEntry = {
+  id: string;
+  email: string;
+  delta: number;
+  createdAt: string;
+};
+
+
+
+
+/** True when the signed-in caller has the admin role. */
+export const getIsAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<boolean> => {
+    const { data } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    return data === true;
+  });
+
+/** Admin-only: add credits to any account, found by email. */
+export const adminGrantCredits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { email: string; amount: number }) => {
+    const email = typeof input?.email === "string" ? input.email.trim().toLowerCase() : "";
+    const amount = Number(input?.amount);
+    if (!email || email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error("Enter a valid email address");
+    }
+    if (!Number.isInteger(amount) || amount < 1 || amount > 100000) {
+      throw new Error("Amount must be a whole number between 1 and 100000");
+    }
+    return { email, amount };
+  })
+  .handler(async ({ data, context }): Promise<AdminGrantResult> => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (isAdmin !== true) throw new Error("Not authorized");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Find the target account by email.
+    let targetId: string | null = null;
+    for (let page = 1; page <= 20 && !targetId; page++) {
+      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 200,
+      });
+      if (error) throw new Error(error.message);
+      const match = list.users.find((u) => (u.email ?? "").toLowerCase() === data.email);
+      if (match) targetId = match.id;
+      if (list.users.length < 200) break;
+    }
+
+    if (!targetId) throw new Error(`No account found for ${data.email}`);
+
+    const { data: balance, error: grantError } = await supabaseAdmin.rpc("grant_credits", {
+      _user_id: targetId,
+      _amount: data.amount,
+      _reason: "admin_grant",
+    });
+    if (grantError) throw new Error(grantError.message);
+
+    return { email: data.email, credits: data.amount, balance: Number(balance ?? 0) };
+  });
+
+/** Admin-only: the most recent admin credit grants. */
+export const getAdminGrants = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminGrantEntry[]> => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (isAdmin !== true) throw new Error("Not authorized");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("credit_ledger")
+      .select("id, user_id, delta, created_at")
+      .eq("reason", "admin_grant")
+      .order("created_at", { ascending: false })
+      .limit(15);
+    if (error) throw new Error(error.message);
+
+    const entries = rows ?? [];
+    const emails = new Map<string, string>();
+    await Promise.all(
+      [...new Set(entries.map((r) => r.user_id))].map(async (id) => {
+        const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
+        if (u?.user?.email) emails.set(id, u.user.email);
+      }),
+    );
+
+    return entries.map((r) => ({
+      id: r.id,
+      email: emails.get(r.user_id) ?? "unknown",
+      delta: r.delta,
+      createdAt: r.created_at,
+    }));
+  });
