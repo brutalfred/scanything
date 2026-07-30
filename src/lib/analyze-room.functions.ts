@@ -15,13 +15,16 @@ export type DetectedItem = {
   currency: string;
   searchUrl: string;
   infoUrl: string;
+  confidence: number; // 0..100
   box: { x: number; y: number; w: number; h: number }; // 0..1 normalized (top-left)
 };
 
 export type QuickItem = {
   name: string;
+  confidence: number; // 0..100
   box: { x: number; y: number; w: number; h: number };
 };
+
 
 export type AnalyzeResult = {
   items: DetectedItem[];
