@@ -5,6 +5,15 @@ export type SoundType = "bubble" | "shutter" | "sweep";
 
 let ctx: AudioContext | null = null;
 
+export function isSoundMuted(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(MUTE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
@@ -27,6 +36,7 @@ async function resumeIfNeeded(): Promise<boolean> {
   }
   return true;
 }
+
 
 export async function playBubblePop() {
   const c = getAudioContext();
