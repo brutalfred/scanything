@@ -622,6 +622,8 @@ function Scanner() {
 
   const reset = useCallback(() => {
     void playSound("sweep");
+    trackedSoundIdsRef.current.clear();
+    photoItemsSoundPlayedRef.current = false;
     try {
       sessionStorage.removeItem(LAST_SCAN_KEY);
     } catch {
@@ -635,6 +637,7 @@ function Scanner() {
     setVideoPaused(false);
     setPhase("camera");
   }, []);
+
 
 
 
