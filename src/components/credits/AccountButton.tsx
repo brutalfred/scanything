@@ -29,7 +29,7 @@ export function AccountButton({
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
-  const { muted, toggleMute } = useSounds();
+  const { muted, volume, toggleMute, setVolume } = useSounds();
 
   async function handleInstall() {
 
