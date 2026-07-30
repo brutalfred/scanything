@@ -28,13 +28,10 @@ export function useSounds() {
     });
   }, []);
 
-  const play = useCallback(
-    (type: SoundType) => {
-      if (muted) return;
-      void playSound(type);
-    },
-    [muted],
-  );
+  const play = useCallback((type: SoundType) => {
+    void playSound(type);
+  }, []);
 
   return { muted, toggleMute, play };
 }
+
