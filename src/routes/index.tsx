@@ -1763,18 +1763,20 @@ function DetailPanel({
           <>
             <p className="mt-3 text-sm leading-relaxed">{enrichment.description}</p>
 
-            <div className="mt-4 rounded-lg bg-secondary p-3">
-              <div className="text-xs font-medium text-muted-foreground">
-                Estimated price range
+            {enrichment.category !== "person" && (
+              <div className="mt-4 rounded-lg bg-secondary p-3">
+                <div className="text-xs font-medium text-muted-foreground">
+                  Estimated price range
+                </div>
+                <div className="text-xl font-semibold text-foreground">
+                  ${enrichment.priceMin}
+                  <span className="text-muted-foreground"> – </span>${enrichment.priceMax}
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    {enrichment.currency}
+                  </span>
+                </div>
               </div>
-              <div className="text-xl font-semibold text-foreground">
-                ${enrichment.priceMin}
-                <span className="text-muted-foreground"> – </span>${enrichment.priceMax}
-                <span className="ml-1 text-xs text-muted-foreground">
-                  {enrichment.currency}
-                </span>
-              </div>
-            </div>
+            )}
 
             <div className="mt-4 flex flex-col gap-2">
               <a
