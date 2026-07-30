@@ -221,6 +221,7 @@ function Scanner() {
     }
   });
   const [filterOpen, setFilterOpen] = useState(false);
+  const [videoWarningOpen, setVideoWarningOpen] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...filters]));
@@ -861,7 +862,13 @@ function Scanner() {
                   Photo Scan
                 </button>
                 <button
-                  onClick={() => switchMode("video")}
+                  onClick={() => {
+                    if (credits.signedIn) {
+                      setVideoWarningOpen(true);
+                    } else {
+                      switchMode("video");
+                    }
+                  }}
                   className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
                     mode === "video"
                       ? "bg-primary text-primary-foreground shadow"
@@ -1434,6 +1441,43 @@ function Scanner() {
                 Google search
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video scan warning for signed-in users */}
+      {videoWarningOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setVideoWarningOpen(false)}
+        >
+          <div
+            className="gold-glow w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-bold text-primary">Warning</h2>
+            <p className="mt-3 text-sm text-foreground">
+              Warning: Videoscanning drains credits fast!
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setVideoWarningOpen(false)}
+                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+              >
+                Go back
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setVideoWarningOpen(false);
+                  switchMode("video");
+                }}
+                className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Continue
+              </button>
             </div>
           </div>
         </div>
