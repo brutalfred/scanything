@@ -414,12 +414,29 @@ function Scanner() {
     setError(null);
     try {
       const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
-      setItems(result.items.filter((it) => it.category === "person" || !isBodyPart(it.name)));
+      const detected = result.items.filter(
+        (it) => it.category === "person" || !isBodyPart(it.name),
+      );
+      setItems(detected);
       setPhase("results");
+      try {
+        sessionStorage.setItem(
+          LAST_SCAN_KEY,
+          JSON.stringify({ snapshot: dataUrl, items: detected }),
+        );
+      } catch {
+        /* storage full — keep the in-memory view */
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
       setPhase("results");
+      try {
+        sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
+      } catch {
+        /* ignore */
+      }
     }
+
   }, [grabFrame, stopCamera, credits]);
 
   const isGuest = !credits.signedIn;
