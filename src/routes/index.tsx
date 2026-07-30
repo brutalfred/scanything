@@ -862,7 +862,13 @@ function Scanner() {
                   Photo Scan
                 </button>
                 <button
-                  onClick={() => switchMode("video")}
+                  onClick={() => {
+                    if (credits.signedIn) {
+                      setVideoWarningOpen(true);
+                    } else {
+                      switchMode("video");
+                    }
+                  }}
                   className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
                     mode === "video"
                       ? "bg-primary text-primary-foreground shadow"
