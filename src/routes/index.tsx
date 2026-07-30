@@ -82,7 +82,7 @@ type TrackedItem = {
   lastSeen: number;
 };
 
-const MAX_TRACKED = 10;
+
 const STALE_MS = 6000;
 
 const CATEGORY_FILTERS: { key: string; label: string }[] = [
@@ -528,7 +528,7 @@ function Scanner() {
 
       const fresh = next.filter((t) => now - t.lastSeen < STALE_MS);
       fresh.sort((a, b) => distFromCenter(a.box) - distFromCenter(b.box));
-      return fresh.slice(0, MAX_TRACKED);
+      return fresh;
     });
   }, [isBlocked]);
 
@@ -1157,7 +1157,7 @@ function Scanner() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] text-muted-foreground">
-                        {visibleTracked.length}/{MAX_TRACKED}
+                        {visibleTracked.length}
                       </span>
                       {scanning && (
                         <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
