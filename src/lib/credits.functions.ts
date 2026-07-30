@@ -71,7 +71,9 @@ export const claimSignupGrant = createServerFn({ method: "POST" })
       return { status: "blocked_email", balance: 0 };
     }
 
-    const { data: rpcData, error } = await context.supabase.rpc("claim_signup_grant", {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rpcData, error } = await supabaseAdmin.rpc("claim_signup_grant_for", {
+      _user_id: context.userId,
       _device_hash: data.deviceHash,
     });
     if (error) throw new Error(error.message);
