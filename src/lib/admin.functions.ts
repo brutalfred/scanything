@@ -43,7 +43,11 @@ export const adminGrantCredits = createServerFn({ method: "POST" })
     return { email, amount };
   })
   .handler(async ({ data, context }): Promise<AdminGrantResult> => {
-    await assertAdmin(context);
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (isAdmin !== true) throw new Error("Not authorized");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -76,7 +80,11 @@ export const adminGrantCredits = createServerFn({ method: "POST" })
 export const getAdminGrants = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminGrantEntry[]> => {
-    await assertAdmin(context);
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (isAdmin !== true) throw new Error("Not authorized");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
