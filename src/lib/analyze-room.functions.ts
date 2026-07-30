@@ -376,6 +376,8 @@ export const translateText = createServerFn({ method: "POST" })
 
 const PersonInput = z.object({ name: z.string().min(1).max(120) });
 
+export type WebSource = { title: string; url: string };
+
 export type PersonInfo = {
   known: boolean;
   summary: string;
@@ -383,7 +385,9 @@ export type PersonInfo = {
   occupation: string;
   nationality: string;
   wikipediaUrl: string;
+  sources?: WebSource[];
 };
+
 
 export const personInfo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -427,34 +431,49 @@ export type PersonMatch = {
   summary: string;
   bullets: string[];
   wikipediaUrl: string;
+  sources: WebSource[];
 };
 
 export type PersonSearchResult = { matches: PersonMatch[] };
 
-const PERSON_SEARCH_SYSTEM = `You identify publicly-known people matching a given name (and optional location) using widely-known public information only. Never invent facts and never include private/personal data about non-public individuals.
-If several public people share the name, list each as a separate match (max 6), most likely first. If a location is given, prioritize matches connected to that place. If nobody public matches, return an empty list.
+const PERSON_SEARCH_SYSTEM = `You summarize web search results about a person. You are given the raw results of a normal web (Google-style) search.
+Base EVERY fact strictly on the provided search results — never add knowledge that is not supported by them, and never include private/sensitive data (home address, phone, email, ID numbers).
+If the results clearly describe several different people with the same name, list each as a separate match (max 6), most likely first. If a location was given, prioritize matches connected to that place. If the results contain nothing meaningful about a person, return an empty list.
+For each match, "sources" must contain 1-4 of the given result URLs that support the summary (copy the url and title exactly).
 Respond ONLY with compact JSON:
-{"matches":[{"name":"full name","occupation":"","location":"city/country most associated with, else empty","nationality":"","summary":"2-4 neutral sentences","bullets":["short public fact","..."],"wikipediaUrl":"https://en.wikipedia.org/wiki/<topic> if plausible else empty"}]}`;
+{"matches":[{"name":"full name","occupation":"","location":"city/country most associated with, else empty","nationality":"","summary":"2-4 neutral sentences","bullets":["short public fact","..."],"wikipediaUrl":"wikipedia url if present in results else empty","sources":[{"title":"","url":""}]}]}`;
 
 export const personSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => PersonSearchInput.parse(data))
   .handler(async ({ data, context }): Promise<PersonSearchResult> => {
     const { withCredits } = await import("./credits.server");
+    const { webSearch } = await import("./websearch.server");
+
+    const query = [data.name, data.location].filter(Boolean).join(" ");
+    const results = await webSearch(query, 8);
+
+    if (results.length === 0) return { matches: [] };
+
+    const resultsText = results
+      .map((r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.snippet}`)
+      .join("\n\n");
+
     const content = await withCredits("person_info", context.userId, () =>
       callGateway("person_search", {
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: PERSON_SEARCH_SYSTEM },
           {
             role: "user",
-            content: `Name: ${data.name}\nLocation: ${data.location || "(not provided)"}\nList all publicly-known people matching. JSON only.`,
+            content: `Searched for: "${query}"\nName: ${data.name}\nLocation: ${data.location || "(not provided)"}\n\nSearch results:\n${resultsText}\n\nJSON only.`,
           },
         ],
       }),
     );
     const parsed = safeParse<{ matches?: Partial<PersonMatch>[] }>(content, {});
+    const allowed = new Set(results.map((r) => r.url));
     const matches = (parsed.matches ?? []).slice(0, 6).map((m) => ({
       name: String(m.name ?? data.name),
       occupation: String(m.occupation ?? ""),
@@ -463,6 +482,11 @@ export const personSearch = createServerFn({ method: "POST" })
       summary: String(m.summary ?? ""),
       bullets: Array.isArray(m.bullets) ? m.bullets.map(String).slice(0, 10) : [],
       wikipediaUrl: String(m.wikipediaUrl ?? ""),
+      sources: (Array.isArray(m.sources) ? m.sources : [])
+        .map((s) => ({ title: String(s?.title ?? ""), url: String(s?.url ?? "") }))
+        .filter((s) => allowed.has(s.url))
+        .slice(0, 4),
     }));
     return { matches };
   });
+
