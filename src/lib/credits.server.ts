@@ -41,9 +41,11 @@ function getBearerToken(): string | null {
 /**
  * Runs `fn` behind a credit debit.
  *
- * Signed-in callers are charged server-side and refunded when the AI call fails.
- * Anonymous visitors run on the client-tracked free trial allowance.
+ * Requires a verified user id (from `requireSupabaseAuth`). There is no
+ * anonymous path: every AI call is authenticated and charged, and refunded
+ * when the AI call fails.
  */
+
 function getUserIdFromToken(token: string): string | null {
   try {
     const payload = JSON.parse(
