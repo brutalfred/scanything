@@ -99,6 +99,8 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
 ];
 const DEFAULT_FILTERS = new Set(CATEGORY_FILTERS.map((c) => c.key));
 const FILTER_STORAGE_KEY = "roomscan:filters";
+const LAST_SCAN_KEY = "scanything:last-scan";
+
 
 function normName(n: string) {
   return n.toLowerCase().trim();
@@ -208,6 +210,22 @@ function Scanner() {
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
+
+  // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(LAST_SCAN_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { snapshot: string; items: DetectedItem[] };
+      if (!saved?.snapshot) return;
+      setSnapshot(saved.snapshot);
+      setItems(Array.isArray(saved.items) ? saved.items : []);
+      setPhase("results");
+    } catch {
+      /* ignore corrupt cache */
+    }
+  }, []);
+
   const [selected, setSelected] = useState<TrackedItem | DetectedItem | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -396,12 +414,29 @@ function Scanner() {
     setError(null);
     try {
       const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
-      setItems(result.items.filter((it) => it.category === "person" || !isBodyPart(it.name)));
+      const detected = result.items.filter(
+        (it) => it.category === "person" || !isBodyPart(it.name),
+      );
+      setItems(detected);
       setPhase("results");
+      try {
+        sessionStorage.setItem(
+          LAST_SCAN_KEY,
+          JSON.stringify({ snapshot: dataUrl, items: detected }),
+        );
+      } catch {
+        /* storage full — keep the in-memory view */
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
       setPhase("results");
+      try {
+        sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
+      } catch {
+        /* ignore */
+      }
     }
+
   }, [grabFrame, stopCamera, credits]);
 
   const isGuest = !credits.signedIn;
@@ -551,6 +586,11 @@ function Scanner() {
 
 
   const reset = useCallback(() => {
+    try {
+      sessionStorage.removeItem(LAST_SCAN_KEY);
+    } catch {
+      /* ignore */
+    }
     setSnapshot(null);
     setItems([]);
     setSelected(null);
@@ -559,6 +599,7 @@ function Scanner() {
     setVideoPaused(false);
     setPhase("camera");
   }, []);
+
 
   const switchMode = useCallback((m: Mode) => {
     setMode(m);
