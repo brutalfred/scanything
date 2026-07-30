@@ -1,4 +1,7 @@
+const MUTE_STORAGE_KEY = "scanything:sounds-muted";
+
 export type SoundType = "bubble" | "shutter" | "sweep";
+
 
 let ctx: AudioContext | null = null;
 
