@@ -15,7 +15,7 @@ const JUMP_MAX_TIME = 0.75; // longest jump when fully charged
 const JUMP_CHARGE_TIME = 0.42; // hold this long for a full jump
 const JUMP_MIN_HEIGHT = 26; // px
 const JUMP_MAX_HEIGHT = 70; // px
-const HURDLE_HIT_PENALTY = 0.35; // seconds of stumble
+
 
 type Obstacle = { m: number; height: number; kind: "hurdle" | "stone" };
 
@@ -196,6 +196,7 @@ export function HurdlesGame({
     setJumpY(0);
     setHits(0);
     setFalseStart(false);
+    setCrashMsg(null);
     setStumbling(false);
     setPhase("countdown");
 
