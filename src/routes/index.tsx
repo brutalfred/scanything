@@ -666,8 +666,26 @@ function Scanner() {
 
 
   const switchMode = useCallback((m: Mode) => {
+    // Leaving a live video session: persist whatever was identified.
+    setTracked((prev) => {
+      if (m !== "video" && prev.length) {
+        void saveScanHistory({
+          data: {
+            mode: "video",
+            items: prev.map((t) => ({
+              name: t.name,
+              category: t.enrichment?.category,
+              description: t.enrichment?.description,
+              confidence: t.confidence,
+              priceMin: t.enrichment?.priceMin,
+              priceMax: t.enrichment?.priceMax,
+            })),
+          },
+        }).catch(() => {});
+      }
+      return [];
+    });
     setMode(m);
-    setTracked([]);
     setVideoPaused(false);
     setError(null);
   }, []);
