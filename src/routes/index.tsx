@@ -709,6 +709,7 @@ function Scanner() {
       const img = snapshot ?? grabFrame(1280, 0.9) ?? null;
       setSelectedImage(img);
       setSelected(item);
+      void playSound("bubble");
     },
     [openAddressSearch, snapshot],
   );
