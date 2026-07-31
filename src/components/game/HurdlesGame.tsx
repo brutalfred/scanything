@@ -8,8 +8,8 @@ import {
 } from "@/lib/sounds";
 
 const TRACK_M = 400;
-const FIRST_HURDLE_M = 13.72;
-const HURDLE_GAP_M = 9.14;
+const FIRST_HURDLE_M = 45;
+const HURDLE_GAP_M = 35;
 const HURDLE_COUNT = 10;
 const PX_PER_M = 26;
 
