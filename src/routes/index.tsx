@@ -97,6 +97,8 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
   { key: "book", label: "Books" },
   { key: "instrument", label: "Instruments" },
   { key: "door", label: "Doors" },
+  { key: "vehicle", label: "Vehicles" },
+  { key: "plate", label: "Plates" },
   { key: "text", label: "Text / Signs" },
   { key: "person", label: "People" },
   { key: "other", label: "Other" },
@@ -1037,7 +1039,7 @@ function Scanner() {
                           {typeof it.confidence === "number" && (
                             <span className="ml-1 opacity-80">{Math.round(it.confidence)}%</span>
                           )}
-                          {it.enrichment && it.enrichment.category !== "person" && (
+                          {it.enrichment && !["person", "plate"].includes(it.enrichment.category) && (
                             <span className="ml-1 opacity-90">
                               ${it.enrichment.priceMin}–${it.enrichment.priceMax}
                             </span>
@@ -1823,7 +1825,7 @@ function DetailPanel({
           <>
             <p className="mt-3 text-sm leading-relaxed">{enrichment.description}</p>
 
-            {enrichment.category !== "person" && (
+            {!["person", "plate"].includes(enrichment.category) && (
               <div className="mt-4 rounded-lg bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
                   Estimated price range
@@ -1915,7 +1917,7 @@ function DetailPanel({
                 {deep.description && (
                   <p className="mt-1 text-sm leading-relaxed">{deep.description}</p>
                 )}
-                {enrichment && enrichment.category !== "person" && (deep.priceMin > 0 || deep.priceMax > 0) && (
+                {enrichment && !["person", "plate"].includes(enrichment.category) && (deep.priceMin > 0 || deep.priceMax > 0) && (
                   <div className="mt-2 text-sm font-medium text-primary">
                     ${deep.priceMin}–${deep.priceMax} {deep.currency}
                   </div>
@@ -2025,7 +2027,7 @@ function TrackedRow({
             <div className="text-[11px] text-muted-foreground">analyzing…</div>
           )}
         </div>
-        {item.enrichment && item.enrichment.category !== "person" ? (
+        {item.enrichment && !["person", "plate"].includes(item.enrichment.category) ? (
           <div className="shrink-0 text-xs font-semibold text-primary">
             ${item.enrichment.priceMin}–${item.enrichment.priceMax}
           </div>
@@ -2067,7 +2069,7 @@ function PhotoItemCard({
           <ConfidenceBadge value={item.confidence} />
         </div>
         <div className="text-xs text-muted-foreground capitalize">{item.category}</div>
-        {item.category !== "person" && (
+        {!["person", "plate"].includes(item.category) && (
           <div className="mt-1 text-xs font-medium text-primary">
             ${item.priceMin}–${item.priceMax}
           </div>
