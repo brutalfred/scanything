@@ -112,6 +112,21 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           ))}
         </div>
 
+        <button
+          type="button"
+          disabled={!credits.signedIn}
+          onClick={() => {
+            if (!credits.signedIn) return;
+            setAdOpen(true);
+          }}
+          className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 bg-secondary/40 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+        >
+          <Play className="h-4 w-4" />
+          Watch a commercial for 1 credit
+        </button>
+
+
+
         <div className="mb-5 text-right">
           <Link
             to="/pricing"
