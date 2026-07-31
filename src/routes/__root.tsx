@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { installGlobalClickSound } from "@/lib/sounds";
+import { useNativeShell } from "@/hooks/useNativeShell";
 
 
 import appCss from "../styles.css?url";
@@ -166,6 +167,8 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useTheme();
+
+  useNativeShell();
 
   useEffect(() => installGlobalClickSound(), []);
 
