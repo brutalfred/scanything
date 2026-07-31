@@ -1716,6 +1716,66 @@ function Scanner() {
     </div>
   );
 }
+type PlateLink = { label: string; url: string };
+
+const PLATE_REGISTRIES: { match: RegExp; label: string; url: string }[] = [
+  {
+    match: /\b(uk|united kingdom|british|england|scotland|wales|northern ireland)\b/i,
+    label: "DVLA vehicle enquiry (UK)",
+    url: "https://www.gov.uk/get-vehicle-information-from-dvla",
+  },
+  {
+    match: /\b(sweden|swedish|sverige)\b/i,
+    label: "Transportstyrelsen vehicle lookup (Sweden)",
+    url: "https://fordonsfraga.transportstyrelsen.se/",
+  },
+  {
+    match: /\b(norway|norwegian)\b/i,
+    label: "Statens vegvesen vehicle lookup (Norway)",
+    url: "https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/",
+  },
+  {
+    match: /\b(netherlands|dutch)\b/i,
+    label: "RDW vehicle lookup (Netherlands)",
+    url: "https://ovi.rdw.nl/",
+  },
+  {
+    match: /\b(germany|german|deutschland)\b/i,
+    label: "Kraftfahrt-Bundesamt (Germany)",
+    url: "https://www.kba.de/",
+  },
+  {
+    match: /\b(usa|united states|american|u\.s\.|california|texas|florida|new york)\b/i,
+    label: "Find your state DMV (USA)",
+    url: "https://www.usa.gov/motor-vehicle-services",
+  },
+  {
+    match: /\b(canada|canadian|ontario|quebec)\b/i,
+    label: "Provincial vehicle registry (Canada)",
+    url: "https://www.canada.ca/en/services/transport.html",
+  },
+  {
+    match: /\b(australia|australian)\b/i,
+    label: "PPSR vehicle check (Australia)",
+    url: "https://www.ppsr.gov.au/",
+  },
+];
+
+function plateLookupLinks(plate: string, description: string): PlateLink[] {
+  const hay = `${plate} ${description}`;
+  const links: PlateLink[] = PLATE_REGISTRIES.filter((r) => r.match.test(hay)).map((r) => ({
+    label: r.label,
+    url: r.url,
+  }));
+  links.push({
+    label: "Search official registry for this plate format",
+    url: `https://www.google.com/search?q=${encodeURIComponent(
+      `official vehicle registration check ${plate} ${description.slice(0, 60)}`,
+    )}`,
+  });
+  return links;
+}
+
 
 function DetailPanel({
   item,
