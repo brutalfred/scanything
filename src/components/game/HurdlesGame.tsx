@@ -64,7 +64,7 @@ export function HurdlesGame({
 
   const [obstacles, setObstacles] = useState<Obstacle[]>(() => buildObstacles());
 
-  const holding = useRef(false);
+  const pendingTaps = useRef(0);
   const jumpStart = useRef(0);
   const jumpDuration = useRef(0);
   const jumpCharging = useRef(false);
