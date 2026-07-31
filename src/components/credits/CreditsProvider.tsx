@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useCredits, type CreditsApi } from "@/hooks/useCredits";
 import { CreditsSheet } from "./CreditsSheet";
