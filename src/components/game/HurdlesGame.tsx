@@ -141,7 +141,7 @@ export function HurdlesGame({
       if (crashedOn) {
         const kind = (crashedOn as Obstacle).kind;
         stopLoop();
-        holding.current = false;
+        pendingTaps.current = 0;
         jumpCharging.current = false;
         setDistance(dist);
         setElapsed(now - start);
@@ -190,7 +190,7 @@ export function HurdlesGame({
     jumpHeight.current = 0;
     jumpCharging.current = false;
     stumbleUntil.current = 0;
-    holding.current = false;
+    pendingTaps.current = 0;
     setDistance(0);
     setElapsed(0);
     setSpeed(0);
@@ -234,11 +234,8 @@ export function HurdlesGame({
       return;
     }
     if (phase !== "running") return;
-    holding.current = true;
-  };
-
-  const pressEnd = () => {
-    holding.current = false;
+    // each click/tap gives the runner a burst of speed — tap faster to run faster
+    pendingTaps.current += 1;
   };
 
   const jumpDown = () => {
@@ -262,11 +259,10 @@ export function HurdlesGame({
         e.preventDefault();
         if (!e.repeat) jumpDown();
       }
-      if (e.code === "ArrowRight") holding.current = true;
+      if (e.code === "ArrowRight" && phase === "running") pendingTaps.current += 1;
     };
     const up = (e: KeyboardEvent) => {
       if (e.code === "Space") jumpUp();
-      if (e.code === "ArrowRight") holding.current = false;
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -290,12 +286,9 @@ export function HurdlesGame({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Hold to run"
+        aria-label="Tap repeatedly to run"
         data-no-sound
         onPointerDown={pressStart}
-        onPointerUp={pressEnd}
-        onPointerLeave={pressEnd}
-        onPointerCancel={pressEnd}
         className="relative h-40 w-full cursor-pointer overflow-hidden rounded-xl border border-current/30 bg-current/5 touch-none"
       >
         {/* sky/ground */}
@@ -402,10 +395,10 @@ export function HurdlesGame({
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center text-xs">
             <span className="text-sm font-bold">110m Hurdles</span>
             <span className="mt-1 opacity-70">
-              Hold the track to run · hold JUMP longer to jump higher
+              Tap the track fast to run · hold JUMP longer to jump higher
             </span>
             <span className="mt-1 opacity-70">
-              Hit a hurdle or the stone and the race is over — restart.
+              Hit a hurdle or a stone and the race is over — restart.
             </span>
             {falseStart && (
               <span className="mt-1 font-semibold text-destructive">False start! Try again.</span>
