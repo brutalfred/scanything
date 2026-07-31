@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Loader2, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { claimAdReward } from "@/lib/ad-reward.functions";
+import { playSound } from "@/lib/sounds";
+
 
 const AD_SECONDS = 15;
 
@@ -29,9 +31,11 @@ export function AdRewardModal({
       if (result.status === "limit_reached") {
         toast.error(`Daily limit reached — ${result.dailyLimit} commercials per day.`);
       } else {
+        void playSound("coin");
         toast.success("+1 credit added — thanks for watching!");
         setDone(true);
       }
+
       onRewarded();
       onClose();
     } catch {

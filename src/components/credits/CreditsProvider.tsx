@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useCredits, type CreditsApi } from "@/hooks/useCredits";
 import { CreditsSheet } from "./CreditsSheet";
@@ -25,13 +25,19 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
   const credits = useCredits();
   const [open, setOpen] = useState(false);
 
-  // Arcade coin whenever the balance goes up (purchase, check-in, grant…).
-  const prevBalance = useRef<number | null>(null);
+  // Arcade coin only for reward moments (top-up, daily check-in, commercial),
+  // which each trigger the sound at their own call site. Web checkout returns
+  // here with ?checkout=success, so that top-up is handled below.
   useEffect(() => {
-    const prev = prevBalance.current;
-    prevBalance.current = credits.balance;
-    if (prev !== null && credits.balance > prev) void playSound("coin");
-  }, [credits.balance]);
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "success") return;
+    void playSound("coin");
+    params.delete("checkout");
+    const qs = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, []);
+
 
   const openSheet = useCallback(() => setOpen(true), []);
 
