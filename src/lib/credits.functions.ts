@@ -21,12 +21,26 @@ export const getCreditState = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data, error } = await supabaseAdmin.rpc("get_credit_state_for", {
-      _user_id: userId,
-    });
-    if (error) throw new Error(error.message);
+    // A freshly-minted token can be a second ahead of the database clock
+    // ("JWT issued at future"). Retry briefly instead of failing the page.
+    let row: { balance?: number | string; last_daily_grant_at?: string | null } | null = null;
+    let lastError: string | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data, error } = await supabaseAdmin.rpc("get_credit_state_for", {
+        _user_id: userId,
+      });
+      if (!error) {
+        row = (Array.isArray(data) ? data[0] : data) ?? null;
+        lastError = null;
+        break;
+      }
+      lastError = error.message;
+      if (!/issued at future|clock/i.test(error.message)) break;
+      await new Promise((r) => setTimeout(r, 700));
+    }
+    if (lastError) throw new Error(lastError);
 
-    const row = Array.isArray(data) ? data[0] : data;
+
 
 
     const { data: ledger } = await supabase
