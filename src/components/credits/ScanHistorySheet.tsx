@@ -256,7 +256,11 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
               </p>
             )}
             {selected.items.map((item, i) => (
-              <div key={i} className="rounded-xl border border-border bg-secondary/40 p-3">
+              <button
+                key={i}
+                onClick={() => setSelectedItem(item)}
+                className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left transition-colors hover:border-primary"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-semibold text-foreground">{item.name}</span>
                   {typeof item.confidence === "number" && (
@@ -271,7 +275,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
                   </span>
                 )}
                 {item.description && (
-                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
                     {item.description}
                   </p>
                 )}
@@ -282,11 +286,16 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
                       ${item.priceMin}–${item.priceMax}
                     </p>
                   )}
-              </div>
+              </button>
             ))}
           </div>
         )}
       </div>
+
+      {selectedItem && (
+        <ItemDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      )}
     </div>
+
   );
 }
