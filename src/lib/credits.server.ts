@@ -30,13 +30,6 @@ export function createUserClient(token: string) {
   });
 }
 
-function getBearerToken(): string | null {
-  const header = getRequestHeader("authorization");
-  if (!header || !header.startsWith("Bearer ")) return null;
-  const token = header.slice("Bearer ".length).trim();
-  if (!token || token.split(".").length !== 3) return null;
-  return token;
-}
 
 /**
  * Runs `fn` behind a credit debit.
