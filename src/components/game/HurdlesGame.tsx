@@ -149,7 +149,9 @@ export function HurdlesGame({
       }
       spd = Math.max(0, spd - drag * dt);
       if (now - lastCrowdUpdate.current > 200) {
-
+        lastCrowdUpdate.current = now;
+        setCrowdIntensity(Math.min(1, spd / 12) * 0.75 + (dist / TRACK_M) * 0.25);
+      }
 
       const prev = dist;
       dist = Math.min(TRACK_M, dist + spd * dt);
