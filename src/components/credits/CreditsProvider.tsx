@@ -1,9 +1,11 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCredits, type CreditsApi } from "@/hooks/useCredits";
 import { CreditsSheet } from "./CreditsSheet";
 import { WelcomeInfoModal } from "@/components/WelcomeInfoModal";
 import { CREDIT_LABELS, type CreditReason } from "@/lib/credits";
+import { playSound } from "@/lib/sounds";
+
 
 type CreditsContextValue = CreditsApi & {
   /** Reserve credits for an action. Returns false (and nudges the user) when the balance is short. */
@@ -23,7 +25,16 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
   const credits = useCredits();
   const [open, setOpen] = useState(false);
 
+  // Arcade coin whenever the balance goes up (purchase, check-in, grant…).
+  const prevBalance = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevBalance.current;
+    prevBalance.current = credits.balance;
+    if (prev !== null && credits.balance > prev) void playSound("coin");
+  }, [credits.balance]);
+
   const openSheet = useCallback(() => setOpen(true), []);
+
 
   const spend = useCallback(
     (reason: CreditReason, opts?: { silent?: boolean }) => {

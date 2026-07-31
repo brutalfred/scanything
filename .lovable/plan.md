@@ -1,43 +1,39 @@
-Plan: Add browser-synthesized camera-themed sound effects to Scanything
+## Goal
+Bring back sound, arcade-style, synthesized in-browser with the Web Audio API (no assets, no API keys), reusing the existing mute + volume settings.
 
-Goal
-Add subtle, camera-themed audio feedback for three key interactions without requiring an external API key or connector. All sounds will be synthesized directly in the browser using the Web Audio API.
+## Sounds
+- `click` — short bubbly "pop": rising sine blip (~440→900 Hz) with fast decay, slight detune for a plasticky arcade feel. Fires on every button click.
+- `shutter` — camera: quick noise burst through a bandpass filter plus two short mechanical clicks (open/close), ~180 ms.
+- `sweep` — "clean house": filtered white noise with a downward sweeping lowpass, ~500 ms, soft tail.
+- `coin` — classic arcade two-note square-wave coin (B5 → E6), short then sustained, ~250 ms.
 
-Sounds
-- Bubble pop: a short, soft sine-wave chirp with a quick decay, played when a newly detected item appears in the list.
-- Camera shutter click: a short burst of filtered noise plus a crisp click, played when a photo scan is captured.
-- Sweep/clear: a downward filtered noise sweep, played when the user presses "New scan" and the current view resets.
+All routed through a master gain that reads the saved volume, and skipped when muted.
 
-Sounds will be enabled by default and can be muted from the signed-in account tab.
+## Steps
 
-Steps
+1. **Rewrite the synthesizer in `src/lib/sounds.ts`**
+   - Add lazily created shared `AudioContext` + master `GainNode`; resume it on first user gesture.
+   - Extend `SoundType` to `"click" | "bubble" | "shutter" | "sweep" | "coin"` (keep `bubble` as an alias of the pop so existing call sites keep working).
+   - Implement `playSound(type)` with the four synths above; apply `getSoundVolume()` and bail out when `isSoundMuted()`.
+   - Keep the existing localStorage keys, `SOUND_SETTINGS_EVENT`, and exported getters/setters unchanged so the account-tab toggle and slider keep working.
+   - Live-update the master gain when the volume changes.
 
-1. Create a Web Audio sound engine
-   - Add `src/lib/sounds.ts` with a small synthesizer that creates sounds on demand using `AudioContext`/`OscillatorNode`/`GainNode`.
-   - Implement three functions: `playBubblePop()`, `playCameraShutter()`, `playSweepClear()`.
-   - Guard against unsupported environments and resume the AudioContext on first user interaction if needed.
+2. **Global button click sound**
+   - Add a small mount-once listener (in `src/routes/__root.tsx`) that plays `click` on `pointerdown` for anything matching `button, [role="button"], a[href]`, so every button in the app is covered without touching each component.
+   - Respect the mute setting and skip elements that opt out via `data-no-sound`.
 
-2. Add a sound settings hook
-   - Create `src/hooks/useSounds.ts`:
-     - Reads `scanything:sounds-muted` from `localStorage`.
-     - Provides `play(type)` that calls the matching synthesizer when not muted.
-     - Provides `muted` and `toggleMute()`.
-   - Sounds start enabled by default.
+3. **Specific triggers in `src/routes/index.tsx`**
+   - Photo scan capture → `shutter` (replaces the current no-op call).
+   - "New scan" → `sweep`.
 
-3. Add a mute toggle in the account tab
-   - In `src/components/credits/AccountButton.tsx`, add a "Sound effects" row with a mute/unmute toggle.
-   - Style it with the current theme colors.
+4. **Coin sound on credit changes**
+   - In the credits provider/hook (`src/components/credits/CreditsProvider.tsx` / `src/hooks/useCredits.ts`), watch the balance and play `coin` whenever it increases — covers purchases, daily check-in, admin grants, and signup grant in one place.
+   - Skip the first balance load so it doesn't fire on page open.
 
-4. Wire sounds to the UI
-   - Photo scan: call `play('shutter')` when the photo is captured.
-   - New item detected: call `play('bubble')` when a new item first appears in the detected list.
-   - New scan reset: call `play('sweep')` when the user clears the current scan and the view resets.
+5. **Verify**
+   - Typecheck/build, then check in the preview that clicks pop, capture clicks, reset sweeps, and the mute/volume controls still apply.
 
-5. Verify
-   - Typecheck and build the project.
-   - Confirm the three sounds trigger on the right interactions and the mute toggle works.
-
-Technical notes
-- No external API key, connector, or asset upload is required.
-- Sounds are generated in real time, so there are no files to host or cache.
-- The app will fall back to silent operation if Web Audio API is unavailable or if the user mutes the app.
+## Technical notes
+- Everything is generated at runtime; no audio files to host, no extra dependencies.
+- Sounds stay silent automatically if `AudioContext` is unavailable or the user is muted.
+- Volume slider and mute button in the account tab need no changes.
