@@ -7,17 +7,32 @@ const HURDLE_GAP_M = 9.14;
 const HURDLE_COUNT = 10;
 const PX_PER_M = 26;
 
-const HURDLES = Array.from(
-  { length: HURDLE_COUNT },
-  (_, i) => FIRST_HURDLE_M + i * HURDLE_GAP_M,
-);
-
 const ACCEL = 5.2; // m/s^2 while holding
 const DECEL = 6.5; // m/s^2 while released
 const MAX_SPEED = 11.5; // m/s
-const JUMP_TIME = 0.52; // seconds airborne
-const JUMP_HEIGHT = 52; // px
+const JUMP_MIN_TIME = 0.3; // shortest hop (seconds)
+const JUMP_MAX_TIME = 0.75; // longest jump when fully charged
+const JUMP_CHARGE_TIME = 0.42; // hold this long for a full jump
+const JUMP_MIN_HEIGHT = 26; // px
+const JUMP_MAX_HEIGHT = 70; // px
 const HURDLE_HIT_PENALTY = 0.35; // seconds of stumble
+
+type Obstacle = { m: number; height: number; kind: "hurdle" | "stone" };
+
+function buildObstacles(): Obstacle[] {
+  const hurdles: Obstacle[] = Array.from({ length: HURDLE_COUNT }, (_, i) => ({
+    m: FIRST_HURDLE_M + i * HURDLE_GAP_M,
+    height: Math.round(22 + Math.random() * 16), // 22–38 px
+    kind: "hurdle" as const,
+  }));
+  // one random stone somewhere on the track (wild card)
+  const stone: Obstacle = {
+    m: 8 + Math.random() * (TRACK_M - 16),
+    height: Math.round(10 + Math.random() * 8), // 10–18 px
+    kind: "stone",
+  };
+  return [...hurdles, stone].sort((a, b) => a.m - b.m);
+}
 
 type Phase = "idle" | "countdown" | "running" | "finished";
 
