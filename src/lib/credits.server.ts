@@ -46,22 +46,9 @@ function getBearerToken(): string | null {
  * when the AI call fails.
  */
 
-function getUserIdFromToken(token: string): string | null {
-  try {
-    const payload = JSON.parse(
-      Buffer.from(token.split(".")[1], "base64").toString("utf8"),
-    ) as { sub?: string };
-    return payload.sub ?? null;
-  } catch {
-    return null;
-  }
-}
+// Identity is never derived from an unverified bearer token in this module.
+// Every caller must supply the user id verified by `requireSupabaseAuth`.
 
-/** Current signed-in user id from the request bearer token, if any. */
-export function getRequestUserId(): string | null {
-  const token = getBearerToken();
-  return token ? getUserIdFromToken(token) : null;
-}
 
 export async function withCredits<T>(
   reason: CreditReason,
