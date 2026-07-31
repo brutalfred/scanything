@@ -1015,8 +1015,9 @@ function Scanner() {
 
                   {mode === "video" &&
                     visibleTracked.map((it) => (
-                      <button
+                    <button
                         key={it.id}
+                        data-no-sound
                         onClick={(e) => {
                           e.preventDefault();
                           openItem(it);
