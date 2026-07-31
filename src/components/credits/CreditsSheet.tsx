@@ -223,7 +223,14 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
 
       {adOpen && (
         <div onClick={(e) => e.stopPropagation()}>
-          <AdRewardModal onClose={() => setAdOpen(false)} onRewarded={credits.refresh} />
+          <AdRewardModal
+            onClose={() => setAdOpen(false)}
+            onRewarded={() => {
+              credits.refresh();
+              void adStatus.refetch();
+            }}
+          />
+
         </div>
       )}
     </div>
