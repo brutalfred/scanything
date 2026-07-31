@@ -84,7 +84,7 @@ export function GameSheet({
         <div className="flex items-center justify-between gap-2">
           <p className="flex items-center gap-2 text-base font-semibold">
             <Trophy className="h-4 w-4" />
-            110m Hurdles
+            400m Hurdles
           </p>
           <button
             type="button"
