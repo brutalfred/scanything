@@ -20,6 +20,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogResaleGuideRouteImport } from './routes/blog.resale-guide'
+import { Route as AccountDeleteRouteImport } from './routes/account.delete'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const TermsRoute = TermsRouteImport.update({
@@ -77,6 +78,11 @@ const BlogResaleGuideRoute = BlogResaleGuideRouteImport.update({
   path: '/blog/resale-guide',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountDeleteRoute = AccountDeleteRouteImport.update({
+  id: '/account/delete',
+  path: '/account/delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/account/delete': typeof AccountDeleteRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/account/delete': typeof AccountDeleteRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/account/delete': typeof AccountDeleteRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/account/delete'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/account/delete'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
   id:
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/account/delete'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  AccountDeleteRoute: typeof AccountDeleteRoute
   BlogResaleGuideRoute: typeof BlogResaleGuideRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
@@ -266,6 +279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogResaleGuideRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/delete': {
+      id: '/account/delete'
+      path: '/account/delete'
+      fullPath: '/account/delete'
+      preLoaderRoute: typeof AccountDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  AccountDeleteRoute: AccountDeleteRoute,
   BlogResaleGuideRoute: BlogResaleGuideRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
