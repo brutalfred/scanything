@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, Play, X } from "lucide-react";
+import { playSound } from "@/lib/sounds";
+
 import { toast } from "sonner";
 import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
