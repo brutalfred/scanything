@@ -27,6 +27,7 @@ export function AccountButton({
   balance: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [gameOpen, setGameOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
