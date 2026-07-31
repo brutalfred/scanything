@@ -7,9 +7,9 @@ import {
   swellCrowd,
 } from "@/lib/sounds";
 
-const TRACK_M = 110;
-const FIRST_HURDLE_M = 13.72;
-const HURDLE_GAP_M = 9.14;
+const TRACK_M = 400;
+const FIRST_HURDLE_M = 45;
+const HURDLE_GAP_M = 35;
 const HURDLE_COUNT = 10;
 const PX_PER_M = 26;
 
@@ -325,7 +325,7 @@ export function HurdlesGame({
   return (
     <div className="select-none">
       <div className="mb-2 flex items-center justify-between text-xs font-semibold tabular-nums">
-        <span className="opacity-70">{distance.toFixed(1)} / 110 m</span>
+        <span className="opacity-70">{distance.toFixed(1)} / 400 m</span>
         <span className="text-base">{formatTime(elapsed)}</span>
         <span className="opacity-70">{hits} hits</span>
       </div>
@@ -477,7 +477,7 @@ export function HurdlesGame({
 
         {phase === "idle" && !countText && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center text-xs">
-            <span className="text-sm font-bold">110m Hurdles</span>
+            <span className="text-sm font-bold">400m Hurdles</span>
             <span className="mt-1 opacity-70">
               Tap the track fast to run · hold JUMP longer to jump higher
             </span>
