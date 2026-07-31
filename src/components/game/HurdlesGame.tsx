@@ -34,7 +34,7 @@ function buildObstacles(): Obstacle[] {
   return [...hurdles, stone].sort((a, b) => a.m - b.m);
 }
 
-type Phase = "idle" | "countdown" | "running" | "finished";
+type Phase = "idle" | "countdown" | "running" | "finished" | "crashed";
 
 export function formatTime(ms: number) {
   return (ms / 1000).toFixed(2) + "s";
@@ -58,6 +58,7 @@ export function HurdlesGame({
   const [speed, setSpeed] = useState(0);
   const [hits, setHits] = useState(0);
   const [falseStart, setFalseStart] = useState(false);
+  const [crashMsg, setCrashMsg] = useState<string | null>(null);
 
   const [obstacles, setObstacles] = useState<Obstacle[]>(() => buildObstacles());
 
@@ -127,18 +128,34 @@ export function HurdlesGame({
       const prev = dist;
       dist = Math.min(TRACK_M, dist + spd * dt);
 
+      let crashedOn: Obstacle | null = null;
       obstaclesRef.current.forEach((o, i) => {
         if (cleared.current.has(i)) return;
         if (prev < o.m && dist >= o.m) {
           cleared.current.add(i);
-          if (currentY < o.height) {
-            stumbleUntil.current = now + HURDLE_HIT_PENALTY * 1000;
-            setStumbling(true);
-            setHits((n) => n + 1);
-            setTimeout(() => setStumbling(false), HURDLE_HIT_PENALTY * 1000);
-          }
+          if (currentY < o.height && !crashedOn) crashedOn = o;
         }
       });
+
+      if (crashedOn) {
+        const kind = (crashedOn as Obstacle).kind;
+        stopLoop();
+        holding.current = false;
+        jumpCharging.current = false;
+        setDistance(dist);
+        setElapsed(now - start);
+        setJumpY(0);
+        setStumbling(true);
+        setHits((n) => n + 1);
+        setCrashMsg(
+          kind === "stone"
+            ? "You tripped on the stone! Race over — restart."
+            : "You hit a hurdle! Race over — restart.",
+        );
+        setPhase("crashed");
+        return;
+      }
+
 
       setJumpY(currentY);
 
@@ -383,11 +400,21 @@ export function HurdlesGame({
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center text-xs">
             <span className="text-sm font-bold">110m Hurdles</span>
             <span className="mt-1 opacity-70">
-              Hold the track to run · hold JUMP longer to jump higher · watch for the stone
+              Hold the track to run · hold JUMP longer to jump higher
+            </span>
+            <span className="mt-1 opacity-70">
+              Hit a hurdle or the stone and the race is over — restart.
             </span>
             {falseStart && (
               <span className="mt-1 font-semibold text-destructive">False start! Try again.</span>
             )}
+          </div>
+        )}
+
+        {phase === "crashed" && crashMsg && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-background/70 text-center text-xs">
+            <span className="text-base font-black">Wipeout!</span>
+            <span className="mt-1 font-semibold text-destructive">{crashMsg}</span>
           </div>
         )}
       </div>
