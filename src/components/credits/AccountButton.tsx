@@ -110,7 +110,7 @@ export function AccountButton({
             role="dialog"
             aria-label="Account"
             onClick={(e) => e.stopPropagation()}
-            className="theme-panel gold-glow w-full max-w-xs rounded-2xl p-5 text-sm shadow-2xl"
+            className="theme-panel gold-glow max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-2xl p-5 text-sm shadow-2xl"
           >
             <p className="truncate text-center text-base font-semibold">
               {email ?? "Account"}
