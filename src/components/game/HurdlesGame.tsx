@@ -212,6 +212,7 @@ export function HurdlesGame({
         swellCrowd(0.4, 1.6);
         void playSound("cheer");
         void playSound("champagne");
+        window.setTimeout(() => stopCrowdAmbience(), 2600);
         onFinish(ms);
         return;
       }
