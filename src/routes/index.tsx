@@ -97,6 +97,8 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
   { key: "book", label: "Books" },
   { key: "instrument", label: "Instruments" },
   { key: "door", label: "Doors" },
+  { key: "vehicle", label: "Vehicles" },
+  { key: "plate", label: "Plates" },
   { key: "text", label: "Text / Signs" },
   { key: "person", label: "People" },
   { key: "other", label: "Other" },
@@ -1037,7 +1039,7 @@ function Scanner() {
                           {typeof it.confidence === "number" && (
                             <span className="ml-1 opacity-80">{Math.round(it.confidence)}%</span>
                           )}
-                          {it.enrichment && it.enrichment.category !== "person" && (
+                          {it.enrichment && !["person", "plate"].includes(it.enrichment.category) && (
                             <span className="ml-1 opacity-90">
                               ${it.enrichment.priceMin}–${it.enrichment.priceMax}
                             </span>
@@ -1714,6 +1716,66 @@ function Scanner() {
     </div>
   );
 }
+type PlateLink = { label: string; url: string };
+
+const PLATE_REGISTRIES: { match: RegExp; label: string; url: string }[] = [
+  {
+    match: /\b(uk|united kingdom|british|england|scotland|wales|northern ireland)\b/i,
+    label: "DVLA vehicle enquiry (UK)",
+    url: "https://www.gov.uk/get-vehicle-information-from-dvla",
+  },
+  {
+    match: /\b(sweden|swedish|sverige)\b/i,
+    label: "Transportstyrelsen vehicle lookup (Sweden)",
+    url: "https://fordonsfraga.transportstyrelsen.se/",
+  },
+  {
+    match: /\b(norway|norwegian)\b/i,
+    label: "Statens vegvesen vehicle lookup (Norway)",
+    url: "https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/",
+  },
+  {
+    match: /\b(netherlands|dutch)\b/i,
+    label: "RDW vehicle lookup (Netherlands)",
+    url: "https://ovi.rdw.nl/",
+  },
+  {
+    match: /\b(germany|german|deutschland)\b/i,
+    label: "Kraftfahrt-Bundesamt (Germany)",
+    url: "https://www.kba.de/",
+  },
+  {
+    match: /\b(usa|united states|american|u\.s\.|california|texas|florida|new york)\b/i,
+    label: "Find your state DMV (USA)",
+    url: "https://www.usa.gov/motor-vehicle-services",
+  },
+  {
+    match: /\b(canada|canadian|ontario|quebec)\b/i,
+    label: "Provincial vehicle registry (Canada)",
+    url: "https://www.canada.ca/en/services/transport.html",
+  },
+  {
+    match: /\b(australia|australian)\b/i,
+    label: "PPSR vehicle check (Australia)",
+    url: "https://www.ppsr.gov.au/",
+  },
+];
+
+function plateLookupLinks(plate: string, description: string): PlateLink[] {
+  const hay = `${plate} ${description}`;
+  const links: PlateLink[] = PLATE_REGISTRIES.filter((r) => r.match.test(hay)).map((r) => ({
+    label: r.label,
+    url: r.url,
+  }));
+  links.push({
+    label: "Search official registry for this plate format",
+    url: `https://www.google.com/search?q=${encodeURIComponent(
+      `official vehicle registration check ${plate} ${description.slice(0, 60)}`,
+    )}`,
+  });
+  return links;
+}
+
 
 function DetailPanel({
   item,
@@ -1823,7 +1885,7 @@ function DetailPanel({
           <>
             <p className="mt-3 text-sm leading-relaxed">{enrichment.description}</p>
 
-            {enrichment.category !== "person" && (
+            {!["person", "plate"].includes(enrichment.category) && (
               <div className="mt-4 rounded-lg bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
                   Estimated price range
@@ -1837,6 +1899,34 @@ function DetailPanel({
                 </div>
               </div>
             )}
+
+            {enrichment.category === "plate" && (
+              <div className="mt-4 rounded-lg border border-border bg-secondary p-3">
+                <div className="text-xs font-medium text-muted-foreground">
+                  Official vehicle lookup
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Owner details are not public. Use an official registry below — you must be
+                  authorised and sign in with your own credentials.
+                </p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {plateLookupLinks(name, enrichment.description).map((l) => (
+                    <a
+                      key={l.url}
+                      href={l.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+                    >
+                      {l.label}
+                      <ExternalLink className="h-4 w-4 opacity-60" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+
 
             <div className="mt-4 flex flex-col gap-2">
               <a
@@ -1915,7 +2005,7 @@ function DetailPanel({
                 {deep.description && (
                   <p className="mt-1 text-sm leading-relaxed">{deep.description}</p>
                 )}
-                {enrichment && enrichment.category !== "person" && (deep.priceMin > 0 || deep.priceMax > 0) && (
+                {enrichment && !["person", "plate"].includes(enrichment.category) && (deep.priceMin > 0 || deep.priceMax > 0) && (
                   <div className="mt-2 text-sm font-medium text-primary">
                     ${deep.priceMin}–${deep.priceMax} {deep.currency}
                   </div>
@@ -2025,7 +2115,7 @@ function TrackedRow({
             <div className="text-[11px] text-muted-foreground">analyzing…</div>
           )}
         </div>
-        {item.enrichment && item.enrichment.category !== "person" ? (
+        {item.enrichment && !["person", "plate"].includes(item.enrichment.category) ? (
           <div className="shrink-0 text-xs font-semibold text-primary">
             ${item.enrichment.priceMin}–${item.enrichment.priceMax}
           </div>
@@ -2067,7 +2157,7 @@ function PhotoItemCard({
           <ConfidenceBadge value={item.confidence} />
         </div>
         <div className="text-xs text-muted-foreground capitalize">{item.category}</div>
-        {item.category !== "person" && (
+        {!["person", "plate"].includes(item.category) && (
           <div className="mt-1 text-xs font-medium text-primary">
             ${item.priceMin}–${item.priceMax}
           </div>

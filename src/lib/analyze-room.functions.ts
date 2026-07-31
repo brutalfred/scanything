@@ -41,6 +41,10 @@ furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, k
 
 TEXT / SIGNS: If you see any writing, logo, sign, sticker, tattoo or label that is NOT in the Latin alphabet (e.g. Chinese, Japanese, Korean, Arabic, Hebrew, Cyrillic, Thai, Devanagari, Greek), include it as an item with category="text" and use the actual visible characters as the "name" (short — max ~40 chars). Draw its box tightly around the writing.
 
+VEHICLES: If a car, motorcycle, van, truck, bus or bicycle is visible, include it with category="vehicle". Guess make, model and generation/year range in the description, and give a realistic used-market price range.
+
+LICENSE PLATES: If a vehicle registration plate is readable, include a SEPARATE item with category="plate", name = the plate characters exactly as shown (uppercase), box tight around the plate. In the description state the issuing country/region and the plate format/series, plus what the plate style indicates (private, commercial, diplomatic, temporary, EV, etc). Set priceMin and priceMax to 0. NEVER guess, state or imply the owner's identity, name or address — that information is not public.
+
 PERSON: Include ONE item with category="person" and name="Person" ONLY IF a human is clearly the MAIN SUBJECT of the photo (portrait or half-portrait, face/upper body large and centered, occupying >=25% of the image). Do NOT include people who are merely on the side, in the background, or partially visible.
 
 NEVER include isolated human body parts (hand, arm, leg, foot, torso, face without a portrait context, head, hair, skin, finger). Skip them entirely.
@@ -52,7 +56,7 @@ For each object, respond with a compact JSON object matching:
   "items": [
     {
       "name": "short common name",
-      "category": "furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|door|text|person|other",
+      "category": "furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|door|text|person|vehicle|plate|other",
       "description": "1-2 sentence plain description of what it likely is (brand/style guess if obvious)",
       "priceMin": number in USD (typical low retail, 0 for text/person),
       "priceMax": number in USD (typical high retail, 0 for text/person),
@@ -72,6 +76,7 @@ There is NO maximum number of items — list everything you can identify. Prefer
 const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name every distinct object you can identify, at any size. There is no maximum — name as many as you can see, starting with objects near the CENTER of the frame.
 
 PRIORITY — spot everyday human-use items: furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, kitchenware, decor, instruments, sports gear, doors, windows.
+ALSO spot vehicles (name them "Car", "Motorcycle", etc) and any readable vehicle registration plate (use the plate characters as the name).
 ALSO include any visible writing/sign/logo that is NOT in the Latin alphabet (Chinese, Japanese, Korean, Arabic, Hebrew, Cyrillic, Thai, Devanagari, Greek). Use the actual characters as the name (short).
 NEVER include human body parts or people (hand, arm, leg, foot, torso, face, head, hair, skin, finger, nose, ear, eye, mouth, person, human, body). Skip them entirely.
 IGNORE walls, wall paint, floor, ceiling, beams, pillars, concrete, tiles, carpet, molding — unless there is literally nothing else visible in the frame.
@@ -85,8 +90,8 @@ confidence is an integer 0-100 for how sure you are about the name.
 
 box is normalized image coords (top-left origin). Be tight around the object. No item limit. NO markdown, NO extra text. Be fast.`;
 
-const ENRICH_SYSTEM = `You are giving quick shopping info for a single household item. Respond ONLY with compact JSON:
-{"category":"furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|other","description":"1-2 sentence plain description","priceMin":<usd number>,"priceMax":<usd number>,"currency":"USD","searchUrl":"https://www.google.com/search?q=<url-encoded>","infoUrl":"https://en.wikipedia.org/wiki/<topic> or relevant homepage","confidence":<integer 0-100 certainty of the identification>}`;
+const ENRICH_SYSTEM = `You are giving quick shopping info for a single item. If the item is a vehicle registration plate, use category="plate", set prices to 0, and describe the issuing country/region and plate format only — NEVER the owner's identity. If it is a vehicle, use category="vehicle" and guess make/model with a used-market price range. Respond ONLY with compact JSON:
+{"category":"furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|vehicle|plate|other","description":"1-2 sentence plain description","priceMin":<usd number>,"priceMax":<usd number>,"currency":"USD","searchUrl":"https://www.google.com/search?q=<url-encoded>","infoUrl":"https://en.wikipedia.org/wiki/<topic> or relevant homepage","confidence":<integer 0-100 certainty of the identification>}`;
 
 const DEEP_SYSTEM = `You are a product identification expert. Given a photo (or crop) of a single item and a rough name, do your best to identify the EXACT product: guess brand, model, materials, generation/year if possible. Give a refined price range in USD based on that specific guess. Respond ONLY with compact JSON:
 {"brand":"best-guess brand or empty","product":"best-guess specific product name or empty","confidence":<integer 0-100 certainty of this exact product identification>,"description":"2-4 sentences with concrete details (materials, features, distinguishing marks)","priceMin":<usd>,"priceMax":<usd>,"currency":"USD","buyUrl":"https://www.google.com/search?q=<url-encoded specific product query>","infoUrl":"https://www.google.com/search?q=<url-encoded review/spec query>"}`;
