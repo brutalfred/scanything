@@ -206,6 +206,63 @@ export type Database = {
         }
         Relationships: []
       }
+      game_prize_payouts: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          month_key: string
+          place: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id?: string
+          month_key: string
+          place: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          month_key?: string
+          place?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      game_scores: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          month_key: string
+          time_ms: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          month_key: string
+          time_ms: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          month_key?: string
+          time_ms?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       play_purchases: {
         Row: {
           created_at: string
@@ -295,6 +352,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_monthly_game_prizes: { Args: never; Returns: number }
       claim_ad_reward_for: {
         Args: { _user_id: string }
         Returns: {
@@ -360,6 +418,15 @@ export type Database = {
           last_daily_grant_at: string
         }[]
       }
+      get_game_leaderboard: {
+        Args: { _limit: number; _scope: string; _user_id?: string }
+        Returns: {
+          display_name: string
+          is_me: boolean
+          rank: number
+          time_ms: number
+        }[]
+      }
       get_scan_economics: {
         Args: { _days?: number }
         Returns: {
@@ -404,6 +471,14 @@ export type Database = {
           _user_id: string
         }
         Returns: number
+      }
+      submit_game_score: {
+        Args: { _display_name: string; _time_ms: number; _user_id: string }
+        Returns: {
+          best_alltime_ms: number
+          best_month_ms: number
+          status: string
+        }[]
       }
     }
     Enums: {
