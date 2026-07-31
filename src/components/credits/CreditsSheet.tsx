@@ -48,8 +48,10 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
         if (!productId) throw new Error("This pack is not available in the app");
         await buyWithPlay(productId);
         await credits.refresh?.();
+        void playSound("coin");
         toast.success("Credits added to your account");
         return;
+
       }
       await openCheckout({
         priceId,
