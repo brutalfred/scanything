@@ -49,6 +49,9 @@ export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; user
             This app is created to help people identify items, animals, plants etc with ease, price estimations, translations and having fun. I hope you find this app helpful. Enjoy!
           </li>
           <li>
+            Clear close-up photos with a clean lens will make the scans more accurate.
+          </li>
+          <li>
             Contact:{" "}
             <a href="mailto:scanythingapp@gmail.com" className="font-semibold text-primary underline">
               scanythingapp@gmail.com
