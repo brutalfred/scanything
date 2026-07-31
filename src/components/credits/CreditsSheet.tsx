@@ -34,6 +34,16 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const { openCheckout } = usePaddleCheckout();
   const [buying, setBuying] = useState<string | null>(null);
   const [adOpen, setAdOpen] = useState(false);
+  const adStatus = useQuery({
+    queryKey: ["ad-reward-status"],
+    queryFn: () => getAdRewardStatus(),
+    enabled: credits.signedIn,
+    staleTime: 10_000,
+  });
+  const adsWatched = adStatus.data?.claimsToday ?? 0;
+  const adLimit = adStatus.data?.dailyLimit ?? 5;
+  const adLimitReached = credits.signedIn && adsWatched >= adLimit;
+
 
 
   async function buy(priceId: string) {
