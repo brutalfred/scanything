@@ -2,7 +2,18 @@ const MUTE_STORAGE_KEY = "scanything:sounds-muted";
 const VOLUME_STORAGE_KEY = "scanything:sounds-volume";
 export const SOUND_SETTINGS_EVENT = "scanything:sound-settings";
 
-export type SoundType = "click" | "bubble" | "shutter" | "sweep" | "coin";
+export type SoundType =
+  | "click"
+  | "bubble"
+  | "shutter"
+  | "sweep"
+  | "coin"
+  | "beepLow"
+  | "beepHigh"
+  | "pistol"
+  | "champagne"
+  | "cheer"
+  | "aww";
 
 function clampVolume(n: number) {
   if (!Number.isFinite(n)) return 1;
@@ -198,6 +209,130 @@ function playCoin(ac: AudioContext, out: GainNode) {
   osc.stop(t + 0.36);
 }
 
+
+/** Short countdown beep (low = 3/2/1, high = ready/set). */
+function playBeep(ac: AudioContext, out: GainNode, freq: number) {
+  const t = ac.currentTime;
+  const osc = ac.createOscillator();
+  const g = ac.createGain();
+  osc.type = "square";
+  osc.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+  g.gain.setValueAtTime(0.35, t + 0.1);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+  osc.connect(g).connect(out);
+  osc.start(t);
+  osc.stop(t + 0.2);
+}
+
+/** Starter pistol: sharp noise crack with a short slap-back tail. */
+function playPistol(ac: AudioContext, out: GainNode) {
+  const t = ac.currentTime;
+
+  const crack = ac.createBufferSource();
+  crack.buffer = noiseBuffer(ac, 0.25);
+  const hp = ac.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.setValueAtTime(1200, t);
+  hp.frequency.exponentialRampToValueAtTime(400, t + 0.2);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(1, t + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+  crack.connect(hp).connect(g).connect(out);
+  crack.start(t);
+  crack.stop(t + 0.25);
+
+  // low body thump
+  const osc = ac.createOscillator();
+  const g2 = ac.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(150, t);
+  osc.frequency.exponentialRampToValueAtTime(50, t + 0.12);
+  g2.gain.setValueAtTime(0.0001, t);
+  g2.gain.exponentialRampToValueAtTime(0.5, t + 0.006);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+  osc.connect(g2).connect(out);
+  osc.start(t);
+  osc.stop(t + 0.18);
+}
+
+/** Champagne: hollow cork pop followed by a soft fizz tail. */
+function playChampagne(ac: AudioContext, out: GainNode) {
+  const t = ac.currentTime;
+
+  // cork pop — fast pitch drop through a resonant bandpass
+  const osc = ac.createOscillator();
+  const bp = ac.createBiquadFilter();
+  const g = ac.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(900, t);
+  osc.frequency.exponentialRampToValueAtTime(180, t + 0.07);
+  bp.type = "bandpass";
+  bp.frequency.value = 700;
+  bp.Q.value = 2;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(1, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+  osc.connect(bp).connect(g).connect(out);
+  osc.start(t);
+  osc.stop(t + 0.16);
+
+  // fizz tail
+  const fizz = ac.createBufferSource();
+  fizz.buffer = noiseBuffer(ac, 1.4);
+  const hp = ac.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 3800;
+  const fg = ac.createGain();
+  fg.gain.setValueAtTime(0.0001, t + 0.05);
+  fg.gain.exponentialRampToValueAtTime(0.22, t + 0.14);
+  fg.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+  fizz.connect(hp).connect(fg).connect(out);
+  fizz.start(t + 0.05);
+  fizz.stop(t + 1.4);
+}
+
+/** One-shot crowd roar (used on GO and at the finish line). */
+function playCheer(ac: AudioContext, out: GainNode) {
+  const t = ac.currentTime;
+  const src = ac.createBufferSource();
+  src.buffer = noiseBuffer(ac, 2.2);
+  const bp = ac.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(700, t);
+  bp.frequency.linearRampToValueAtTime(1600, t + 0.5);
+  bp.frequency.linearRampToValueAtTime(900, t + 2);
+  bp.Q.value = 0.7;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(0.5, t + 0.35);
+  g.gain.setValueAtTime(0.5, t + 0.9);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 2.1);
+  src.connect(bp).connect(g).connect(out);
+  src.start(t);
+  src.stop(t + 2.2);
+}
+
+/** Disappointed crowd "aww": a descending muffled swell. */
+function playAww(ac: AudioContext, out: GainNode) {
+  const t = ac.currentTime;
+  const src = ac.createBufferSource();
+  src.buffer = noiseBuffer(ac, 1.3);
+  const lp = ac.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.setValueAtTime(1100, t);
+  lp.frequency.exponentialRampToValueAtTime(320, t + 1.1);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(0.4, t + 0.18);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+  src.connect(lp).connect(g).connect(out);
+  src.start(t);
+  src.stop(t + 1.3);
+}
+
 export async function playSound(type: SoundType): Promise<void> {
   if (typeof window === "undefined") return;
   if (isSoundMuted() || getSoundVolume() <= 0) return;
@@ -217,6 +352,24 @@ export async function playSound(type: SoundType): Promise<void> {
         break;
       case "coin":
         playCoin(ac, master);
+        break;
+      case "beepLow":
+        playBeep(ac, master, 440);
+        break;
+      case "beepHigh":
+        playBeep(ac, master, 720);
+        break;
+      case "pistol":
+        playPistol(ac, master);
+        break;
+      case "champagne":
+        playChampagne(ac, master);
+        break;
+      case "cheer":
+        playCheer(ac, master);
+        break;
+      case "aww":
+        playAww(ac, master);
         break;
       case "click":
       case "bubble":
@@ -246,4 +399,129 @@ export function installGlobalClickSound(): () => void {
   };
   document.addEventListener("pointerdown", handler, true);
   return () => document.removeEventListener("pointerdown", handler, true);
+}
+
+/* ------------------------------------------------------------------ */
+/* Continuous crowd ambience (stadium murmur)                           */
+/* ------------------------------------------------------------------ */
+
+type CrowdGraph = {
+  source: AudioBufferSourceNode;
+  gain: GainNode;
+  lfo: OscillatorNode;
+  filter: BiquadFilterNode;
+};
+
+let crowd: CrowdGraph | null = null;
+let crowdWanted = false;
+let crowdIntensity = 0;
+
+const CROWD_BASE = 0.05;
+const CROWD_RANGE = 0.16;
+
+function buildCrowd(ac: AudioContext, out: GainNode): CrowdGraph {
+  const source = ac.createBufferSource();
+  source.buffer = noiseBuffer(ac, 4);
+  source.loop = true;
+
+  const filter = ac.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 800;
+  filter.Q.value = 0.6;
+
+  const gain = ac.createGain();
+  gain.gain.value = 0.0001;
+
+  // slow wobble so the murmur breathes instead of hissing flatly
+  const lfo = ac.createOscillator();
+  const lfoGain = ac.createGain();
+  lfo.type = "sine";
+  lfo.frequency.value = 0.28;
+  lfoGain.gain.value = 260;
+  lfo.connect(lfoGain).connect(filter.frequency);
+
+  source.connect(filter).connect(gain).connect(out);
+  source.start();
+  lfo.start();
+
+  return { source, gain, lfo, filter };
+}
+
+function crowdTarget() {
+  return CROWD_BASE + CROWD_RANGE * Math.max(0, Math.min(1, crowdIntensity));
+}
+
+/** Fades the stadium murmur in. Safe to call repeatedly. */
+export function startCrowdAmbience() {
+  crowdWanted = true;
+  if (isSoundMuted() || getSoundVolume() <= 0) return;
+  const ac = getCtx();
+  if (!ac || !master) return;
+  if (ac.state === "suspended") void ac.resume();
+  if (!crowd) crowd = buildCrowd(ac, master);
+  crowd.gain.gain.cancelScheduledValues(ac.currentTime);
+  crowd.gain.gain.setTargetAtTime(crowdTarget(), ac.currentTime, 0.6);
+}
+
+/** 0..1 — how excited the crowd is (drives volume + brightness). */
+export function setCrowdIntensity(value: number) {
+  crowdIntensity = Math.max(0, Math.min(1, value));
+  if (!crowd || !ctx) return;
+  crowd.gain.gain.setTargetAtTime(crowdTarget(), ctx.currentTime, 0.25);
+  crowd.filter.frequency.setTargetAtTime(700 + crowdIntensity * 700, ctx.currentTime, 0.3);
+}
+
+/** Short burst of extra noise, e.g. when an obstacle is cleared. */
+export function swellCrowd(amount = 0.35, seconds = 0.7) {
+  if (!crowd || !ctx) return;
+  const t = ctx.currentTime;
+  const peak = Math.min(0.45, crowdTarget() + amount);
+  crowd.gain.gain.cancelScheduledValues(t);
+  crowd.gain.gain.setTargetAtTime(peak, t, 0.05);
+  crowd.gain.gain.setTargetAtTime(crowdTarget(), t + seconds, 0.3);
+}
+
+/** Fades out and tears down the ambience graph. */
+export function stopCrowdAmbience(immediate = false) {
+  crowdWanted = false;
+  crowdIntensity = 0;
+  const graph = crowd;
+  if (!graph || !ctx) {
+    crowd = null;
+    return;
+  }
+  crowd = null;
+  const t = ctx.currentTime;
+  const fade = immediate ? 0.03 : 0.5;
+  try {
+    graph.gain.gain.cancelScheduledValues(t);
+    graph.gain.gain.setTargetAtTime(0.0001, t, fade / 3);
+  } catch {
+    /* ignore */
+  }
+  window.setTimeout(() => {
+    try {
+      graph.source.stop();
+      graph.lfo.stop();
+      graph.source.disconnect();
+      graph.lfo.disconnect();
+      graph.filter.disconnect();
+      graph.gain.disconnect();
+    } catch {
+      /* ignore */
+    }
+  }, fade * 1000 + 80);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener(SOUND_SETTINGS_EVENT, () => {
+    const silent = isSoundMuted() || getSoundVolume() <= 0;
+    if (silent && crowd) {
+      const wanted = crowdWanted;
+      stopCrowdAmbience(true);
+      crowdWanted = wanted; // remember so unmuting resumes it
+    } else if (!silent && crowdWanted && !crowd) {
+      startCrowdAmbience();
+    }
+  });
 }
