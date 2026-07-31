@@ -19,6 +19,8 @@ function reasonLabel(reason: string) {
 export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClose: () => void }) {
   const { openCheckout } = usePaddleCheckout();
   const [buying, setBuying] = useState<string | null>(null);
+  const [adOpen, setAdOpen] = useState(false);
+
 
   async function buy(priceId: string) {
     if (!credits.signedIn || !credits.userId) {
