@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Coins, Loader2, X } from "lucide-react";
+import { Coins, Loader2, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { getPaddleEnvironment } from "@/lib/paddle";
+import { AdRewardModal } from "./AdRewardModal";
 import type { CreditsApi } from "@/hooks/useCredits";
+
 
 function reasonLabel(reason: string) {
   const base = reason.replace(/^refund:/, "").replace(/^purchase:.*$/, "purchase");
@@ -17,6 +19,8 @@ function reasonLabel(reason: string) {
 export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClose: () => void }) {
   const { openCheckout } = usePaddleCheckout();
   const [buying, setBuying] = useState<string | null>(null);
+  const [adOpen, setAdOpen] = useState(false);
+
 
   async function buy(priceId: string) {
     if (!credits.signedIn || !credits.userId) {
@@ -108,6 +112,21 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           ))}
         </div>
 
+        <button
+          type="button"
+          disabled={!credits.signedIn}
+          onClick={() => {
+            if (!credits.signedIn) return;
+            setAdOpen(true);
+          }}
+          className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 bg-secondary/40 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+        >
+          <Play className="h-4 w-4" />
+          Watch a commercial for 1 credit
+        </button>
+
+
+
         <div className="mb-5 text-right">
           <Link
             to="/pricing"
@@ -156,6 +175,13 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           </p>
         )}
       </div>
+
+      {adOpen && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <AdRewardModal onClose={() => setAdOpen(false)} onRewarded={credits.refresh} />
+        </div>
+      )}
     </div>
+
   );
 }

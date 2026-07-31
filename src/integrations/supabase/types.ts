@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_reward_claims: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_usage: {
         Row: {
           action: string
@@ -211,6 +232,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_ad_reward_for: {
+        Args: { _user_id: string }
+        Returns: {
+          balance: number
+          claims_today: number
+          daily_limit: number
+          status: string
+        }[]
+      }
       claim_daily_checkin_for: {
         Args: { _user_id: string }
         Returns: {
@@ -242,6 +272,13 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_ad_reward_status_for: {
+        Args: { _user_id: string }
+        Returns: {
+          claims_today: number
+          daily_limit: number
+        }[]
       }
       get_checkin_state_for: {
         Args: { _user_id: string }
