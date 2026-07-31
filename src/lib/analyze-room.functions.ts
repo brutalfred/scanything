@@ -167,7 +167,7 @@ export const analyzeRoom = createServerFn({ method: "POST" })
             ],
           },
         ],
-      }),
+      }, context.userId),
     );
 
     const parsed = safeParse<AnalyzeResult>(content, { items: [] });
@@ -196,7 +196,7 @@ export const quickScan = createServerFn({ method: "POST" })
             ],
           },
         ],
-      }),
+      }, context.userId),
     );
 
     const parsed = safeParse<QuickResult>(content, { items: [] });
@@ -242,7 +242,7 @@ export const enrichItem = createServerFn({ method: "POST" })
             ],
           },
         ],
-      }),
+      }, context.userId),
     );
 
     const parsed = safeParse<Partial<DetectedItem>>(content, {});
@@ -335,7 +335,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
             ],
           },
         ],
-      }),
+      }, context.userId),
     );
     const parsed = safeParse<Partial<DeepAnalysis>>(content, {});
     const q = [parsed.brand, parsed.product, data.name].filter(Boolean).join(" ").trim();
@@ -378,7 +378,7 @@ export const translateText = createServerFn({ method: "POST" })
           { role: "system", content: TRANSLATE_SYSTEM },
           { role: "user", content: `Translate to English: ${data.text}` },
         ],
-      }),
+      }, context.userId),
     );
     const parsed = safeParse<Partial<Translation>>(content, {});
     return {
@@ -422,7 +422,7 @@ export const personInfo = createServerFn({ method: "POST" })
             content: `Give a public info summary for: ${data.name}. Use only widely-known public information. If not publicly known, say so.`,
           },
         ],
-      }),
+      }, context.userId),
     );
     const parsed = safeParse<Partial<PersonInfo>>(content, {});
     return {
@@ -487,7 +487,7 @@ export const personSearch = createServerFn({ method: "POST" })
             content: `Searched for: "${query}"\nName: ${data.name}\nLocation: ${data.location || "(not provided)"}\n\nSearch results:\n${resultsText}\n\nJSON only.`,
           },
         ],
-      }),
+      }, context.userId),
     );
     const parsed = safeParse<{ matches?: Partial<PersonMatch>[] }>(content, {});
     const allowed = new Set(results.map((r) => r.url));
