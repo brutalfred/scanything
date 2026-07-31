@@ -18,6 +18,7 @@ import {
   Sparkles,
   Languages,
   User,
+  History,
 } from "lucide-react";
 
 
@@ -43,6 +44,8 @@ import { CreditMeter } from "@/components/credits/CreditMeter";
 import { AccountButton } from "@/components/credits/AccountButton";
 import { CREDIT_COSTS } from "@/lib/credits";
 import { playSound } from "@/lib/sounds";
+import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
+import { saveScanHistory } from "@/lib/scan-history.functions";
 
 
 
@@ -251,6 +254,7 @@ function Scanner() {
   });
   const [filterOpen, setFilterOpen] = useState(false);
   const [videoWarningOpen, setVideoWarningOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...filters]));
@@ -457,6 +461,21 @@ function Scanner() {
       );
       setItems(detected);
       setPhase("results");
+      if (detected.length) {
+        void saveScanHistory({
+          data: {
+            mode: "photo",
+            items: detected.map((d) => ({
+              name: d.name,
+              category: d.category,
+              description: d.description,
+              confidence: d.confidence,
+              priceMin: d.priceMin,
+              priceMax: d.priceMax,
+            })),
+          },
+        }).catch(() => {});
+      }
       try {
         sessionStorage.setItem(
           LAST_SCAN_KEY,
@@ -1687,6 +1706,8 @@ function Scanner() {
       )}
 
       {/* Video scan warning for signed-in users */}
+      <ScanHistorySheet open={historyOpen} onClose={() => setHistoryOpen(false)} />
+
       {videoWarningOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
