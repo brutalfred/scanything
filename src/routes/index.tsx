@@ -709,6 +709,7 @@ function Scanner() {
       const img = snapshot ?? grabFrame(1280, 0.9) ?? null;
       setSelectedImage(img);
       setSelected(item);
+      void playSound("bubble");
     },
     [openAddressSearch, snapshot],
   );
@@ -1015,8 +1016,9 @@ function Scanner() {
 
                   {mode === "video" &&
                     visibleTracked.map((it) => (
-                      <button
+                    <button
                         key={it.id}
+                        data-no-sound
                         onClick={(e) => {
                           e.preventDefault();
                           openItem(it);
@@ -1101,6 +1103,7 @@ function Scanner() {
                 <div className="flex flex-col items-center gap-2">
                   <Button
                     size="lg"
+                    data-no-sound
                     onClick={capture}
                     disabled={!credits.canAfford("photo_scan")}
                     className="w-full max-w-xs"
@@ -1231,6 +1234,7 @@ function Scanner() {
                     visibleItems.map((it, i) => (
                       <button
                         key={i}
+                        data-no-sound
                         onClick={(e) => {
                           e.preventDefault();
                           openItem(it);
