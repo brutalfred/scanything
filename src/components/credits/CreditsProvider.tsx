@@ -25,7 +25,16 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
   const credits = useCredits();
   const [open, setOpen] = useState(false);
 
+  // Arcade coin whenever the balance goes up (purchase, check-in, grant…).
+  const prevBalance = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevBalance.current;
+    prevBalance.current = credits.balance;
+    if (prev !== null && credits.balance > prev) void playSound("coin");
+  }, [credits.balance]);
+
   const openSheet = useCallback(() => setOpen(true), []);
+
 
   const spend = useCallback(
     (reason: CreditReason, opts?: { silent?: boolean }) => {
