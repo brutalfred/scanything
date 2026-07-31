@@ -119,7 +119,7 @@ export function HurdlesGame({
         const ms = Math.round(now - start);
         setElapsed(ms);
         setPhase("finished");
-        void playSound("coin");
+        void playSound("bubble");
         onFinish(ms);
         return;
       }
