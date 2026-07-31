@@ -1106,7 +1106,7 @@ function Scanner() {
                     className="w-full max-w-xs"
                   >
                     <Camera className="mr-2 h-5 w-5" />
-                    {`Scan the room · ${CREDIT_COSTS.photo_scan}`}
+                    {`Scan · ${CREDIT_COSTS.photo_scan}`}
                   </Button>
                 </div>
               )
