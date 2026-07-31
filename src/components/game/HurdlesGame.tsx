@@ -71,7 +71,6 @@ export function HurdlesGame({
   const [obstacles, setObstacles] = useState<Obstacle[]>(() => buildObstacles());
 
   const pendingTaps = useRef(0);
-  const lossAccum = useRef(0);
   const lastCrowdUpdate = useRef(0);
   const jumpStart = useRef(0);
   const jumpDuration = useRef(0);
@@ -147,16 +146,9 @@ export function HurdlesGame({
           (jumpHeight.current - JUMP_MIN_HEIGHT) / (JUMP_MAX_HEIGHT - JUMP_MIN_HEIGHT);
         extraDrag = JUMP_DRAG * (0.4 + 0.6 * Math.max(0, Math.min(1, heightFactor)));
         drag += extraDrag;
-        lossAccum.current += Math.min(extraDrag * dt, spd);
       }
       spd = Math.max(0, spd - drag * dt);
       if (now - lastCrowdUpdate.current > 200) {
-        lastCrowdUpdate.current = now;
-        setCrowdIntensity(Math.min(1, spd / 12) * 0.75 + (dist / TRACK_M) * 0.25);
-      }
-      setJumpDragRate(extraDrag);
-      setAirborneNow(airborne);
-      setJumpLoss(lossAccum.current);
 
 
       const prev = dist;
