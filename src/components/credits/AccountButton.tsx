@@ -172,6 +172,15 @@ export function AccountButton({
 
             <DailyCheckin enabled={signedIn && open} />
 
+            <button
+              type="button"
+              onClick={() => setGameOpen(true)}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
+            >
+              <Trophy className="h-4 w-4" />
+              Play: 110m Hurdles
+            </button>
+
 
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>
