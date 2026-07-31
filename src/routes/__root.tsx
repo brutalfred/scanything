@@ -165,6 +165,8 @@ function RootComponent() {
   const router = useRouter();
   useTheme();
 
+  useEffect(() => installGlobalClickSound(), []);
+
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
