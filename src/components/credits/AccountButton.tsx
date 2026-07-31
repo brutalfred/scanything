@@ -12,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useSounds } from "@/hooks/useSounds";
 import { DailyCheckin } from "./DailyCheckin";
+import { isNative } from "@/lib/platform";
 
 
 
@@ -198,6 +199,7 @@ export function AccountButton({
             </div>
 
 
+            {!isNative() && (
             <button
               type="button"
               onClick={handleInstall}
@@ -206,6 +208,7 @@ export function AccountButton({
               <Download className="h-4 w-4" />
               {installed ? "App installed" : canInstall ? "Install app" : "Add to desktop / home screen"}
             </button>
+            )}
 
             {admin.data === true && (
               <Link
@@ -226,6 +229,14 @@ export function AccountButton({
               <LogOut className="h-4 w-4" />
               Log out
             </button>
+
+            <Link
+              to="/account/delete"
+              onClick={() => setOpen(false)}
+              className="mt-3 block text-center text-xs text-muted-foreground underline"
+            >
+              Delete my account
+            </Link>
 
             <div className="mt-3 flex justify-center">
               <button
