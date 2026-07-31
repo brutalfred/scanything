@@ -206,6 +206,39 @@ export type Database = {
         }
         Relationships: []
       }
+      play_purchases: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          order_id: string | null
+          product_id: string
+          purchase_token: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id?: string
+          order_id?: string | null
+          product_id: string
+          purchase_token: string
+          state?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          order_id?: string | null
+          product_id?: string
+          purchase_token?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -315,6 +348,19 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      redeem_play_purchase: {
+        Args: {
+          _credits: number
+          _order_id: string
+          _product_id: string
+          _purchase_token: string
+          _user_id: string
+        }
+        Returns: {
+          balance: number
+          status: string
+        }[]
       }
       refund_credits_for: {
         Args: { _amount: number; _reason: string; _user_id: string }
