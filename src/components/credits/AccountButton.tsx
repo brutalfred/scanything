@@ -263,6 +263,8 @@ export function AccountButton({
         </div>,
         document.body,
       )}
-    </>
+
+      <GameSheet open={gameOpen} onClose={() => setGameOpen(false)} email={email} />
+    </>result
   );
 }
