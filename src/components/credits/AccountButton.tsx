@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, LogIn, LogOut, ShieldCheck, User2, Volume2, VolumeX, X } from "lucide-react";
+import { Download, LogIn, LogOut, ShieldCheck, Trophy, User2, Volume2, VolumeX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
@@ -12,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useSounds } from "@/hooks/useSounds";
 import { DailyCheckin } from "./DailyCheckin";
+import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
 
 
@@ -26,6 +27,7 @@ export function AccountButton({
   balance: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [gameOpen, setGameOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -170,6 +172,15 @@ export function AccountButton({
 
             <DailyCheckin enabled={signedIn && open} />
 
+            <button
+              type="button"
+              onClick={() => setGameOpen(true)}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
+            >
+              <Trophy className="h-4 w-4" />
+              Play: 110m Hurdles
+            </button>
+
 
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>
@@ -252,6 +263,8 @@ export function AccountButton({
         </div>,
         document.body,
       )}
+
+      <GameSheet open={gameOpen} onClose={() => setGameOpen(false)} email={email} />
     </>
   );
 }
