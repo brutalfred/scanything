@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { playSound } from "@/lib/sounds";
+import {
+  playSound,
+  setCrowdIntensity,
+  startCrowdAmbience,
+  stopCrowdAmbience,
+  swellCrowd,
+} from "@/lib/sounds";
 
 const TRACK_M = 110;
 const FIRST_HURDLE_M = 13.72;
@@ -69,6 +75,7 @@ export function HurdlesGame({
 
   const pendingTaps = useRef(0);
   const lossAccum = useRef(0);
+  const lastCrowdUpdate = useRef(0);
   const jumpStart = useRef(0);
   const jumpDuration = useRef(0);
   const jumpCharging = useRef(false);
@@ -89,9 +96,17 @@ export function HurdlesGame({
     raf.current = null;
   };
 
-  useEffect(() => () => {
-    clearTimers();
-    stopLoop();
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") stopCrowdAmbience(true);
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      clearTimers();
+      stopLoop();
+      stopCrowdAmbience(true);
+    };
   }, []);
 
   const runLoop = useCallback(() => {
@@ -138,6 +153,10 @@ export function HurdlesGame({
         lossAccum.current += Math.min(extraDrag * dt, spd);
       }
       spd = Math.max(0, spd - drag * dt);
+      if (now - lastCrowdUpdate.current > 200) {
+        lastCrowdUpdate.current = now;
+        setCrowdIntensity(Math.min(1, spd / 12) * 0.75 + (dist / TRACK_M) * 0.25);
+      }
       setJumpDragRate(extraDrag);
       setAirborneNow(airborne);
       setJumpLoss(lossAccum.current);
@@ -152,6 +171,7 @@ export function HurdlesGame({
         if (prev < o.m && dist >= o.m) {
           cleared.current.add(i);
           if (currentY < o.height && !crashedOn) crashedOn = o;
+          else swellCrowd(0.18, 0.4);
         }
       });
 
@@ -171,6 +191,9 @@ export function HurdlesGame({
             : "You hit a hurdle! Race over — restart.",
         );
         setPhase("crashed");
+        setCrowdIntensity(0);
+        void playSound("aww");
+        window.setTimeout(() => stopCrowdAmbience(), 900);
         return;
       }
 
@@ -186,7 +209,9 @@ export function HurdlesGame({
         const ms = Math.round(now - start);
         setElapsed(ms);
         setPhase("finished");
-        void playSound("bubble");
+        swellCrowd(0.4, 1.6);
+        void playSound("cheer");
+        void playSound("champagne");
         onFinish(ms);
         return;
       }
@@ -221,6 +246,9 @@ export function HurdlesGame({
     setCrashMsg(null);
     setStumbling(false);
     setPhase("countdown");
+    lastCrowdUpdate.current = 0;
+    setCrowdIntensity(0.15);
+    startCrowdAmbience();
 
     const seq: [string, number][] = [
       ["3", 0],
@@ -234,7 +262,16 @@ export function HurdlesGame({
       timers.current.push(
         setTimeout(() => {
           setCountText(text);
-          void playSound(text === "GO!" ? "shutter" : "bubble");
+          if (text === "GO!") {
+            void playSound("pistol");
+            swellCrowd(0.35, 1.2);
+            void playSound("cheer");
+          } else if (text === "Ready…" || text === "Set…") {
+            void playSound("beepHigh");
+            if (text === "Set…") setCrowdIntensity(0.05); // crowd hushes
+          } else {
+            void playSound("beepLow");
+          }
           if (text === "GO!") {
             setPhase("running");
             runLoop();
@@ -250,6 +287,7 @@ export function HurdlesGame({
       clearTimers();
       stopLoop();
       setFalseStart(true);
+      stopCrowdAmbience();
       setCountText("");
       setPhase("idle");
       return;
