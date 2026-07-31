@@ -225,10 +225,6 @@ export function HurdlesGame({
     jumpCharging.current = false;
     stumbleUntil.current = 0;
     pendingTaps.current = 0;
-    lossAccum.current = 0;
-    setJumpLoss(0);
-    setJumpDragRate(0);
-    setAirborneNow(false);
     setDistance(0);
     setElapsed(0);
     setSpeed(0);
@@ -294,7 +290,6 @@ export function HurdlesGame({
     const now = performance.now();
     if (jumpDuration.current > 0 && now < jumpStart.current + jumpDuration.current * 1000) return;
     jumpStart.current = now;
-    lossAccum.current = 0;
     jumpDuration.current = JUMP_MIN_TIME;
     jumpHeight.current = JUMP_MIN_HEIGHT;
     jumpCharging.current = true;
@@ -472,30 +467,7 @@ export function HurdlesGame({
           </div>
         </div>
 
-        {/* HUD */}
-        {(phase === "running" || phase === "finished" || phase === "crashed") && (
-          <div className="pointer-events-none absolute left-2 top-2 rounded-lg border border-current/30 bg-background/70 px-2 py-1 text-[10px] font-semibold tabular-nums leading-tight backdrop-blur-sm">
-            <div className="flex items-center gap-1">
-              <span className="opacity-60">SPD</span>
-              <span className="text-xs font-black">{speed.toFixed(1)}</span>
-              <span className="opacity-60">m/s</span>
-            </div>
-            <div className="mt-0.5 h-1 w-24 overflow-hidden rounded-full bg-current/20">
-              <div
-                className="h-full bg-current"
-                style={{ width: `${Math.min(100, (speed / 14) * 100)}%` }}
-              />
-            </div>
-            <div className={`mt-1 flex items-center gap-1 ${airborneNow ? "" : "opacity-60"}`}>
-              <span className="opacity-60">JUMP LOSS</span>
-              <span className="font-black">-{jumpLoss.toFixed(2)}</span>
-              <span className="opacity-60">m/s</span>
-            </div>
-            <div className="opacity-60">
-              {airborneNow ? `airborne · -${jumpDragRate.toFixed(1)} m/s²` : "grounded"}
-            </div>
-          </div>
-        )}
+        {/* HUD removed */}
 
         {countText && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
