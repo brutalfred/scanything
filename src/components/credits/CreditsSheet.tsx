@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getAdRewardStatus } from "@/lib/ad-reward.functions";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, Play, X } from "lucide-react";
 import { playSound } from "@/lib/sounds";
