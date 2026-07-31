@@ -152,16 +152,23 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
 
         <button
           type="button"
-          disabled={!credits.signedIn}
+          disabled={!credits.signedIn || adLimitReached}
           onClick={() => {
-            if (!credits.signedIn) return;
+            if (!credits.signedIn || adLimitReached) return;
             setAdOpen(true);
           }}
-          className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 bg-secondary/40 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 bg-secondary/40 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
         >
           <Play className="h-4 w-4" />
-          Watch a commercial for 1 credit
+          {adLimitReached ? "Daily commercial limit reached" : "Watch a commercial for 1 credit"}
         </button>
+        {credits.signedIn && (
+          <p className="mb-4 mt-1.5 text-center text-[11px] text-muted-foreground">
+            {adsWatched}/{adLimit} commercials watched today
+          </p>
+        )}
+        {!credits.signedIn && <div className="mb-4" />}
+
 
 
 
