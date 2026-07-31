@@ -58,6 +58,9 @@ export function HurdlesGame({
   const [jumpY, setJumpY] = useState(0);
   const [stumbling, setStumbling] = useState(false);
   const [speed, setSpeed] = useState(0);
+  const [jumpLoss, setJumpLoss] = useState(0); // m/s lost on the current/last jump
+  const [jumpDragRate, setJumpDragRate] = useState(0); // m/s^2 extra drag right now
+  const [airborneNow, setAirborneNow] = useState(false);
   const [hits, setHits] = useState(0);
   const [falseStart, setFalseStart] = useState(false);
   const [crashMsg, setCrashMsg] = useState<string | null>(null);
@@ -65,6 +68,7 @@ export function HurdlesGame({
   const [obstacles, setObstacles] = useState<Obstacle[]>(() => buildObstacles());
 
   const pendingTaps = useRef(0);
+  const lossAccum = useRef(0);
   const jumpStart = useRef(0);
   const jumpDuration = useRef(0);
   const jumpCharging = useRef(false);
@@ -124,13 +128,19 @@ export function HurdlesGame({
       pendingTaps.current = 0;
       if (taps > 0) spd += taps * TAP_IMPULSE; // no speed cap
       let drag = DECEL * (stumble ? 2 : 1);
+      let extraDrag = 0;
       if (airborne) {
         // jumping costs speed — the higher the jump, the more you lose
         const heightFactor =
           (jumpHeight.current - JUMP_MIN_HEIGHT) / (JUMP_MAX_HEIGHT - JUMP_MIN_HEIGHT);
-        drag += JUMP_DRAG * (0.4 + 0.6 * Math.max(0, Math.min(1, heightFactor)));
+        extraDrag = JUMP_DRAG * (0.4 + 0.6 * Math.max(0, Math.min(1, heightFactor)));
+        drag += extraDrag;
+        lossAccum.current += Math.min(extraDrag * dt, spd);
       }
       spd = Math.max(0, spd - drag * dt);
+      setJumpDragRate(extraDrag);
+      setAirborneNow(airborne);
+      setJumpLoss(lossAccum.current);
 
 
       const prev = dist;
@@ -198,6 +208,10 @@ export function HurdlesGame({
     jumpCharging.current = false;
     stumbleUntil.current = 0;
     pendingTaps.current = 0;
+    lossAccum.current = 0;
+    setJumpLoss(0);
+    setJumpDragRate(0);
+    setAirborneNow(false);
     setDistance(0);
     setElapsed(0);
     setSpeed(0);
@@ -250,6 +264,7 @@ export function HurdlesGame({
     const now = performance.now();
     if (jumpDuration.current > 0 && now < jumpStart.current + jumpDuration.current * 1000) return;
     jumpStart.current = now;
+    lossAccum.current = 0;
     jumpDuration.current = JUMP_MIN_TIME;
     jumpHeight.current = JUMP_MIN_HEIGHT;
     jumpCharging.current = true;
@@ -426,6 +441,31 @@ export function HurdlesGame({
             </svg>
           </div>
         </div>
+
+        {/* HUD */}
+        {(phase === "running" || phase === "finished" || phase === "crashed") && (
+          <div className="pointer-events-none absolute left-2 top-2 rounded-lg border border-current/30 bg-background/70 px-2 py-1 text-[10px] font-semibold tabular-nums leading-tight backdrop-blur-sm">
+            <div className="flex items-center gap-1">
+              <span className="opacity-60">SPD</span>
+              <span className="text-xs font-black">{speed.toFixed(1)}</span>
+              <span className="opacity-60">m/s</span>
+            </div>
+            <div className="mt-0.5 h-1 w-24 overflow-hidden rounded-full bg-current/20">
+              <div
+                className="h-full bg-current"
+                style={{ width: `${Math.min(100, (speed / 14) * 100)}%` }}
+              />
+            </div>
+            <div className={`mt-1 flex items-center gap-1 ${airborneNow ? "" : "opacity-60"}`}>
+              <span className="opacity-60">JUMP LOSS</span>
+              <span className="font-black">-{jumpLoss.toFixed(2)}</span>
+              <span className="opacity-60">m/s</span>
+            </div>
+            <div className="opacity-60">
+              {airborneNow ? `airborne · -${jumpDragRate.toFixed(1)} m/s²` : "grounded"}
+            </div>
+          </div>
+        )}
 
         {countText && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
