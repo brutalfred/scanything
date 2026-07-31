@@ -7,8 +7,18 @@ import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { AdRewardModal } from "./AdRewardModal";
+import { isNativeAndroid } from "@/lib/platform";
+import { buyWithPlay, playBillingAvailable } from "@/lib/play-billing";
 import type { CreditsApi } from "@/hooks/useCredits";
 
+
+/** Web price IDs mapped to Google Play in-app product IDs. */
+const PLAY_PRODUCT_BY_PRICE_ID: Record<string, string> = {
+  credits_pack_1_price: "credits_1",
+  credits_pack_5_price: "credits_5",
+  credits_pack_10_price: "credits_10",
+  credits_pack_50_price: "credits_50",
+};
 
 function reasonLabel(reason: string) {
   const base = reason.replace(/^refund:/, "").replace(/^purchase:.*$/, "purchase");
@@ -29,6 +39,18 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
     }
     setBuying(priceId);
     try {
+      if (isNativeAndroid()) {
+        if (!playBillingAvailable()) {
+          throw new Error("Google Play billing is unavailable on this device");
+        }
+        // Play requires in-app purchases for digital goods inside the Android app.
+        const productId = PLAY_PRODUCT_BY_PRICE_ID[priceId];
+        if (!productId) throw new Error("This pack is not available in the app");
+        await buyWithPlay(productId);
+        await credits.refresh?.();
+        toast.success("Credits added to your account");
+        return;
+      }
       await openCheckout({
         priceId,
         customerEmail: credits.email ?? undefined,
