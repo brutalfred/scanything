@@ -36,7 +36,7 @@ export const redeemPlayPurchase = createServerFn({ method: "POST" })
       _user_id: context.userId,
       _purchase_token: data.purchaseToken,
       _product_id: data.productId,
-      _order_id: verified.orderId,
+      _order_id: verified.orderId ?? "",
       _credits: credits,
     });
     if (error) throw new Error(error.message);
