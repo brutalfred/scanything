@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getAdRewardStatus } from "@/lib/ad-reward.functions";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, Play, X } from "lucide-react";
 import { playSound } from "@/lib/sounds";
@@ -32,6 +34,16 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const { openCheckout } = usePaddleCheckout();
   const [buying, setBuying] = useState<string | null>(null);
   const [adOpen, setAdOpen] = useState(false);
+  const adStatus = useQuery({
+    queryKey: ["ad-reward-status"],
+    queryFn: () => getAdRewardStatus(),
+    enabled: credits.signedIn,
+    staleTime: 10_000,
+  });
+  const adsWatched = adStatus.data?.claimsToday ?? 0;
+  const adLimit = adStatus.data?.dailyLimit ?? 5;
+  const adLimitReached = credits.signedIn && adsWatched >= adLimit;
+
 
 
   async function buy(priceId: string) {
@@ -140,16 +152,23 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
 
         <button
           type="button"
-          disabled={!credits.signedIn}
+          disabled={!credits.signedIn || adLimitReached}
           onClick={() => {
-            if (!credits.signedIn) return;
+            if (!credits.signedIn || adLimitReached) return;
             setAdOpen(true);
           }}
-          className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 bg-secondary/40 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 bg-secondary/40 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
         >
           <Play className="h-4 w-4" />
-          Watch a commercial for 1 credit
+          {adLimitReached ? "Daily commercial limit reached" : "Watch a commercial for 1 credit"}
         </button>
+        {credits.signedIn && (
+          <p className="mb-4 mt-1.5 text-center text-[11px] text-muted-foreground">
+            {adsWatched}/{adLimit} commercials watched today
+          </p>
+        )}
+        {!credits.signedIn && <div className="mb-4" />}
+
 
 
 
@@ -204,7 +223,14 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
 
       {adOpen && (
         <div onClick={(e) => e.stopPropagation()}>
-          <AdRewardModal onClose={() => setAdOpen(false)} onRewarded={credits.refresh} />
+          <AdRewardModal
+            onClose={() => setAdOpen(false)}
+            onRewarded={() => {
+              credits.refresh();
+              void adStatus.refetch();
+            }}
+          />
+
         </div>
       )}
     </div>
