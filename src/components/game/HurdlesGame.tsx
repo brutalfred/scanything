@@ -59,10 +59,16 @@ export function HurdlesGame({
   const [hits, setHits] = useState(0);
   const [falseStart, setFalseStart] = useState(false);
 
+  const [obstacles, setObstacles] = useState<Obstacle[]>(() => buildObstacles());
+
   const holding = useRef(false);
-  const jumpUntil = useRef(0);
+  const jumpStart = useRef(0);
+  const jumpDuration = useRef(0);
+  const jumpCharging = useRef(false);
+  const jumpHeight = useRef(0);
   const stumbleUntil = useRef(0);
   const cleared = useRef<Set<number>>(new Set());
+  const obstaclesRef = useRef<Obstacle[]>(obstacles);
   const raf = useRef<number | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -91,8 +97,24 @@ export function HurdlesGame({
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
 
-      const airborne = now < jumpUntil.current;
+      // charge the jump while the button/space is held
+      if (jumpCharging.current) {
+        const held = (now - jumpStart.current) / 1000;
+        const charge = Math.min(1, held / JUMP_CHARGE_TIME);
+        jumpDuration.current = JUMP_MIN_TIME + charge * (JUMP_MAX_TIME - JUMP_MIN_TIME);
+        jumpHeight.current = JUMP_MIN_HEIGHT + charge * (JUMP_MAX_HEIGHT - JUMP_MIN_HEIGHT);
+        if (held >= JUMP_CHARGE_TIME) jumpCharging.current = false;
+      }
+
+      const jumpEnd = jumpStart.current + jumpDuration.current * 1000;
+      const airborne = jumpDuration.current > 0 && now < jumpEnd;
       const stumble = now < stumbleUntil.current;
+
+      let currentY = 0;
+      if (airborne) {
+        const t = (now - jumpStart.current) / (jumpDuration.current * 1000);
+        currentY = Math.sin(Math.PI * t) * jumpHeight.current;
+      }
 
       if (stumble) {
         spd = Math.max(0, spd - DECEL * 2 * dt);
@@ -105,11 +127,11 @@ export function HurdlesGame({
       const prev = dist;
       dist = Math.min(TRACK_M, dist + spd * dt);
 
-      HURDLES.forEach((h, i) => {
+      obstaclesRef.current.forEach((o, i) => {
         if (cleared.current.has(i)) return;
-        if (prev < h && dist >= h) {
+        if (prev < o.m && dist >= o.m) {
           cleared.current.add(i);
-          if (!airborne) {
+          if (currentY < o.height) {
             stumbleUntil.current = now + HURDLE_HIT_PENALTY * 1000;
             setStumbling(true);
             setHits((n) => n + 1);
@@ -118,12 +140,7 @@ export function HurdlesGame({
         }
       });
 
-      if (airborne) {
-        const t = 1 - (jumpUntil.current - now) / (JUMP_TIME * 1000);
-        setJumpY(Math.sin(Math.PI * t) * JUMP_HEIGHT);
-      } else {
-        setJumpY(0);
-      }
+      setJumpY(currentY);
 
       setDistance(dist);
       setSpeed(spd);
@@ -147,7 +164,13 @@ export function HurdlesGame({
     clearTimers();
     stopLoop();
     cleared.current = new Set();
-    jumpUntil.current = 0;
+    const next = buildObstacles();
+    obstaclesRef.current = next;
+    setObstacles(next);
+    jumpStart.current = 0;
+    jumpDuration.current = 0;
+    jumpHeight.current = 0;
+    jumpCharging.current = false;
     stumbleUntil.current = 0;
     holding.current = false;
     setDistance(0);
@@ -199,23 +222,31 @@ export function HurdlesGame({
     holding.current = false;
   };
 
-  const jump = () => {
+  const jumpDown = () => {
     if (phase !== "running") return;
     const now = performance.now();
-    if (now < jumpUntil.current) return;
-    jumpUntil.current = now + JUMP_TIME * 1000;
+    if (jumpDuration.current > 0 && now < jumpStart.current + jumpDuration.current * 1000) return;
+    jumpStart.current = now;
+    jumpDuration.current = JUMP_MIN_TIME;
+    jumpHeight.current = JUMP_MIN_HEIGHT;
+    jumpCharging.current = true;
     void playSound("bubble");
+  };
+
+  const jumpUp = () => {
+    jumpCharging.current = false;
   };
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
-        jump();
+        if (!e.repeat) jumpDown();
       }
       if (e.code === "ArrowRight") holding.current = true;
     };
     const up = (e: KeyboardEvent) => {
+      if (e.code === "Space") jumpUp();
       if (e.code === "ArrowRight") holding.current = false;
     };
     window.addEventListener("keydown", down);
@@ -267,16 +298,30 @@ export function HurdlesGame({
             </div>
           ))}
 
-          {/* hurdles */}
-          {HURDLES.map((m, i) => (
-            <div
-              key={i}
-              className="absolute bottom-14 w-[3px] rounded-sm bg-current opacity-80"
-              style={{ left: m * PX_PER_M, height: 30 }}
-            >
-              <span className="absolute -left-3 top-0 block h-[3px] w-8 rounded-sm bg-current" />
-            </div>
-          ))}
+          {/* hurdles + stone */}
+          {obstacles.map((o, i) =>
+            o.kind === "hurdle" ? (
+              <div
+                key={i}
+                className="absolute bottom-14 w-[3px] rounded-sm bg-current opacity-80"
+                style={{ left: o.m * PX_PER_M, height: o.height }}
+              >
+                <span className="absolute -left-3 top-0 block h-[3px] w-8 rounded-sm bg-current" />
+              </div>
+            ) : (
+              <div
+                key={i}
+                className="absolute bottom-14 rounded-full bg-current opacity-60"
+                style={{
+                  left: o.m * PX_PER_M,
+                  width: o.height + 6,
+                  height: o.height,
+                  transform: "translateX(-50%)",
+                }}
+                title="Stone"
+              />
+            ),
+          )}
 
           {/* finish line */}
           <div
@@ -337,7 +382,9 @@ export function HurdlesGame({
         {phase === "idle" && !countText && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center text-xs">
             <span className="text-sm font-bold">110m Hurdles</span>
-            <span className="mt-1 opacity-70">Hold the track to run · JUMP to clear hurdles</span>
+            <span className="mt-1 opacity-70">
+              Hold the track to run · hold JUMP longer to jump higher · watch for the stone
+            </span>
             {falseStart && (
               <span className="mt-1 font-semibold text-destructive">False start! Try again.</span>
             )}
@@ -359,11 +406,14 @@ export function HurdlesGame({
           data-no-sound
           onPointerDown={(e) => {
             e.preventDefault();
-            jump();
+            jumpDown();
           }}
+          onPointerUp={jumpUp}
+          onPointerLeave={jumpUp}
+          onPointerCancel={jumpUp}
           className="flex-1 rounded-xl border border-current/40 bg-current/10 px-3 py-2 text-sm font-black uppercase tracking-wide transition-transform active:scale-95"
         >
-          Jump
+          Jump (SPACE)
         </button>
       </div>
 
