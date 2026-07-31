@@ -1840,6 +1840,34 @@ function DetailPanel({
               </div>
             )}
 
+            {enrichment.category === "plate" && (
+              <div className="mt-4 rounded-lg border border-border bg-secondary p-3">
+                <div className="text-xs font-medium text-muted-foreground">
+                  Official vehicle lookup
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Owner details are not public. Use an official registry below — you must be
+                  authorised and sign in with your own credentials.
+                </p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {plateLookupLinks(name, enrichment.description).map((l) => (
+                    <a
+                      key={l.url}
+                      href={l.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+                    >
+                      {l.label}
+                      <ExternalLink className="h-4 w-4 opacity-60" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+
+
             <div className="mt-4 flex flex-col gap-2">
               <a
                 href={enrichment.searchUrl}
