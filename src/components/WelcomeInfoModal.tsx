@@ -51,12 +51,6 @@ export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; user
           <li>
             Clear close-up photos with a clean lens will make the scans more accurate.
           </li>
-          <li>
-            Contact:{" "}
-            <a href="mailto:scanythingapp@gmail.com" className="font-semibold text-primary underline">
-              scanythingapp@gmail.com
-            </a>
-          </li>
         </ul>
 
         <button
