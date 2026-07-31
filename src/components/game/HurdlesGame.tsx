@@ -9,7 +9,7 @@ const PX_PER_M = 26;
 
 const TAP_IMPULSE = 1.15; // m/s gained per tap/click
 const DECEL = 3.2; // m/s^2 constant slow-down
-const MAX_SPEED = 11.5; // m/s
+const JUMP_DRAG = 6.0; // extra m/s^2 slow-down while airborne, scaled by jump height
 const STONE_COUNT = 3;
 const JUMP_MIN_TIME = 0.3; // shortest hop (seconds)
 const JUMP_MAX_TIME = 0.75; // longest jump when fully charged
@@ -122,8 +122,15 @@ export function HurdlesGame({
       // taps/clicks add speed; the runner constantly slows down otherwise
       const taps = pendingTaps.current;
       pendingTaps.current = 0;
-      if (taps > 0) spd = Math.min(MAX_SPEED, spd + taps * TAP_IMPULSE);
-      spd = Math.max(0, spd - DECEL * (stumble ? 2 : 1) * dt);
+      if (taps > 0) spd += taps * TAP_IMPULSE; // no speed cap
+      let drag = DECEL * (stumble ? 2 : 1);
+      if (airborne) {
+        // jumping costs speed — the higher the jump, the more you lose
+        const heightFactor =
+          (jumpHeight.current - JUMP_MIN_HEIGHT) / (JUMP_MAX_HEIGHT - JUMP_MIN_HEIGHT);
+        drag += JUMP_DRAG * (0.4 + 0.6 * Math.max(0, Math.min(1, heightFactor)));
+      }
+      spd = Math.max(0, spd - drag * dt);
 
 
       const prev = dist;
@@ -291,6 +298,41 @@ export function HurdlesGame({
         onPointerDown={pressStart}
         className="relative h-40 w-full cursor-pointer overflow-hidden rounded-xl border border-current/30 bg-current/5 touch-none"
       >
+        {/* stadium backdrop: crowd + stands silhouette */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-[62%] bg-gradient-to-b from-current/[0.14] to-transparent" />
+          {/* floodlights */}
+          {[12, 46, 80].map((x) => (
+            <div key={x} className="absolute top-1 opacity-30" style={{ left: `${x}%` }}>
+              <div className="h-1.5 w-10 rounded-sm bg-current" />
+              <div className="mx-auto h-5 w-[2px] bg-current" />
+            </div>
+          ))}
+          {/* crowd rows */}
+          {[0, 1, 2].map((row) => (
+            <div
+              key={row}
+              className="absolute inset-x-0 flex items-end"
+              style={{ bottom: `${44 + row * 9}%`, opacity: 0.16 + row * 0.06 }}
+            >
+              {Array.from({ length: 90 }, (_, i) => (
+                <span
+                  key={i}
+                  className="mx-[1px] block rounded-full bg-current"
+                  style={{
+                    width: 5 - row,
+                    height: 5 - row,
+                    transform: `translateY(${(i % 3) - 1}px)`,
+                  }}
+                />
+              ))}
+            </div>
+          ))}
+          {/* stand front wall */}
+          <div className="absolute inset-x-0 bottom-[42%] h-[3px] bg-current/30" />
+          <div className="absolute inset-x-0 bottom-14 h-[calc(42%-3.5rem)] bg-current/[0.07]" />
+        </div>
+
         {/* sky/ground */}
         <div className="absolute inset-x-0 bottom-0 h-14 border-t border-current/30 bg-current/10" />
 
