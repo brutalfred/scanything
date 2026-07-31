@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Coins, Loader2, X } from "lucide-react";
+import { Coins, Loader2, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { getPaddleEnvironment } from "@/lib/paddle";
+import { AdRewardModal } from "./AdRewardModal";
 import type { CreditsApi } from "@/hooks/useCredits";
+
 
 function reasonLabel(reason: string) {
   const base = reason.replace(/^refund:/, "").replace(/^purchase:.*$/, "purchase");
