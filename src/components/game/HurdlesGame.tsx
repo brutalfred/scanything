@@ -7,9 +7,10 @@ const HURDLE_GAP_M = 9.14;
 const HURDLE_COUNT = 10;
 const PX_PER_M = 26;
 
-const ACCEL = 5.2; // m/s^2 while holding
-const DECEL = 6.5; // m/s^2 while released
+const TAP_IMPULSE = 1.15; // m/s gained per tap/click
+const DECEL = 3.2; // m/s^2 constant slow-down
 const MAX_SPEED = 11.5; // m/s
+const STONE_COUNT = 3;
 const JUMP_MIN_TIME = 0.3; // shortest hop (seconds)
 const JUMP_MAX_TIME = 0.75; // longest jump when fully charged
 const JUMP_CHARGE_TIME = 0.42; // hold this long for a full jump
@@ -25,14 +26,15 @@ function buildObstacles(): Obstacle[] {
     height: Math.round(22 + Math.random() * 16), // 22–38 px
     kind: "hurdle" as const,
   }));
-  // one random stone somewhere on the track (wild card)
-  const stone: Obstacle = {
+  // random stones scattered on the track (wild cards)
+  const stones: Obstacle[] = Array.from({ length: STONE_COUNT }, () => ({
     m: 8 + Math.random() * (TRACK_M - 16),
     height: Math.round(10 + Math.random() * 8), // 10–18 px
-    kind: "stone",
-  };
-  return [...hurdles, stone].sort((a, b) => a.m - b.m);
+    kind: "stone" as const,
+  }));
+  return [...hurdles, ...stones].sort((a, b) => a.m - b.m);
 }
+
 
 type Phase = "idle" | "countdown" | "running" | "finished" | "crashed";
 
@@ -62,7 +64,7 @@ export function HurdlesGame({
 
   const [obstacles, setObstacles] = useState<Obstacle[]>(() => buildObstacles());
 
-  const holding = useRef(false);
+  const pendingTaps = useRef(0);
   const jumpStart = useRef(0);
   const jumpDuration = useRef(0);
   const jumpCharging = useRef(false);
@@ -117,13 +119,12 @@ export function HurdlesGame({
         currentY = Math.sin(Math.PI * t) * jumpHeight.current;
       }
 
-      if (stumble) {
-        spd = Math.max(0, spd - DECEL * 2 * dt);
-      } else if (holding.current) {
-        spd = Math.min(MAX_SPEED, spd + ACCEL * dt);
-      } else {
-        spd = Math.max(0, spd - DECEL * dt);
-      }
+      // taps/clicks add speed; the runner constantly slows down otherwise
+      const taps = pendingTaps.current;
+      pendingTaps.current = 0;
+      if (taps > 0) spd = Math.min(MAX_SPEED, spd + taps * TAP_IMPULSE);
+      spd = Math.max(0, spd - DECEL * (stumble ? 2 : 1) * dt);
+
 
       const prev = dist;
       dist = Math.min(TRACK_M, dist + spd * dt);
@@ -140,7 +141,7 @@ export function HurdlesGame({
       if (crashedOn) {
         const kind = (crashedOn as Obstacle).kind;
         stopLoop();
-        holding.current = false;
+        pendingTaps.current = 0;
         jumpCharging.current = false;
         setDistance(dist);
         setElapsed(now - start);
@@ -189,7 +190,7 @@ export function HurdlesGame({
     jumpHeight.current = 0;
     jumpCharging.current = false;
     stumbleUntil.current = 0;
-    holding.current = false;
+    pendingTaps.current = 0;
     setDistance(0);
     setElapsed(0);
     setSpeed(0);
@@ -233,11 +234,8 @@ export function HurdlesGame({
       return;
     }
     if (phase !== "running") return;
-    holding.current = true;
-  };
-
-  const pressEnd = () => {
-    holding.current = false;
+    // each click/tap gives the runner a burst of speed — tap faster to run faster
+    pendingTaps.current += 1;
   };
 
   const jumpDown = () => {
@@ -261,11 +259,10 @@ export function HurdlesGame({
         e.preventDefault();
         if (!e.repeat) jumpDown();
       }
-      if (e.code === "ArrowRight") holding.current = true;
+      if (e.code === "ArrowRight" && phase === "running") pendingTaps.current += 1;
     };
     const up = (e: KeyboardEvent) => {
       if (e.code === "Space") jumpUp();
-      if (e.code === "ArrowRight") holding.current = false;
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -289,12 +286,9 @@ export function HurdlesGame({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Hold to run"
+        aria-label="Tap repeatedly to run"
         data-no-sound
         onPointerDown={pressStart}
-        onPointerUp={pressEnd}
-        onPointerLeave={pressEnd}
-        onPointerCancel={pressEnd}
         className="relative h-40 w-full cursor-pointer overflow-hidden rounded-xl border border-current/30 bg-current/5 touch-none"
       >
         {/* sky/ground */}
@@ -401,10 +395,10 @@ export function HurdlesGame({
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center text-xs">
             <span className="text-sm font-bold">110m Hurdles</span>
             <span className="mt-1 opacity-70">
-              Hold the track to run · hold JUMP longer to jump higher
+              Tap the track fast to run · hold JUMP longer to jump higher
             </span>
             <span className="mt-1 opacity-70">
-              Hit a hurdle or the stone and the race is over — restart.
+              Hit a hurdle or a stone and the race is over — restart.
             </span>
             {falseStart && (
               <span className="mt-1 font-semibold text-destructive">False start! Try again.</span>
