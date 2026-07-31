@@ -1,6 +1,5 @@
 // Server-only credit bridge: debits credits before an AI call and refunds on failure.
 import { createClient } from "@supabase/supabase-js";
-import { getRequestHeader } from "@tanstack/react-start/server";
 import type { Database } from "@/integrations/supabase/types";
 import { CREDIT_COSTS, INSUFFICIENT_CREDITS, type CreditReason } from "./credits";
 
