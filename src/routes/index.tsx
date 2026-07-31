@@ -19,6 +19,7 @@ import {
   Languages,
   User,
   History,
+  Mail,
 } from "lucide-react";
 
 
