@@ -1,9 +1,11 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCredits, type CreditsApi } from "@/hooks/useCredits";
 import { CreditsSheet } from "./CreditsSheet";
 import { WelcomeInfoModal } from "@/components/WelcomeInfoModal";
 import { CREDIT_LABELS, type CreditReason } from "@/lib/credits";
+import { playSound } from "@/lib/sounds";
+
 
 type CreditsContextValue = CreditsApi & {
   /** Reserve credits for an action. Returns false (and nudges the user) when the balance is short. */
