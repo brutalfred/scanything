@@ -1101,6 +1101,7 @@ function Scanner() {
                 <div className="flex flex-col items-center gap-2">
                   <Button
                     size="lg"
+                    data-no-sound
                     onClick={capture}
                     disabled={!credits.canAfford("photo_scan")}
                     className="w-full max-w-xs"
