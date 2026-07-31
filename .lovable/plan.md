@@ -1,52 +1,44 @@
-## Goal
+## Scanything Hurdles — mini-game
 
-Make Scanything shippable on Google Play as a Capacitor-wrapped Android app, with credit purchases going through Google Play Billing instead of Paddle when running inside the Android app.
+A small arcade game inside the signed-in account tab: a 1-lane 110m hurdles sprint with a global leaderboard and monthly credit prizes.
 
-## What I do in this project
+### Gameplay
+- Entry: a "Play: 110m Hurdles" button in the account modal, opening a themed game panel (same colors/glow as the other sheets).
+- Countdown: "3 — 2 — 1 — Ready… Set… GO!" (false start before GO = restart).
+- Side-view single lane, runner silhouette, 10 hurdles spaced over a 110m track, camera scrolls with the runner.
+- Controls: tap/click/hold anywhere on the track area accelerates; releasing decelerates to a stop. A dedicated "JUMP" button clears hurdles.
+- Hitting a hurdle costs speed and a small time penalty; the runner stumbles briefly.
+- Timer runs from GO to the finish line, shown to 1/100s. On finish: your time, your personal best, and whether it beat your monthly best.
+- Works with mouse, touch, and keyboard (space = jump).
+- Uses the existing arcade sound helper (bubble pop for buttons; no new sound assets).
 
-**1. Capacitor setup**
-- Add `@capacitor/core`, `@capacitor/cli`, `@capacitor/android`, plus `@capacitor/app`, `@capacitor/browser`, `@capacitor/status-bar`, `@capacitor/splash-screen`.
-- Create `capacitor.config.ts`: appId `app.scanything.twa` → `app.scanything`, appName `Scanything`, `server.url = https://scanything.app` with `androidScheme: "https"` so the shell loads the live site (web updates ship without a new Play upload).
-- Add npm scripts for `cap sync` / `cap open android`.
+### Leaderboards
+Two boards in tabs inside the game panel:
+- **This month** — resets at the start of each month, drives the credit prizes.
+- **All time** — never resets, no payouts.
 
-**2. Native-aware app code**
-- `src/lib/platform.ts` — `isNativeAndroid()` helper (Capacitor detection).
-- Hide the "Install app" PWA button inside the native shell.
-- Android hardware back button handling (close modals/sheets before exiting).
-- Safe-area padding for the status bar on the camera overlay.
+Each shows the top 10 by fastest time, with a "Show more" toggle that expands to top 50. Your own row is always highlighted and shown even if you're outside the visible range. Players appear under a display name they can set once in the game panel (defaults to a masked version of their sign-in email — full emails are never shown to other users).
 
-**3. Auth for native**
-- Sign-in opens in a system browser tab and returns via a custom scheme (`app.scanything://callback`) plus the existing `/auth/callback` web path.
-- Add the Android intent-filter/deep-link config and document the redirect URI to register.
+### Monthly prizes
+- On the 1st of each month, the previous month's top 3 are awarded automatically: 1st = 100 credits, 2nd = 50 credits, 3rd = 10 credits (coin sound plays next time they see the balance change; a note appears in their credit history).
+- The monthly board then starts fresh; all-time results are untouched.
+- A small line in the game panel shows the prize structure and days remaining in the month.
 
-**4. Play Billing (credits)**
-- New table `play_purchases` (purchase token, product id, user id, credits granted, state) with RLS + grants; unique purchase token so a token can only be redeemed once.
-- Server function `verifyPlayPurchase` — verifies the purchase token against Google Play Developer API, then credits the account atomically. Requires a Google service-account JSON secret; I'll request it when we reach that step.
-- `src/lib/billing.ts` — wraps a Play Billing Capacitor plugin behind the same interface the credits sheet already uses; on native, the credits sheet shows Play products, on web it keeps Paddle.
-- Product IDs mirroring the current packs (e.g. `credits_1`, `credits_5`, `credits_10`, `credits_50`) to be created in Play Console.
+### Anti-cheat (kept light)
+- Times are validated server-side against plausible bounds (no sub-human times, no negative or absurd values), and only improvements to a player's best are stored.
+- Score submission requires a signed-in session; one best-time row per player per month.
 
-**5. Store compliance**
-- Privacy policy link + account deletion route (Play requires in-app account deletion): `/account/delete` calling a server function that removes the user's data.
-- Data-safety notes: camera images sent to AI for analysis, no biometric storage.
-- App icons + 512px store icon, feature graphic and screenshot guidance from the existing logo.
+## Technical details
 
-## What you do outside Lovable
+**Database (one migration)**
+- `game_scores`: user_id, display_name, time_ms, month_key (e.g. `2026-07`), created_at/updated_at, unique on (user_id, month_key). GRANTs + RLS: users insert/update their own rows only; leaderboard reads go through a security-definer function that returns rank, display name, and time (no emails, no user ids).
+- `game_prize_payouts`: month_key + user_id + place + credits, unique per month/place, so payouts can never double-fire.
+- Security-definer functions: `submit_game_score(_user_id, _time_ms)`, `get_game_leaderboard(_scope text, _limit int)` (`month` | `alltime`), `award_monthly_game_prizes()` — the last one reads last month's top 3, calls the existing `grant_credits` with reason `game_prize:<place>`, and records rows in `game_prize_payouts`.
+- `pg_cron` job on the 1st at 00:05 UTC calling `award_monthly_game_prizes()` (pure SQL, no HTTP needed).
 
-1. Export the project to GitHub, `npm install`, `npx cap add android`, open in Android Studio.
-2. Create the Google Play developer account ($25 one-time) and the app entry.
-3. Create the four in-app products in Play Console with the IDs above.
-4. Create a Google Cloud service account, grant it Play Developer API access, download the JSON key — I'll store it as a secret.
-5. Build the signed AAB (Play App Signing), upload to internal testing, then production.
-
-## Technical notes
-
-- Camera and flashlight already use `getUserMedia`; with `server.url` pointing at the https site the WebView grants them after the native `CAMERA` permission prompt — I'll add the manifest permission entries and the WebView permission-request handler snippet.
-- Because the shell loads the live site, content/UI/AI changes need no Play upload; only wrapper, permission, icon, or billing-plugin changes do.
-- Paddle stays for the web app; Play Billing only activates inside the Android build to satisfy Google's payments policy.
-
-## Order of work
-
-1. Capacitor config + native-aware UI + back button + deep links
-2. Account deletion route + store compliance pieces
-3. Play Billing table, server verification, and billing abstraction
-4. Icon/store asset generation and a written build/upload checklist
+**Frontend**
+- `src/lib/game.functions.ts` — `requireSupabaseAuth`-protected server fns wrapping the three RPCs.
+- `src/components/game/HurdlesGame.tsx` — canvas-free DOM/CSS render loop via `requestAnimationFrame`, fixed-timestep physics, no new dependencies.
+- `src/components/game/GameSheet.tsx` — themed modal holding the game + leaderboard tabs.
+- `src/components/credits/AccountButton.tsx` — adds the "Play: 110m Hurdles" button.
+- No AI calls, no credit cost to play.
