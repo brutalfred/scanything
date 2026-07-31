@@ -119,13 +119,12 @@ export function HurdlesGame({
         currentY = Math.sin(Math.PI * t) * jumpHeight.current;
       }
 
-      if (stumble) {
-        spd = Math.max(0, spd - DECEL * 2 * dt);
-      } else if (holding.current) {
-        spd = Math.min(MAX_SPEED, spd + ACCEL * dt);
-      } else {
-        spd = Math.max(0, spd - DECEL * dt);
-      }
+      // taps/clicks add speed; the runner constantly slows down otherwise
+      const taps = pendingTaps.current;
+      pendingTaps.current = 0;
+      if (taps > 0) spd = Math.min(MAX_SPEED, spd + taps * TAP_IMPULSE);
+      spd = Math.max(0, spd - DECEL * (stumble ? 2 : 1) * dt);
+
 
       const prev = dist;
       dist = Math.min(TRACK_M, dist + spd * dt);
