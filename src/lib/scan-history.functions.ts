@@ -63,6 +63,30 @@ export const saveScanHistory = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    // Keep only the 10 most recent scans per user.
+    const { data: keep } = await supabase
+      .from("scan_history")
+      .select("id")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (keep && keep.length === 10) {
+      const oldest = keep[keep.length - 1]!.id;
+      const { data: cutoff } = await supabase
+        .from("scan_history")
+        .select("created_at")
+        .eq("id", oldest)
+        .single();
+      if (cutoff) {
+        await supabase
+          .from("scan_history")
+          .delete()
+          .eq("user_id", userId)
+          .lt("created_at", cutoff.created_at);
+      }
+    }
+
     return { id: row.id };
   });
 
