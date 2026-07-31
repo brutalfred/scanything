@@ -64,9 +64,6 @@ export function HurdlesGame({
   const [jumpY, setJumpY] = useState(0);
   const [stumbling, setStumbling] = useState(false);
   const [speed, setSpeed] = useState(0);
-  const [jumpLoss, setJumpLoss] = useState(0); // m/s lost on the current/last jump
-  const [jumpDragRate, setJumpDragRate] = useState(0); // m/s^2 extra drag right now
-  const [airborneNow, setAirborneNow] = useState(false);
   const [hits, setHits] = useState(0);
   const [falseStart, setFalseStart] = useState(false);
   const [crashMsg, setCrashMsg] = useState<string | null>(null);
