@@ -106,6 +106,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ScanHistoryEntry | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ScanHistoryItem | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
