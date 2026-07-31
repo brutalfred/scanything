@@ -102,7 +102,7 @@ const TRANSLATE_SYSTEM = `You translate short pieces of text (signs, logos, labe
 const PERSON_SYSTEM = `You compile a short, neutral, publicly-known summary about a named person for a UI info card. Do NOT invent facts; if you don't know, say so plainly. Use only widely-known public information. Respond ONLY with compact JSON:
 {"known":true|false,"summary":"2-4 sentence neutral overview, or a note that this person is not publicly known","bullets":["short fact 1","short fact 2","..."],"occupation":"if known, else empty","nationality":"if known, else empty","wikipediaUrl":"https://en.wikipedia.org/wiki/<topic> if plausible, else empty"}`;
 
-async function callGateway(action: string, body: unknown): Promise<string> {
+async function callGateway(action: string, body: unknown, userId: string): Promise<string> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -124,11 +124,9 @@ async function callGateway(action: string, body: unknown): Promise<string> {
 
   // Cost telemetry: record what this call actually cost us.
   const model = (body as { model?: string })?.model ?? "unknown";
-  const [{ recordAiUsage }, { getRequestUserId }] = await Promise.all([
-    import("./ai-usage.server"),
-    import("./credits.server"),
-  ]);
-  await recordAiUsage({ action, model, usage: json.usage, userId: getRequestUserId() });
+  const { recordAiUsage } = await import("./ai-usage.server");
+  // Identity comes from the auth middleware, never from an unverified token.
+  await recordAiUsage({ action, model, usage: json.usage, userId });
 
   return json.choices?.[0]?.message?.content ?? "{}";
 }
@@ -169,7 +167,7 @@ export const analyzeRoom = createServerFn({ method: "POST" })
             ],
           },
         ],
-      }),
+      }, context.userId),
     );
 
     const parsed = safeParse<AnalyzeResult>(content, { items: [] });
@@ -198,7 +196,7 @@ export const quickScan = createServerFn({ method: "POST" })
             ],
           },
         ],
-      }),
+      }, context.userId),
     );
 
     const parsed = safeParse<QuickResult>(content, { items: [] });
@@ -244,7 +242,7 @@ export const enrichItem = createServerFn({ method: "POST" })
             ],
           },
         ],
-      }),
+      }, context.userId),
     );
 
     const parsed = safeParse<Partial<DetectedItem>>(content, {});
@@ -337,7 +335,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
             ],
           },
         ],
-      }),
+      }, context.userId),
     );
     const parsed = safeParse<Partial<DeepAnalysis>>(content, {});
     const q = [parsed.brand, parsed.product, data.name].filter(Boolean).join(" ").trim();
@@ -380,7 +378,7 @@ export const translateText = createServerFn({ method: "POST" })
           { role: "system", content: TRANSLATE_SYSTEM },
           { role: "user", content: `Translate to English: ${data.text}` },
         ],
-      }),
+      }, context.userId),
     );
     const parsed = safeParse<Partial<Translation>>(content, {});
     return {
@@ -424,7 +422,7 @@ export const personInfo = createServerFn({ method: "POST" })
             content: `Give a public info summary for: ${data.name}. Use only widely-known public information. If not publicly known, say so.`,
           },
         ],
-      }),
+      }, context.userId),
     );
     const parsed = safeParse<Partial<PersonInfo>>(content, {});
     return {
@@ -489,7 +487,7 @@ export const personSearch = createServerFn({ method: "POST" })
             content: `Searched for: "${query}"\nName: ${data.name}\nLocation: ${data.location || "(not provided)"}\n\nSearch results:\n${resultsText}\n\nJSON only.`,
           },
         ],
-      }),
+      }, context.userId),
     );
     const parsed = safeParse<{ matches?: Partial<PersonMatch>[] }>(content, {});
     const allowed = new Set(results.map((r) => r.url));

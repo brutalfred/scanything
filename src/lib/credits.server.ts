@@ -1,6 +1,5 @@
 // Server-only credit bridge: debits credits before an AI call and refunds on failure.
 import { createClient } from "@supabase/supabase-js";
-import { getRequestHeader } from "@tanstack/react-start/server";
 import type { Database } from "@/integrations/supabase/types";
 import { CREDIT_COSTS, INSUFFICIENT_CREDITS, type CreditReason } from "./credits";
 
@@ -30,13 +29,6 @@ export function createUserClient(token: string) {
   });
 }
 
-function getBearerToken(): string | null {
-  const header = getRequestHeader("authorization");
-  if (!header || !header.startsWith("Bearer ")) return null;
-  const token = header.slice("Bearer ".length).trim();
-  if (!token || token.split(".").length !== 3) return null;
-  return token;
-}
 
 /**
  * Runs `fn` behind a credit debit.
@@ -46,22 +38,9 @@ function getBearerToken(): string | null {
  * when the AI call fails.
  */
 
-function getUserIdFromToken(token: string): string | null {
-  try {
-    const payload = JSON.parse(
-      Buffer.from(token.split(".")[1], "base64").toString("utf8"),
-    ) as { sub?: string };
-    return payload.sub ?? null;
-  } catch {
-    return null;
-  }
-}
+// Identity is never derived from an unverified bearer token in this module.
+// Every caller must supply the user id verified by `requireSupabaseAuth`.
 
-/** Current signed-in user id from the request bearer token, if any. */
-export function getRequestUserId(): string | null {
-  const token = getBearerToken();
-  return token ? getUserIdFromToken(token) : null;
-}
 
 export async function withCredits<T>(
   reason: CreditReason,
