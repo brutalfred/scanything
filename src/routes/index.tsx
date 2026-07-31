@@ -1233,6 +1233,7 @@ function Scanner() {
                     visibleItems.map((it, i) => (
                       <button
                         key={i}
+                        data-no-sound
                         onClick={(e) => {
                           e.preventDefault();
                           openItem(it);
