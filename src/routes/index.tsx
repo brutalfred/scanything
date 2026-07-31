@@ -1003,6 +1003,15 @@ function Scanner() {
                   <Video className="h-3.5 w-3.5" />
                   Video Scan
                 </button>
+                {credits.signedIn && (
+                  <button
+                    onClick={() => setHistoryOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    Scan History
+                  </button>
+                )}
               </div>
             </div>
 
