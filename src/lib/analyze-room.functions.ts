@@ -41,6 +41,10 @@ furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, k
 
 TEXT / SIGNS: If you see any writing, logo, sign, sticker, tattoo or label that is NOT in the Latin alphabet (e.g. Chinese, Japanese, Korean, Arabic, Hebrew, Cyrillic, Thai, Devanagari, Greek), include it as an item with category="text" and use the actual visible characters as the "name" (short — max ~40 chars). Draw its box tightly around the writing.
 
+VEHICLES: If a car, motorcycle, van, truck, bus or bicycle is visible, include it with category="vehicle". Guess make, model and generation/year range in the description, and give a realistic used-market price range.
+
+LICENSE PLATES: If a vehicle registration plate is readable, include a SEPARATE item with category="plate", name = the plate characters exactly as shown (uppercase), box tight around the plate. In the description state the issuing country/region and the plate format/series, plus what the plate style indicates (private, commercial, diplomatic, temporary, EV, etc). Set priceMin and priceMax to 0. NEVER guess, state or imply the owner's identity, name or address — that information is not public.
+
 PERSON: Include ONE item with category="person" and name="Person" ONLY IF a human is clearly the MAIN SUBJECT of the photo (portrait or half-portrait, face/upper body large and centered, occupying >=25% of the image). Do NOT include people who are merely on the side, in the background, or partially visible.
 
 NEVER include isolated human body parts (hand, arm, leg, foot, torso, face without a portrait context, head, hair, skin, finger). Skip them entirely.
