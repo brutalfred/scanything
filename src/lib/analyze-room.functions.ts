@@ -536,7 +536,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data, context }): Promise<AnalyzeResult> => {
     const { withCredits } = await import("./credits.server");
-    const content = await withCredits("photo_scan", context.userId, () =>
+    const content = await withCredits("document_scan", context.userId, () =>
       callGateway("document_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
@@ -553,6 +553,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       }, context.userId),
       data.environment as "sandbox" | "live",
     );
+
 
     const parsed = safeParse<AnalyzeResult>(content, { items: [] });
     const items = (parsed.items ?? [])
