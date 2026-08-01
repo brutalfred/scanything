@@ -31,6 +31,7 @@ import { toast } from "sonner";
 
 import {
   analyzeRoom,
+  analyzeDocument,
   quickScan,
   enrichItem,
   analyzeFurther,
@@ -53,6 +54,9 @@ import { CREDIT_COSTS } from "@/lib/credits";
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import { saveScanHistory } from "@/lib/scan-history.functions";
+import { getPaddleEnvironment } from "@/lib/paddle";
+import { useSubscription } from "@/hooks/useSubscription";
+
 
 
 
