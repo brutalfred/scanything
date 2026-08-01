@@ -32,11 +32,14 @@ export function AccountButton({
 }) {
   const [open, setOpen] = useState(false);
   const [gameOpen, setGameOpen] = useState(false);
+  const [managing, setManaging] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const { muted, volume, toggleMute, setVolume } = useSounds();
+  const { isPro } = useSubscription(signedIn && open);
+
 
   async function handleInstall() {
 
