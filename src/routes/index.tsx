@@ -456,7 +456,8 @@ function Scanner() {
   }, []);
 
   const capture = useCallback(async () => {
-    if (!credits.spend("photo_scan")) return;
+    const isDoc = mode === "document";
+    if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
     void playSound("shutter");
     const dataUrl = grabFrame(1024, 0.8);
     if (!dataUrl) return;
@@ -471,16 +472,22 @@ function Scanner() {
     setPhase("analyzing");
     setError(null);
     try {
-      const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
-      const detected = result.items.filter(
-        (it) => it.category === "person" || !isBodyPart(it.name),
-      );
+      let detected: DetectedItem[] = [];
+      if (isDoc) {
+        const doc = await analyzeDocument({ data: { imageBase64: dataUrl, environment } });
+        detected = (doc.items ?? []).filter(Boolean);
+      } else {
+        const result = await analyzeRoom({ data: { imageBase64: dataUrl, environment } });
+        detected = result.items.filter(
+          (it) => it.category === "person" || !isBodyPart(it.name),
+        );
+      }
       setItems(detected);
       setPhase("results");
       if (detected.length) {
         void saveScanHistory({
           data: {
-            mode: "photo",
+            mode: isDoc ? "document" : "photo",
             items: detected.map((d) => ({
               name: d.name,
               category: d.category,
@@ -509,8 +516,8 @@ function Scanner() {
         /* ignore */
       }
     }
+  }, [grabFrame, stopCamera, credits, mode, environment]);
 
-  }, [grabFrame, stopCamera, credits]);
 
   const isGuest = !credits.signedIn;
 
