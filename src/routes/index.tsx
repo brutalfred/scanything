@@ -1239,22 +1239,7 @@ function Scanner() {
 
             </div>
 
-            {mode === "photo" ? (
-              !isGuest && (
-                <div className="flex flex-col items-center gap-2">
-                  <Button
-                    size="lg"
-                    data-no-sound
-                    onClick={capture}
-                    disabled={!credits.canAfford("photo_scan")}
-                    className="w-full max-w-xs"
-                  >
-                    <Camera className="mr-2 h-5 w-5" />
-                    {`Scan · ${CREDIT_COSTS.photo_scan}`}
-                  </Button>
-                </div>
-              )
-            ) : (
+            {mode === "video" ? (
               <>
                 {!isGuest && (
                   <div className="flex flex-col items-center gap-2">
@@ -1281,6 +1266,7 @@ function Scanner() {
                     </p>
                   </div>
                 )}
+
 
                 <div className="rounded-2xl border border-border bg-card">
 
