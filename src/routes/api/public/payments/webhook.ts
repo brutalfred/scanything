@@ -34,6 +34,8 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
 
   const credits = CREDITS_BY_PRICE_ID[priceId];
   if (!credits) {
+    // Subscription transactions carry a subscription_id and should be handled separately.
+    if (data?.subscriptionId) return;
     console.warn("payments webhook: unknown credit pack", priceId);
     return;
   }
@@ -67,12 +69,95 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   if (grantError) throw new Error(grantError.message);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
+  const userId = data?.customData?.userId as string | undefined;
+  if (!userId) {
+    console.error("payments webhook: no userId in customData");
+    return;
+  }
+
+  const item = data?.items?.[0];
+  const priceId = item?.price?.importMeta?.externalId as string | undefined;
+  const productId = item?.product?.importMeta?.externalId as string | undefined;
+
+  if (!priceId || !productId) {
+    console.warn("payments webhook: subscription missing importMeta.externalId", {
+      rawPriceId: item?.price?.id,
+      rawProductId: item?.product?.id,
+    });
+    return;
+  }
+
+  const supabase = getSupabase();
+  const { error } = await supabase.from("subscriptions").upsert(
+    {
+      user_id: userId,
+      paddle_subscription_id: data.id,
+      paddle_customer_id: data.customerId,
+      product_id: productId,
+      price_id: priceId,
+      status: data.status,
+      current_period_start: data.currentBillingPeriod?.startsAt ?? null,
+      current_period_end: data.currentBillingPeriod?.endsAt ?? null,
+      cancel_at_period_end: data.scheduledChange?.action === "cancel",
+      environment: env,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "paddle_subscription_id" },
+  );
+
+  if (error) throw new Error(error.message);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      status: data.status,
+      current_period_start: data.currentBillingPeriod?.startsAt ?? null,
+      current_period_end: data.currentBillingPeriod?.endsAt ?? null,
+      cancel_at_period_end: data.scheduledChange?.action === "cancel",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("paddle_subscription_id", data.id)
+    .eq("environment", env);
+
+  if (error) throw new Error(error.message);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      status: "canceled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("paddle_subscription_id", data.id)
+    .eq("environment", env);
+
+  if (error) throw new Error(error.message);
+}
+
 async function handleWebhook(req: Request, env: PaddleEnv) {
   const event = await verifyWebhook(req, env);
 
   switch (event.eventType) {
     case EventName.TransactionCompleted:
       await handleTransactionCompleted(event.data, env);
+      break;
+    case EventName.SubscriptionCreated:
+      await handleSubscriptionCreated(event.data, env);
+      break;
+    case EventName.SubscriptionUpdated:
+      await handleSubscriptionUpdated(event.data, env);
+      break;
+    case EventName.SubscriptionCanceled:
+      await handleSubscriptionCanceled(event.data, env);
       break;
     default:
       console.log("Unhandled event:", event.eventType);

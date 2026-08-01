@@ -22,12 +22,16 @@ import {
   Mail,
   Share2,
   Download,
+  FileText,
+  Crown,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 
 import {
   analyzeRoom,
+  analyzeDocument,
   quickScan,
   enrichItem,
   analyzeFurther,
@@ -50,6 +54,9 @@ import { CREDIT_COSTS } from "@/lib/credits";
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import { saveScanHistory } from "@/lib/scan-history.functions";
+import { getPaddleEnvironment } from "@/lib/paddle";
+import { useSubscription } from "@/hooks/useSubscription";
+
 
 
 
@@ -73,7 +80,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video";
+type Mode = "photo" | "video" | "document";
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -108,8 +115,10 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
   { key: "plate", label: "Plates" },
   { key: "text", label: "Text / Signs" },
   { key: "person", label: "People" },
+  { key: "document", label: "Documents" },
   { key: "other", label: "Other" },
 ];
+
 const DEFAULT_FILTERS = new Set(CATEGORY_FILTERS.map((c) => c.key));
 const FILTER_STORAGE_KEY = "roomscan:filters";
 const LAST_SCAN_KEY = "scanything:last-scan";
@@ -258,7 +267,12 @@ function Scanner() {
   });
   const [filterOpen, setFilterOpen] = useState(false);
   const [videoWarningOpen, setVideoWarningOpen] = useState(false);
+  const [proUpsellOpen, setProUpsellOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const environment = getPaddleEnvironment();
+  const { isPro } = useSubscription(credits.signedIn);
+
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...filters]));
@@ -444,7 +458,8 @@ function Scanner() {
   }, []);
 
   const capture = useCallback(async () => {
-    if (!credits.spend("photo_scan")) return;
+    const isDoc = mode === "document";
+    if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
     void playSound("shutter");
     const dataUrl = grabFrame(1024, 0.8);
     if (!dataUrl) return;
@@ -459,16 +474,22 @@ function Scanner() {
     setPhase("analyzing");
     setError(null);
     try {
-      const result = await analyzeRoom({ data: { imageBase64: dataUrl } });
-      const detected = result.items.filter(
-        (it) => it.category === "person" || !isBodyPart(it.name),
-      );
+      let detected: DetectedItem[] = [];
+      if (isDoc) {
+        const doc = await analyzeDocument({ data: { imageBase64: dataUrl, environment } });
+        detected = (doc.items ?? []).filter(Boolean);
+      } else {
+        const result = await analyzeRoom({ data: { imageBase64: dataUrl, environment } });
+        detected = result.items.filter(
+          (it) => it.category === "person" || !isBodyPart(it.name),
+        );
+      }
       setItems(detected);
       setPhase("results");
       if (detected.length) {
         void saveScanHistory({
           data: {
-            mode: "photo",
+            mode: isDoc ? "document" : "photo",
             items: detected.map((d) => ({
               name: d.name,
               category: d.category,
@@ -497,8 +518,8 @@ function Scanner() {
         /* ignore */
       }
     }
+  }, [grabFrame, stopCamera, credits, mode, environment]);
 
-  }, [grabFrame, stopCamera, credits]);
 
   const isGuest = !credits.signedIn;
 
@@ -580,7 +601,8 @@ function Scanner() {
         scanningRef.current = true;
         setScanning(true);
         try {
-          const result = await quickScan({ data: { imageBase64: frame } });
+          const result = await quickScan({ data: { imageBase64: frame, environment } });
+
           if (!cancelled && modeRef.current === "video") {
             mergeDetections(result.items);
             setError(null);
@@ -626,8 +648,9 @@ function Scanner() {
         enrichingIdsRef.current.add(target.id);
         try {
           const enrichment = await enrichItem({
-            data: { name: target.name, imageBase64: frame },
+            data: { name: target.name, imageBase64: frame, environment },
           });
+
           if (!cancelled) {
             setTracked((prev) =>
               prev.map((t) => (t.id === target.id ? { ...t, enrichment } : t)),
@@ -1105,6 +1128,23 @@ function Scanner() {
               </div>
             </div>
 
+            <div className="flex items-center justify-center">
+              <button
+                onClick={() => (isPro ? switchMode("document") : setProUpsellOpen(true))}
+
+                className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-medium transition-colors ${
+                  mode === "document"
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Document Scan
+                <Crown className="h-3 w-3 text-primary" />
+              </button>
+            </div>
+
+
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
               <div {...cameraZoom.handlers} className="absolute inset-0">
                 <div style={cameraZoom.transformStyle}>
@@ -1199,22 +1239,7 @@ function Scanner() {
 
             </div>
 
-            {mode === "photo" ? (
-              !isGuest && (
-                <div className="flex flex-col items-center gap-2">
-                  <Button
-                    size="lg"
-                    data-no-sound
-                    onClick={capture}
-                    disabled={!credits.canAfford("photo_scan")}
-                    className="w-full max-w-xs"
-                  >
-                    <Camera className="mr-2 h-5 w-5" />
-                    {`Scan · ${CREDIT_COSTS.photo_scan}`}
-                  </Button>
-                </div>
-              )
-            ) : (
+            {mode === "video" ? (
               <>
                 {!isGuest && (
                   <div className="flex flex-col items-center gap-2">
@@ -1243,7 +1268,6 @@ function Scanner() {
                 )}
 
                 <div className="rounded-2xl border border-border bg-card">
-
                   <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
                     <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
                       <button
@@ -1311,7 +1335,25 @@ function Scanner() {
                   )}
                 </div>
               </>
+            ) : (
+              !isGuest && (
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    size="lg"
+                    data-no-sound
+                    onClick={capture}
+                    disabled={!credits.canAfford(mode === "document" ? "document_scan" : "photo_scan")}
+                    className="w-full max-w-xs"
+                  >
+                    <Camera className="mr-2 h-5 w-5" />
+                    {mode === "document"
+                      ? `Scan document · ${CREDIT_COSTS.document_scan}`
+                      : `Scan · ${CREDIT_COSTS.photo_scan}`}
+                  </Button>
+                </div>
+              )
             )}
+
           </div>
         )}
 
@@ -1870,7 +1912,54 @@ function Scanner() {
           </div>
         </div>
       )}
+
+      {proUpsellOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setProUpsellOpen(false)}
+        >
+          <div
+            className="gold-glow w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
+              <Crown className="h-6 w-6 text-primary" />
+            </div>
+            <h2 className="text-lg font-bold text-primary">Scanything Pro</h2>
+            <p className="mt-2 text-sm text-foreground">
+              Unlock Document Scanning and unlimited photo / video scans.
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-3 text-foreground">
+              <div className="rounded-xl border border-primary/30 bg-background/50 px-3 py-1.5">
+                <span className="font-bold text-primary">$9.99</span>
+                <span className="text-xs text-muted-foreground">/mo</span>
+              </div>
+              <div className="rounded-xl border border-primary/30 bg-background/50 px-3 py-1.5">
+                <span className="font-bold text-primary">$79.99</span>
+                <span className="text-xs text-muted-foreground">/yr</span>
+              </div>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setProUpsellOpen(false)}
+                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+              >
+                Maybe later
+              </button>
+              <Link
+                to="/pricing"
+                onClick={() => setProUpsellOpen(false)}
+                className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                View plans
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
 type PlateLink = { label: string; url: string };
@@ -1980,8 +2069,9 @@ function DetailPanel({
     setDeepError(null);
     try {
       const result = await analyzeFurther({
-        data: { name, imageBase64: imageBase64.replace(/^data:[^,]+,/, "") },
+        data: { name, imageBase64: imageBase64.replace(/^data:[^,]+,/, ""), environment: getPaddleEnvironment() },
       });
+
       setDeep(result);
     } catch (e) {
       setDeepError(e instanceof Error ? e.message : "Analysis failed.");
@@ -1995,7 +2085,7 @@ function DetailPanel({
     setTranslating(true);
     setTranslateError(null);
     try {
-      const result = await translateText({ data: { text: name } });
+      const result = await translateText({ data: { text: name, environment: getPaddleEnvironment() } });
       setTranslation(result);
     } catch (e) {
       setTranslateError(e instanceof Error ? e.message : "Translation failed.");

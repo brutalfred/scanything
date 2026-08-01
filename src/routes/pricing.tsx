@@ -55,7 +55,9 @@ const FEATURES = [
   "Photo and live video scanning",
   "Real-time detected-item list",
   "Translation and deeper analysis",
+  "Document & receipt scanning (Pro)",
 ];
+
 
 function PricingPage() {
   return (
@@ -71,13 +73,34 @@ function PricingPage() {
 
       <main className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
         <div className="text-center">
-          <h1 className="text-4xl font-bold gold-text sm:text-5xl">Simple scan credits</h1>
+          <h1 className="text-4xl font-bold gold-text sm:text-5xl">Simple scan pricing</h1>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Pay only for what you scan. No subscriptions, no ads, no hidden fees. Top up once and scan until your credits run out.
+            Pay per scan with prepaid credits, or go Pro for unlimited photo, video and document scans.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="relative mx-auto mt-10 max-w-md rounded-2xl border-2 border-primary bg-primary/10 p-6 text-center gold-glow sm:p-8">
+          <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase text-primary-foreground">
+            Best value
+          </span>
+          <h2 className="text-2xl font-bold text-foreground">Scanything Pro</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Unlimited scans + Document mode</p>
+          <div className="mt-5 flex items-stretch justify-center gap-3">
+            <div className="flex flex-col items-center rounded-xl border border-primary/50 bg-background/50 px-4 py-3">
+              <span className="text-2xl font-bold text-primary">$9.99</span>
+              <span className="text-xs text-muted-foreground">/ month</span>
+            </div>
+            <div className="flex flex-col items-center rounded-xl border border-primary/50 bg-background/50 px-4 py-3">
+              <span className="text-2xl font-bold text-primary">$79.99</span>
+              <span className="text-xs text-muted-foreground">/ year</span>
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Subscribe inside the app from the credit counter or account tab.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {CREDIT_PACKS.map((pack) => (
             <div
               key={pack.priceId}
@@ -119,6 +142,7 @@ function PricingPage() {
             </div>
           ))}
         </div>
+
 
         <div className="mx-auto mt-14 max-w-3xl rounded-2xl border border-border bg-secondary/20 p-6 sm:p-8">
           <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold text-foreground">

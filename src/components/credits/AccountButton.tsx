@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, LogIn, LogOut, ShieldCheck, Trophy, User2, Volume2, VolumeX, X } from "lucide-react";
+import { Crown, Download, Loader2, LogIn, LogOut, ShieldCheck, Trophy, User2, Volume2, VolumeX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
@@ -11,9 +11,13 @@ import { THEMES } from "@/lib/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useSounds } from "@/hooks/useSounds";
+import { useSubscription } from "@/hooks/useSubscription";
+import { createPortalSession } from "@/lib/subscription.functions";
+import { getPaddleEnvironment } from "@/lib/paddle";
 import { DailyCheckin } from "./DailyCheckin";
 import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
+
 
 
 
@@ -28,11 +32,14 @@ export function AccountButton({
 }) {
   const [open, setOpen] = useState(false);
   const [gameOpen, setGameOpen] = useState(false);
+  const [managing, setManaging] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const { muted, volume, toggleMute, setVolume } = useSounds();
+  const { isPro } = useSubscription(signedIn && open);
+
 
   async function handleInstall() {
 
@@ -115,6 +122,13 @@ export function AccountButton({
             <p className="truncate text-center text-base font-semibold">
               {email ?? "Account"}
             </p>
+            {isPro && (
+              <div className="mt-2 flex items-center justify-center gap-1 text-xs font-bold text-primary">
+                <Crown className="h-3.5 w-3.5" />
+                Scanything Pro
+              </div>
+            )}
+
 
             <dl className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3">
@@ -169,8 +183,40 @@ export function AccountButton({
               </div>
             </div>
 
+            {isPro ? (
+              <button
+                type="button"
+                disabled={managing}
+                onClick={async () => {
+                  setManaging(true);
+                  try {
+                    const url = await createPortalSession({ data: { environment: getPaddleEnvironment() } });
+                    window.open(url, "_blank");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Could not open billing portal");
+                  } finally {
+                    setManaging(false);
+                  }
+                }}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 font-semibold text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
+              >
+                <Crown className="h-4 w-4" />
+                {managing ? "Opening portal…" : "Manage subscription"}
+                {managing && <Loader2 className="h-4 w-4 animate-spin" />}
+              </button>
+            ) : (
+              <Link
+                to="/pricing"
+                onClick={() => setOpen(false)}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 font-semibold text-primary transition-colors hover:bg-primary/20"
+              >
+                <Crown className="h-4 w-4" />
+                Upgrade to Pro
+              </Link>
+            )}
 
             <DailyCheckin enabled={signedIn && open} />
+
 
             <button
               type="button"

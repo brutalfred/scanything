@@ -2,9 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const EnvironmentSchema = z.object({
+  environment: z.enum(["sandbox", "live"]).optional().default("live"),
+});
+
 const InputSchema = z.object({
   imageBase64: z.string().min(100),
-});
+}).merge(EnvironmentSchema);
+
 
 export type DetectedItem = {
   name: string;
@@ -168,9 +173,12 @@ export const analyzeRoom = createServerFn({ method: "POST" })
           },
         ],
       }, context.userId),
+      data.environment as "sandbox" | "live",
     );
 
+
     const parsed = safeParse<AnalyzeResult>(content, { items: [] });
+
     const items = (parsed.items ?? [])
       .filter((it) => it && it.box && typeof it.box.x === "number")
       .map((it) => normalizeFull(it));
@@ -197,9 +205,11 @@ export const quickScan = createServerFn({ method: "POST" })
           },
         ],
       }, context.userId),
+      data.environment as "sandbox" | "live",
     );
 
     const parsed = safeParse<QuickResult>(content, { items: [] });
+
     const items = (parsed.items ?? [])
       .filter((it) => it && it.box && typeof it.box.x === "number")
       .map((it) => ({
@@ -218,7 +228,8 @@ export const quickScan = createServerFn({ method: "POST" })
 const EnrichInput = z.object({
   name: z.string().min(1),
   imageBase64: z.string().min(100),
-});
+}).merge(EnvironmentSchema);
+
 
 export const enrichItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -243,6 +254,7 @@ export const enrichItem = createServerFn({ method: "POST" })
           },
         ],
       }, context.userId),
+      data.environment as "sandbox" | "live",
     );
 
     const parsed = safeParse<Partial<DetectedItem>>(content, {});
@@ -299,7 +311,8 @@ function clamp01(n: number) {
 const DeepInput = z.object({
   name: z.string().min(1),
   imageBase64: z.string().min(100),
-});
+}).merge(EnvironmentSchema);
+
 
 export type DeepAnalysis = {
   brand: string;
@@ -336,6 +349,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
           },
         ],
       }, context.userId),
+      data.environment as "sandbox" | "live",
     );
     const parsed = safeParse<Partial<DeepAnalysis>>(content, {});
     const q = [parsed.brand, parsed.product, data.name].filter(Boolean).join(" ").trim();
@@ -354,7 +368,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
     };
   });
 
-const TranslateInput = z.object({ text: z.string().min(1).max(200) });
+const TranslateInput = z.object({ text: z.string().min(1).max(200) }).merge(EnvironmentSchema);
 
 export type Translation = {
   language: string;
@@ -379,6 +393,7 @@ export const translateText = createServerFn({ method: "POST" })
           { role: "user", content: `Translate to English: ${data.text}` },
         ],
       }, context.userId),
+      data.environment as "sandbox" | "live",
     );
     const parsed = safeParse<Partial<Translation>>(content, {});
     return {
@@ -391,7 +406,7 @@ export const translateText = createServerFn({ method: "POST" })
     };
   });
 
-const PersonInput = z.object({ name: z.string().min(1).max(120) });
+const PersonInput = z.object({ name: z.string().min(1).max(120) }).merge(EnvironmentSchema);
 
 export type WebSource = { title: string; url: string };
 
@@ -423,6 +438,7 @@ export const personInfo = createServerFn({ method: "POST" })
           },
         ],
       }, context.userId),
+      data.environment as "sandbox" | "live",
     );
     const parsed = safeParse<Partial<PersonInfo>>(content, {});
     return {
@@ -438,7 +454,7 @@ export const personInfo = createServerFn({ method: "POST" })
 const PersonSearchInput = z.object({
   name: z.string().min(1).max(120),
   location: z.string().max(160).optional().default(""),
-});
+}).merge(EnvironmentSchema);
 
 export type PersonMatch = {
   name: string;
@@ -488,6 +504,7 @@ export const personSearch = createServerFn({ method: "POST" })
           },
         ],
       }, context.userId),
+      data.environment as "sandbox" | "live",
     );
     const parsed = safeParse<{ matches?: Partial<PersonMatch>[] }>(content, {});
     const allowed = new Set(results.map((r) => r.url));
@@ -506,4 +523,43 @@ export const personSearch = createServerFn({ method: "POST" })
     }));
     return { matches };
   });
+
+const DOC_SYSTEM = `You are a document and receipt reader. Read the full image carefully.
+For a receipt/invoice: extract merchant name, date, total amount and itemized lines.
+For any other document: transcribe the main text and summarize key points.
+Priority is readable text, numbers and named entities.
+Respond ONLY with compact JSON:
+{"items":[{"name":"short title (e.g. 'Receipt from Store' or 'Document page')","category":"document","description":"summary or transcription (keep concise but complete)","priceMin":0,"priceMax":0,"currency":"USD","searchUrl":"https://www.google.com/search?q=url-encoded+title","infoUrl":"","confidence":85,"box":{"x":0,"y":0,"w":1,"h":1}}]}`;
+
+export const analyzeDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => InputSchema.parse(data))
+  .handler(async ({ data, context }): Promise<AnalyzeResult> => {
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits("document_scan", context.userId, () =>
+      callGateway("document_scan", {
+        model: "google/gemini-3-flash-preview",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: DOC_SYSTEM },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Read this document/receipt. JSON only." },
+              { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
+            ],
+          },
+        ],
+      }, context.userId),
+      data.environment as "sandbox" | "live",
+    );
+
+
+    const parsed = safeParse<AnalyzeResult>(content, { items: [] });
+    const items = (parsed.items ?? [])
+      .filter((it) => it && it.box && typeof it.box.x === "number")
+      .map((it) => normalizeFull(it));
+    return { items };
+  });
+
 
