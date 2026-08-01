@@ -1126,6 +1126,22 @@ function Scanner() {
               </div>
             </div>
 
+            <div className="flex items-center justify-center">
+              <button
+                onClick={() => setProUpsellOpen(true)}
+                className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-medium transition-colors ${
+                  mode === "document"
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Document Scan
+                <Crown className="h-3 w-3 text-primary" />
+              </button>
+            </div>
+
+
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
               <div {...cameraZoom.handlers} className="absolute inset-0">
                 <div style={cameraZoom.transformStyle}>
