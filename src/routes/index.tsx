@@ -599,7 +599,8 @@ function Scanner() {
         scanningRef.current = true;
         setScanning(true);
         try {
-          const result = await quickScan({ data: { imageBase64: frame } });
+          const result = await quickScan({ data: { imageBase64: frame, environment } });
+
           if (!cancelled && modeRef.current === "video") {
             mergeDetections(result.items);
             setError(null);
@@ -645,8 +646,9 @@ function Scanner() {
         enrichingIdsRef.current.add(target.id);
         try {
           const enrichment = await enrichItem({
-            data: { name: target.name, imageBase64: frame },
+            data: { name: target.name, imageBase64: frame, environment },
           });
+
           if (!cancelled) {
             setTracked((prev) =>
               prev.map((t) => (t.id === target.id ? { ...t, enrichment } : t)),
