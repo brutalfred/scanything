@@ -22,7 +22,10 @@ import {
   Mail,
   Share2,
   Download,
+  FileText,
+  Crown,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 
