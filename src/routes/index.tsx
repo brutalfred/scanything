@@ -1130,7 +1130,8 @@ function Scanner() {
 
             <div className="flex items-center justify-center">
               <button
-                onClick={() => setProUpsellOpen(true)}
+                onClick={() => (isPro ? switchMode("document") : setProUpsellOpen(true))}
+
                 className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-medium transition-colors ${
                   mode === "document"
                     ? "bg-primary text-primary-foreground shadow"
