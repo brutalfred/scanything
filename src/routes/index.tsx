@@ -20,7 +20,10 @@ import {
   User,
   History,
   Mail,
+  Share2,
+  Download,
 } from "lucide-react";
+import { toast } from "sonner";
 
 
 import {
