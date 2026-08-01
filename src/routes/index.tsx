@@ -80,7 +80,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video";
+type Mode = "photo" | "video" | "document";
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
