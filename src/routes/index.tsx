@@ -1267,9 +1267,7 @@ function Scanner() {
                   </div>
                 )}
 
-
                 <div className="rounded-2xl border border-border bg-card">
-
                   <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
                     <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
                       <button
@@ -1337,7 +1335,25 @@ function Scanner() {
                   )}
                 </div>
               </>
+            ) : (
+              !isGuest && (
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    size="lg"
+                    data-no-sound
+                    onClick={capture}
+                    disabled={!credits.canAfford(mode === "document" ? "document_scan" : "photo_scan")}
+                    className="w-full max-w-xs"
+                  >
+                    <Camera className="mr-2 h-5 w-5" />
+                    {mode === "document"
+                      ? `Scan document · ${CREDIT_COSTS.document_scan}`
+                      : `Scan · ${CREDIT_COSTS.photo_scan}`}
+                  </Button>
+                </div>
+              )
             )}
+
           </div>
         )}
 
