@@ -267,7 +267,10 @@ function Scanner() {
   });
   const [filterOpen, setFilterOpen] = useState(false);
   const [videoWarningOpen, setVideoWarningOpen] = useState(false);
+  const [proUpsellOpen, setProUpsellOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const environment = getPaddleEnvironment();
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...filters]));
