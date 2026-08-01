@@ -270,6 +270,8 @@ function Scanner() {
   const [proUpsellOpen, setProUpsellOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const environment = getPaddleEnvironment();
+  const { isPro } = useSubscription(credits.signedIn);
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
