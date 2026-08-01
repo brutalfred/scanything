@@ -55,7 +55,9 @@ const FEATURES = [
   "Photo and live video scanning",
   "Real-time detected-item list",
   "Translation and deeper analysis",
+  "Document & receipt scanning (Pro)",
 ];
+
 
 function PricingPage() {
   return (
