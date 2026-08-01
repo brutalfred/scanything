@@ -2001,8 +2001,9 @@ function DetailPanel({
     setDeepError(null);
     try {
       const result = await analyzeFurther({
-        data: { name, imageBase64: imageBase64.replace(/^data:[^,]+,/, "") },
+        data: { name, imageBase64: imageBase64.replace(/^data:[^,]+,/, ""), environment: getPaddleEnvironment() },
       });
+
       setDeep(result);
     } catch (e) {
       setDeepError(e instanceof Error ? e.message : "Analysis failed.");
@@ -2016,7 +2017,7 @@ function DetailPanel({
     setTranslating(true);
     setTranslateError(null);
     try {
-      const result = await translateText({ data: { text: name } });
+      const result = await translateText({ data: { text: name, environment: getPaddleEnvironment() } });
       setTranslation(result);
     } catch (e) {
       setTranslateError(e instanceof Error ? e.message : "Translation failed.");
