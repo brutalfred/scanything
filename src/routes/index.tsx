@@ -1365,6 +1365,26 @@ function Scanner() {
                   <p className="text-sm">Analyzing room…</p>
                 </div>
               )}
+              <div className="absolute bottom-2 right-2 z-10 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSharePicture}
+                  aria-label="Share picture"
+                  title="Share picture"
+                  className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePicture}
+                  aria-label="Save picture"
+                  title="Save picture to device"
+                  className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
+                >
+                  <Download className="h-4 w-4" />
+                </button>
+              </div>
               {photoZoom.scale > 1.01 && (
                 <button
                   onClick={photoZoom.reset}
