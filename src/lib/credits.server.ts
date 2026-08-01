@@ -30,30 +30,54 @@ export function createUserClient(token: string) {
 }
 
 
+export async function hasActiveSubscription(
+  userId: string,
+  environment?: "sandbox" | "live",
+): Promise<boolean> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  let query = supabaseAdmin
+    .from("subscriptions")
+    .select("status, current_period_end")
+    .eq("user_id", userId);
+
+  if (environment) query = query.eq("environment", environment);
+
+  const { data: row } = await query
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!row) return false;
+
+  const now = Date.now();
+  const periodEnd = row.current_period_end ? new Date(row.current_period_end).getTime() : null;
+  const active = ["active", "trialing"].includes(row.status) && (periodEnd === null || periodEnd > now);
+  const grace = row.status === "canceled" && periodEnd !== null && periodEnd > now;
+  return active || grace;
+}
+
 /**
  * Runs `fn` behind a credit debit.
  *
- * Requires a verified user id (from `requireSupabaseAuth`). There is no
- * anonymous path: every AI call is authenticated and charged, and refunded
- * when the AI call fails.
+ * Requires a verified user id (from `requireSupabaseAuth`). Active Scanything
+ * Pro subscribers skip credit consumption for the covered environment.
  */
-
-// Identity is never derived from an unverified bearer token in this module.
-// Every caller must supply the user id verified by `requireSupabaseAuth`.
-
-
 export async function withCredits<T>(
   reason: CreditReason,
   userId: string,
   fn: () => Promise<T>,
+  environment?: "sandbox" | "live",
 ): Promise<T> {
   // The caller must pass the identity verified by `requireSupabaseAuth`.
   // Never derive it from an unverified bearer token here.
   if (!userId) throw new Error("Unauthorized");
 
-
   const amount = CREDIT_COSTS[reason];
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  if (await hasActiveSubscription(userId, environment)) {
+    return await fn();
+  }
 
   const { error } = await supabaseAdmin.rpc("spend_credits_for", {
     _user_id: userId,
@@ -81,4 +105,5 @@ export async function withCredits<T>(
     throw err;
   }
 }
+
 
