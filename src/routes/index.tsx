@@ -875,6 +875,55 @@ function Scanner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
+  // --- Share / save the captured picture -------------------------------
+  const snapshotFileName = useCallback(() => {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `scanything-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.jpg`;
+  }, []);
+
+  const downloadSnapshot = useCallback(() => {
+    if (!snapshot) return;
+    const a = document.createElement("a");
+    a.href = snapshot;
+    a.download = snapshotFileName();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }, [snapshot, snapshotFileName]);
+
+  const handleSavePicture = useCallback(() => {
+    if (!snapshot) return;
+    try {
+      downloadSnapshot();
+      toast.success("Picture saved");
+    } catch {
+      toast.error("Could not save the picture");
+    }
+  }, [snapshot, downloadSnapshot]);
+
+  const handleSharePicture = useCallback(async () => {
+    if (!snapshot) return;
+    try {
+      const blob = await (await fetch(snapshot)).blob();
+      const file = new File([blob], snapshotFileName(), {
+        type: blob.type || "image/jpeg",
+      });
+      const nav = navigator as Navigator & {
+        canShare?: (data?: ShareData) => boolean;
+      };
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: "Scanything scan" });
+        return;
+      }
+      downloadSnapshot();
+      toast("Sharing isn't supported here — saved the picture instead");
+    } catch (e) {
+      if ((e as DOMException)?.name === "AbortError") return;
+      downloadSnapshot();
+      toast("Sharing failed — saved the picture instead");
+    }
+  }, [snapshot, snapshotFileName, downloadSnapshot]);
 
 
   return (
