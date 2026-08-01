@@ -115,8 +115,10 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
   { key: "plate", label: "Plates" },
   { key: "text", label: "Text / Signs" },
   { key: "person", label: "People" },
+  { key: "document", label: "Documents" },
   { key: "other", label: "Other" },
 ];
+
 const DEFAULT_FILTERS = new Set(CATEGORY_FILTERS.map((c) => c.key));
 const FILTER_STORAGE_KEY = "roomscan:filters";
 const LAST_SCAN_KEY = "scanything:last-scan";
