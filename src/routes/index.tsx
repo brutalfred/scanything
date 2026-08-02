@@ -51,6 +51,13 @@ import { CreditsProvider, useCreditsContext } from "@/components/credits/Credits
 import { CreditMeter } from "@/components/credits/CreditMeter";
 import { AccountButton } from "@/components/credits/AccountButton";
 import { CREDIT_COSTS } from "@/lib/credits";
+import {
+  baseScanCost,
+  estimateScanCost,
+  recordScanCost,
+  type ScanMode,
+} from "@/lib/scan-estimate";
+
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import { saveScanHistory } from "@/lib/scan-history.functions";
