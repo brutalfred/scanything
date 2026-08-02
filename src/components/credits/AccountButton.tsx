@@ -41,7 +41,11 @@ export function AccountButton({
   const { language, setLanguage, t } = useLanguage();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const { muted, volume, toggleMute, setVolume } = useSounds();
-  const { isPro } = useSubscription(signedIn && open);
+  const { isPro, subscription } = useSubscription(signedIn && open);
+  const isComp = !!subscription && (
+    subscription.price_id === "pro_lifetime" ||
+    (subscription.paddle_customer_id ?? "").startsWith("comp_")
+  );
 
 
   async function handleInstall() {
