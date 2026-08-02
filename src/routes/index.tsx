@@ -496,11 +496,14 @@ function Scanner() {
       if (isDoc) {
         const doc = await analyzeDocument({ data: { imageBase64: dataUrl, environment } });
         detected = (doc.items ?? []).filter(Boolean);
+        setRawItemCount(detected.length);
       } else {
         const result = await analyzeRoom({ data: { imageBase64: dataUrl, environment } });
+        setRawItemCount(result.items.length);
         detected = result.items.filter(
           (it) => it.category === "person" || !isBodyPart(it.name),
         );
+
       }
       setItems(detected);
       setPhase("results");
