@@ -2396,8 +2396,14 @@ function DetailPanel({
 
   // --- Deep analysis auto-translation (follows the language picked above) ---
   const DEEP_LABELS = useMemo(
-    () => ["Deep analysis", "confidence", "Best guess", "Buy this exact product", "Reviews & specs"],
-    [],
+    () => [
+      t("deepAnalysis"),
+      t("confidence"),
+      t("bestGuess"),
+      t("buyExactProduct"),
+      t("reviewsSpecs"),
+    ],
+    [t],
   );
   const [deepTranslation, setDeepTranslation] = useState<{
     language: string;
@@ -2468,8 +2474,8 @@ function DetailPanel({
                 className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
               >
                 <Languages className="h-3 w-3" />
-                Translate
-                <span className="text-muted-foreground">· free</span>
+                {t("translate")}
+                <span className="text-muted-foreground">· {t("free")}</span>
               </button>
             </div>
             {namePickerOpen && (
@@ -2488,7 +2494,7 @@ function DetailPanel({
               </div>
             )}
             {nameTranslating && (
-              <p className="mt-1 text-[11px] text-muted-foreground">Translating…</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("translating")}</p>
             )}
             {nameTranslateError && (
               <p className="mt-1 text-[11px] text-destructive">{nameTranslateError}</p>
@@ -2606,7 +2612,7 @@ function DetailPanel({
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Analyze further · {CREDIT_COSTS.analyze_further}
+                    {t("analyzeFurther")} · {CREDIT_COSTS.analyze_further}
                   </>
                 )}
               </Button>
@@ -2621,12 +2627,12 @@ function DetailPanel({
                   {translating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Translating…
+                      {t("translating")}
                     </>
                   ) : (
                     <>
                       <Languages className="mr-2 h-4 w-4" />
-                      Translate · {CREDIT_COSTS.translate}
+                      {t("translate")} · {CREDIT_COSTS.translate}
                     </>
                   )}
                 </Button>
