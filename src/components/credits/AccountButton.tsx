@@ -232,31 +232,55 @@ export function AccountButton({
 
 
             <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{t("theme")}</p>
               <div className="mt-2 grid grid-cols-5 gap-2">
-                {THEMES.map((t) => (
+                {THEMES.map((th) => (
                   <button
-                    key={t.key}
+                    key={th.key}
                     type="button"
-                    onClick={() => setTheme(t.key)}
-                    aria-label={`${t.label} theme`}
-                    aria-pressed={theme === t.key}
+                    onClick={() => setTheme(th.key)}
+                    aria-label={`${th.label} theme`}
+                    aria-pressed={theme === th.key}
                     className={`rounded-lg border p-1 transition-transform hover:scale-105 ${
-                      theme === t.key ? "border-current" : "border-transparent opacity-70"
+                      theme === th.key ? "border-current" : "border-transparent opacity-70"
                     }`}
                   >
                     <span className="flex h-6 w-full overflow-hidden rounded">
-                      {t.swatch.map((c) => (
+                      {th.swatch.map((c) => (
                         <span key={c} className="flex-1" style={{ backgroundColor: c }} />
                       ))}
                     </span>
                     <span className="mt-1 block text-[9px] font-medium leading-tight">
-                      {t.label}
+                      {th.label}
                     </span>
                   </button>
                 ))}
               </div>
             </div>
+
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">
+                {t("language")}
+              </p>
+              <div className="mt-2 grid grid-cols-3 gap-1.5">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setLanguage(lang)}
+                    aria-pressed={language === lang}
+                    className={`rounded-lg border px-2 py-1.5 text-[10px] font-medium leading-tight transition-colors ${
+                      language === lang
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-current/25 opacity-70 hover:bg-current/10"
+                    }`}
+                  >
+                    {LANGUAGE_NATIVE[lang]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
 
 
             {!isNative() && (
