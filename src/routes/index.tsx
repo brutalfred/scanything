@@ -60,7 +60,7 @@ import {
 
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
-import { saveScanHistory } from "@/lib/scan-history.functions";
+import { saveScanHistory, appendScanHistory } from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
 
