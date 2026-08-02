@@ -7,6 +7,7 @@ import {
   type ScanHistoryEntry,
   type ScanHistoryItem,
 } from "@/lib/scan-history.functions";
+import { useLanguage } from "@/hooks/useLanguage";
 
 function formatStamp(iso: string) {
   const d = new Date(iso);
@@ -102,6 +103,7 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
 
 
 export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useLanguage();
   const [entries, setEntries] = useState<ScanHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
