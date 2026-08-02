@@ -542,6 +542,7 @@ function Scanner() {
 
   const capture = useCallback(async () => {
     const isDoc = mode === "document";
+    const isResale = mode === "resale";
     if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
     startScanSpend(isDoc ? "document" : "photo");
 
