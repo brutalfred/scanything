@@ -35,18 +35,8 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const { openCheckout } = usePaddleCheckout();
   const { t } = useLanguage();
   const [buying, setBuying] = useState<string | null>(null);
-  const [adOpen, setAdOpen] = useState(false);
   const { isPro } = useSubscription(credits.signedIn);
   const environment = getPaddleEnvironment();
-  const adStatus = useQuery({
-    queryKey: ["ad-reward-status"],
-    queryFn: () => getAdRewardStatus(),
-    enabled: credits.signedIn,
-    staleTime: 10_000,
-  });
-  const adsWatched = adStatus.data?.claimsToday ?? 0;
-  const adLimit = adStatus.data?.dailyLimit ?? 5;
-  const adLimitReached = credits.signedIn && adsWatched >= adLimit;
 
 
 
@@ -275,20 +265,6 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
             Payments are in test mode in the preview — no real money is charged.
           </p>
         )}
-      </div>
-
-      {adOpen && (
-        <div onClick={(e) => e.stopPropagation()}>
-          <AdRewardModal
-            onClose={() => setAdOpen(false)}
-            onRewarded={() => {
-              credits.refresh();
-              void adStatus.refetch();
-            }}
-          />
-
-        </div>
-      )}
     </div>
 
   );
