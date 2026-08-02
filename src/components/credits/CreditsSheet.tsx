@@ -104,15 +104,8 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           <span className="tabular-nums">{credits.balance}</span>
         </div>
 
-        {credits.signedIn && (
-          <div className="mb-5 rounded-xl border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
-            <span className="font-semibold text-primary">Free daily scan: </span>
-            <span className="text-foreground">
-              {credits.freeScanAvailable ? "available now" : "used"}
-            </span>
-            <span className="text-muted-foreground"> — resets at midnight UTC</span>
-          </div>
-        )}
+
+
 
 
         {!credits.signedIn && (

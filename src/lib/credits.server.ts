@@ -79,21 +79,6 @@ export async function withCredits<T>(
     return await fn();
   }
 
-  // One free photo/resale scan per UTC day for signed-in users.
-  if (reason === "photo_scan") {
-    const { data: gotFree } = await supabaseAdmin.rpc("claim_free_scan_for", {
-      _user_id: userId,
-    });
-    if (gotFree === true) {
-      try {
-        return await fn();
-      } catch (err) {
-        // A failed AI call must not burn the free scan.
-        await supabaseAdmin.rpc("release_free_scan_for", { _user_id: userId });
-        throw err;
-      }
-    }
-  }
 
   const { error } = await supabaseAdmin.rpc("spend_credits_for", {
     _user_id: userId,
