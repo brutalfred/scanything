@@ -1257,8 +1257,8 @@ function Scanner() {
         {phase === "camera" && !snapshot && (
           <div className="space-y-3">
             {/* Mode toggle */}
-            <div className="flex items-center justify-center gap-2">
-              <div className="inline-flex rounded-full border border-border bg-secondary p-1">
+            <div className="flex items-center justify-center">
+              <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-border bg-secondary p-1">
                 <button
                   onClick={() => switchMode("photo")}
                   className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
@@ -1287,6 +1287,28 @@ function Scanner() {
                   <Video className="h-3.5 w-3.5" />
                   {t("videoScan")}
                 </button>
+                <button
+                  onClick={() => switchMode("resale")}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                    mode === "resale"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Tag className="h-3.5 w-3.5" />
+                  Resale Scan
+                </button>
+                <button
+                  onClick={() => switchMode("document")}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                    mode === "document"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  {t("documentScan")}
+                </button>
                 {credits.signedIn && (
                   <button
                     onClick={() => setHistoryOpen(true)}
@@ -1299,31 +1321,6 @@ function Scanner() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <button
-                onClick={() => switchMode("resale")}
-                className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-medium transition-colors ${
-                  mode === "resale"
-                    ? "bg-primary text-primary-foreground shadow"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Tag className="h-3.5 w-3.5" />
-                Resale Scan
-              </button>
-              <button
-                onClick={() => switchMode("document")}
-
-                className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-medium transition-colors ${
-                  mode === "document"
-                    ? "bg-primary text-primary-foreground shadow"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                {t("documentScan")}
-              </button>
-            </div>
 
             {mode === "resale" && (
               <p className="text-center text-[11px] text-muted-foreground">
