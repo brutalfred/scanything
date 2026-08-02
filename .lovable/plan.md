@@ -1,39 +1,35 @@
-# Plan: Professional Welcome Modal Redesign
+## 1. One free photo scan per day (signed in)
 
-## Goal
-Redesign the "Good to know" sign-in popup to feel more premium, polished, and on-brand while keeping the existing dark theme and the same informational content.
+Server-enforced so it can't be faked from the browser.
 
-## Chosen direction
-**Premium obsidian gold** — single-column layout, centered heading with a subtle "Welcome" label, icon-driven list items, and a gold gradient CTA button.
+- New table `daily_free_scans` (user_id, scan_date, created_at) with a unique key on (user_id, scan_date), plus GRANTs and owner-only SELECT RLS.
+- New security-definer function `claim_free_scan_for(_user_id)` → returns `{ used boolean }`: inserts today's row and returns true, or returns false when today's row already exists.
+- `withCredits` (in `src/lib/credits.server.ts`) gets a "free daily" path for photo-type scans: Pro subscribers run free as today; otherwise try `claim_free_scan_for` first, and only debit credits if the free scan for today is already used. Refund logic stays unchanged (a failed AI call doesn't burn the free scan).
+- `get_credit_state_for` gains a `free_scan_available` flag so the UI knows before the user taps.
 
-## Locked constraints from your choices
-- **Palette:** Same as the active Scanything theme (dark background, gold/primary accents).
-- **Typography:** Sora for headings, Manrope for body text.
-- **Layout:** Single column, centered, compact modal.
+UI:
+- Scan button shows "Scan · Free" (with a small badge) when today's free scan is available, instead of "Scan · 2".
+- Client-side `spend()` skips the optimistic debit when the free scan is available, then refreshes the real balance from the server after the scan.
+- Credits sheet shows a "Free daily scan: available / used — resets at midnight UTC" line, next to the check-in streak.
 
-## What will change
+## 2. Resale / value scan mode
 
-### 1. `src/components/WelcomeInfoModal.tsx`
-- Replace the plain bullet list with a vertically spaced list of icon + text rows.
-- Add a centered header block: small "Welcome" label above the "Good to know" title, with a short decorative gold divider below.
-- Keep the current backdrop (`bg-black/80`) and modal container (`bg-card`, `rounded-2xl`, `gold-glow`) but refine inner spacing to match the prototype.
-- Redesign the "Got it" button to use the gold gradient with a subtle shadow and active-scale press state.
-- Preserve existing behavior: opens once per signed-in session via `sessionStorage`, dismisses on backdrop click or close button, and closes with the CTA.
-- Keep the original warning items: AI costs, video-mode drains credits, app purpose, and photo-quality tip.
+A fourth mode next to Photo Scan / Video Scan / Document Scan, called **Resale Scan**, that reframes each detected item around what it's worth.
 
-### 2. `src/routes/__root.tsx`
-- Add Google Fonts `<link>` tags for **Sora** and **Manrope** so the chosen typography can be applied safely without relying on system fonts.
-- Add CSS font-family variables to `src/styles.css` (or theme) mapping `--font-heading` and `--font-body` to Sora and Manrope.
+Per item it returns:
+- **Resale price range** — low / typical / high used-market value, with a confidence note.
+- **Sell-or-keep verdict** — a short "worth listing" / "not worth it" call with one-line reasoning (effort vs. payoff, demand, condition sensitivity).
+- **Marketplace links** — prebuilt search links to eBay, Facebook Marketplace, and Etsy (plus the existing official/product links) using the identified name and any brand/model detected.
 
-### 3. `src/styles.css` (minor)
-- Add `font-heading` and `font-body` utilities if they are not already present, so the modal can use them without hardcoded font names.
-- Ensure the new modal still uses semantic tokens (`bg-card`, `text-primary`, `border-primary/70`, etc.) so it adapts to the user's theme (Gold, Matrix, Camo, Peach, Water).
+Session-level:
+- A **batch total** bar above the items list: running sum of typical resale values for everything scanned in the current session, with item count ("12 items · ~$430 est."). Deleting an item from the list removes it from the total.
+- The total and per-item values respect the selected app language and are included in scan history entries.
 
-## What will not change
-- No functional changes to the app's scanning, credits, or auth flows.
-- No new content/copy beyond what already exists in the modal.
-- No new routes or dependencies other than the Google Fonts links.
+Credit cost: same as a photo scan (2), and the free daily scan applies to it too, so the "what's this worth" hook is the thing new users try for free.
 
-## Verification
-- After the change, the modal will be manually opened in the preview and compared to the selected prototype for visual match.
-- The close/dismiss behavior will be tested to ensure it still works via the backdrop, X button, and "Got it" button.
+## Technical notes
+
+- Resale output extends the existing item schema in `src/lib/analyze-room.functions.ts` with an optional `resale` block (`low`, `typical`, `high`, `currency`, `verdict`, `reason`), so the normal photo/video item card is unchanged when the block is absent.
+- Marketplace URLs are built client-side from the item name/brand — no extra AI or credit cost.
+- Currency follows the app language selection, defaulting to USD.
+- Mode is passed through the existing scan-mode plumbing (`mode: "resale"`), reusing the same model and image pipeline as photo scan, only with a different prompt and response schema.
