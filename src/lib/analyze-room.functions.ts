@@ -10,8 +10,19 @@ const InputSchema = z.object({
   imageBase64: z.string().min(100),
   excludeNames: z.array(z.string()).optional(),
   pass: z.number().optional(),
+  resale: z.boolean().optional(),
 }).merge(EnvironmentSchema);
 
+
+export type ResaleInfo = {
+  low: number;
+  typical: number;
+  high: number;
+  currency: string;
+  /** "sell" = worth listing, "keep" = not worth the effort. */
+  verdict: "sell" | "keep";
+  reason: string;
+};
 
 export type DetectedItem = {
   name: string;
@@ -24,7 +35,9 @@ export type DetectedItem = {
   infoUrl: string;
   confidence: number; // 0..100
   box: { x: number; y: number; w: number; h: number }; // 0..1 normalized (top-left)
+  resale?: ResaleInfo;
 };
+
 
 export type QuickItem = {
   name: string;
