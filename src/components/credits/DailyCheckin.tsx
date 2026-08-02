@@ -13,6 +13,7 @@ import { playSound } from "@/lib/sounds";
 
 export function DailyCheckin({ enabled }: { enabled: boolean }) {
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
   const state = useQuery({
     queryKey: ["checkin"],

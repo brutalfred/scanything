@@ -15,6 +15,7 @@ import { isNativeAndroid } from "@/lib/platform";
 import { buyWithPlay, playBillingAvailable } from "@/lib/play-billing";
 import type { CreditsApi } from "@/hooks/useCredits";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useLanguage } from "@/hooks/useLanguage";
 
 
 
@@ -35,6 +36,7 @@ function reasonLabel(reason: string) {
 
 export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClose: () => void }) {
   const { openCheckout } = usePaddleCheckout();
+  const { t } = useLanguage();
   const [buying, setBuying] = useState<string | null>(null);
   const [adOpen, setAdOpen] = useState(false);
   const { isPro } = useSubscription(credits.signedIn);
