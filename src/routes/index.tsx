@@ -23,6 +23,7 @@ import {
   Share2,
   Download,
   FileText,
+  Tag,
   Crown,
 } from "lucide-react";
 
