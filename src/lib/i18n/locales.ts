@@ -3,6 +3,7 @@ import type { Dictionary, Language } from "./index";
 const Spanish: Dictionary = {
   photoScan: "Escaneo de foto",
   videoScan: "Escaneo de vídeo",
+  resaleScan: "Escaneo de reventa",
   documentScan: "Escaneo de documento",
   scanHistory: "Historial de escaneos",
   scan: "Escanear",
@@ -81,6 +82,7 @@ const Spanish: Dictionary = {
 const French: Dictionary = {
   photoScan: "Scan photo",
   videoScan: "Scan vidéo",
+  resaleScan: "Scan revente",
   documentScan: "Scan de document",
   scanHistory: "Historique des scans",
   scan: "Scanner",
@@ -159,6 +161,7 @@ const French: Dictionary = {
 const German: Dictionary = {
   photoScan: "Foto-Scan",
   videoScan: "Video-Scan",
+  resaleScan: "Weiterverkauf-Scan",
   documentScan: "Dokument-Scan",
   scanHistory: "Scan-Verlauf",
   scan: "Scannen",
@@ -237,6 +240,7 @@ const German: Dictionary = {
 const Swedish: Dictionary = {
   photoScan: "Fotoskanning",
   videoScan: "Videoskanning",
+  resaleScan: "Återförsäljningsscan",
   documentScan: "Dokumentskanning",
   scanHistory: "Skanningshistorik",
   scan: "Skanna",
@@ -315,6 +319,7 @@ const Swedish: Dictionary = {
 const Italian: Dictionary = {
   photoScan: "Scansione foto",
   videoScan: "Scansione video",
+  resaleScan: "Scan rivendita",
   documentScan: "Scansione documento",
   scanHistory: "Cronologia scansioni",
   scan: "Scansiona",
@@ -393,6 +398,7 @@ const Italian: Dictionary = {
 const Portuguese: Dictionary = {
   photoScan: "Digitalização de foto",
   videoScan: "Digitalização de vídeo",
+  resaleScan: "Digitalização de revenda",
   documentScan: "Digitalização de documento",
   scanHistory: "Histórico de digitalizações",
   scan: "Digitalizar",
@@ -471,6 +477,7 @@ const Portuguese: Dictionary = {
 const Polish: Dictionary = {
   photoScan: "Skan zdjęcia",
   videoScan: "Skan wideo",
+  resaleScan: "Skan odsprzedaży",
   documentScan: "Skan dokumentu",
   scanHistory: "Historia skanów",
   scan: "Skanuj",
@@ -549,6 +556,7 @@ const Polish: Dictionary = {
 const Arabic: Dictionary = {
   photoScan: "مسح صورة",
   videoScan: "مسح فيديو",
+  resaleScan: "مسح إعادة البيع",
   documentScan: "مسح مستند",
   scanHistory: "سجل عمليات المسح",
   scan: "مسح",
@@ -627,6 +635,7 @@ const Arabic: Dictionary = {
 const Chinese: Dictionary = {
   photoScan: "照片扫描",
   videoScan: "视频扫描",
+  resaleScan: "转售扫描",
   documentScan: "文档扫描",
   scanHistory: "扫描历史",
   scan: "扫描",
@@ -705,6 +714,7 @@ const Chinese: Dictionary = {
 const Japanese: Dictionary = {
   photoScan: "写真スキャン",
   videoScan: "ビデオスキャン",
+  resaleScan: "転売スキャン",
   documentScan: "書類スキャン",
   scanHistory: "スキャン履歴",
   scan: "スキャン",
@@ -783,6 +793,7 @@ const Japanese: Dictionary = {
 const Korean: Dictionary = {
   photoScan: "사진 스캔",
   videoScan: "영상 스캔",
+  resaleScan: "재판매 스캔",
   documentScan: "문서 스캔",
   scanHistory: "스캔 기록",
   scan: "스캔",
@@ -861,6 +872,7 @@ const Korean: Dictionary = {
 const Hindi: Dictionary = {
   photoScan: "फ़ोटो स्कैन",
   videoScan: "वीडियो स्कैन",
+  resaleScan: "पुनर्विक्री स्कैन",
   documentScan: "दस्तावेज़ स्कैन",
   scanHistory: "स्कैन इतिहास",
   scan: "स्कैन करें",
@@ -939,6 +951,7 @@ const Hindi: Dictionary = {
 const Russian: Dictionary = {
   photoScan: "Фотоскан",
   videoScan: "Видеоскан",
+  resaleScan: "Скан перепродажи",
   documentScan: "Скан документа",
   scanHistory: "История сканов",
   scan: "Сканировать",
@@ -1017,6 +1030,7 @@ const Russian: Dictionary = {
 const Thai: Dictionary = {
   photoScan: "สแกนรูปภาพ",
   videoScan: "สแกนวิดีโอ",
+  resaleScan: "สแกนขายต่อ",
   documentScan: "สแกนเอกสาร",
   scanHistory: "ประวัติการสแกน",
   scan: "สแกน",
