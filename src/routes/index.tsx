@@ -583,7 +583,7 @@ function Scanner() {
         return next;
       });
       if (added.length) {
-        void playSound("pop");
+        void playSound("bubble");
         void saveScanHistory({
           data: {
             mode: "photo",
