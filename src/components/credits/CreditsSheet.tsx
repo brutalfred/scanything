@@ -122,7 +122,7 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
             to="/auth"
             className="mb-5 block rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground"
           >
-            {t("signIn")}
+            {t("signInToScan")}
           </Link>
         )}
 
