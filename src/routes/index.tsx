@@ -36,6 +36,7 @@ import {
   enrichItem,
   analyzeFurther,
   translateText,
+  translateName,
   personInfo,
   personSearch,
   type DetectedItem,
@@ -60,7 +61,7 @@ import {
 
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
-import { saveScanHistory } from "@/lib/scan-history.functions";
+import { saveScanHistory, appendScanHistory } from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
 
@@ -156,6 +157,24 @@ function isBodyPart(name: string) {
   return BODY_PART_RE.test(n);
 }
 
+
+/** Languages offered by the free item-name translator. */
+const NAME_LANGUAGES = [
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Swedish",
+  "Italian",
+  "Portuguese",
+  "Polish",
+  "Arabic",
+  "Chinese",
+  "Japanese",
+  "Korean",
+  "Hindi",
+  "Russian",
+] as const;
 
 // Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
 // Any code point >= U+0370 excluding common punctuation counts as non-Latin.
@@ -260,6 +279,8 @@ function Scanner() {
   const [rawItemCount, setRawItemCount] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreNote, setLoadMoreNote] = useState<string | null>(null);
+  /** History row of the current photo scan, so "Load more" appends to the same entry. */
+  const historyIdRef = useRef<string | null>(null);
 
 
   // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
@@ -549,6 +570,7 @@ function Scanner() {
       }
       setItems(detected);
       setPhase("results");
+      historyIdRef.current = null;
       if (detected.length) {
         void saveScanHistory({
           data: {
@@ -562,7 +584,11 @@ function Scanner() {
               priceMax: d.priceMax,
             })),
           },
-        }).catch(() => {});
+        })
+          .then((row) => {
+            historyIdRef.current = row.id;
+          })
+          .catch(() => {});
       }
       try {
         sessionStorage.setItem(
@@ -626,19 +652,25 @@ function Scanner() {
       });
       if (added.length) {
         void playSound("bubble");
-        void saveScanHistory({
-          data: {
-            mode: "photo",
-            items: added.map((d) => ({
-              name: d.name,
-              category: d.category,
-              description: d.description,
-              confidence: d.confidence,
-              priceMin: d.priceMin,
-              priceMax: d.priceMax,
-            })),
-          },
-        }).catch(() => {});
+        const payload = added.map((d) => ({
+          name: d.name,
+          category: d.category,
+          description: d.description,
+          confidence: d.confidence,
+          priceMin: d.priceMin,
+          priceMax: d.priceMax,
+        }));
+        const existingId = historyIdRef.current;
+        if (existingId) {
+          // Same scan — append to the existing history entry instead of creating a new one.
+          void appendScanHistory({ data: { id: existingId, items: payload } }).catch(() => {});
+        } else {
+          void saveScanHistory({ data: { mode: "photo", items: payload } })
+            .then((row) => {
+              historyIdRef.current = row.id;
+            })
+            .catch(() => {});
+        }
       } else {
         setLoadMoreNote("No additional items found in this photo.");
       }
@@ -2268,6 +2300,33 @@ function DetailPanel({
     }
   }, [name, panelCredits]);
 
+  const [namePickerOpen, setNamePickerOpen] = useState(false);
+  const [nameTranslating, setNameTranslating] = useState(false);
+  const [nameTranslateError, setNameTranslateError] = useState<string | null>(null);
+  const [nameTranslation, setNameTranslation] = useState<
+    { language: string; translation: string; transliteration: string } | null
+  >(null);
+
+  const runNameTranslate = useCallback(
+    async (language: string) => {
+      setNameTranslating(true);
+      setNameTranslateError(null);
+      setNameTranslation(null);
+      try {
+        const result = await translateName({ data: { text: name, targetLanguage: language } });
+        setNameTranslation({ language, ...result });
+        setNamePickerOpen(false);
+      } catch (e) {
+        setNameTranslateError(e instanceof Error ? e.message : "Translation failed.");
+      } finally {
+        setNameTranslating(false);
+      }
+    },
+    [name],
+  );
+
+
+
   return (
     <div
       className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
@@ -2284,7 +2343,50 @@ function DetailPanel({
               <ConfidenceBadge
                 value={isTracked(item) ? (item.confidence ?? item.enrichment?.confidence) : item.confidence}
               />
+              <button
+                type="button"
+                onClick={() => setNamePickerOpen((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
+              >
+                <Languages className="h-3 w-3" />
+                Translate
+                <span className="text-muted-foreground">· free</span>
+              </button>
             </div>
+            {namePickerOpen && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {NAME_LANGUAGES.map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => void runNameTranslate(lang)}
+                    disabled={nameTranslating}
+                    className="rounded-full border border-border px-2 py-0.5 text-[10px] text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            )}
+            {nameTranslating && (
+              <p className="mt-1 text-[11px] text-muted-foreground">Translating…</p>
+            )}
+            {nameTranslateError && (
+              <p className="mt-1 text-[11px] text-destructive">{nameTranslateError}</p>
+            )}
+            {nameTranslation && !nameTranslating && (
+              <p className="mt-1 text-sm font-medium text-primary">
+                {nameTranslation.translation || "—"}
+                <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {nameTranslation.language}
+                </span>
+                {nameTranslation.transliteration && (
+                  <span className="ml-1 text-[11px] text-muted-foreground">
+                    ({nameTranslation.transliteration})
+                  </span>
+                )}
+              </p>
+            )}
             {enrichment ? (
               <p className="text-xs capitalize text-muted-foreground">
                 {enrichment.category}
