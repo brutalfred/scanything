@@ -1529,10 +1529,13 @@ function Scanner() {
             {phase === "results" && visibleItems.length === 0 && !error && (
               <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
                 {items.length > 0
-                  ? "All items filtered out. Adjust filters to see them."
-                  : "No items detected. Try a clearer photo."}
+                  ? "All items were hidden by your category filters. Open Filters and turn them back on."
+                  : rawItemCount > 0
+                    ? `${rawItemCount} item${rawItemCount === 1 ? " was" : "s were"} hidden by the people/body-part filter. Try another angle.`
+                    : "Nothing identified in this shot. Try a closer, sharper photo with a clean lens."}
               </div>
             )}
+
           </div>
         )}
       </main>
