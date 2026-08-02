@@ -167,7 +167,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
             <History className="h-4 w-4 text-primary" />
           )}
           <h2 className="flex-1 text-sm font-semibold text-foreground">
-            {selected ? selected.title || formatStamp(selected.createdAt) : "Scan History"}
+            {selected ? selected.title || formatStamp(selected.createdAt) : t("scanHistory")}
           </h2>
           <button
             onClick={onClose}
