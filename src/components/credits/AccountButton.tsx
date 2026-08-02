@@ -95,7 +95,7 @@ export function AccountButton({
         className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary/40 bg-card px-2.5 py-1 text-[11px] font-semibold text-primary gold-glow sm:px-3 sm:py-1.5 sm:text-xs"
       >
         <LogIn className="h-3.5 w-3.5" />
-        Sign in
+        {t("signIn")}
       </Link>
     );
   }
@@ -123,7 +123,7 @@ export function AccountButton({
             className="theme-panel gold-glow max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-2xl p-5 text-sm shadow-2xl"
           >
             <p className="truncate text-center text-base font-semibold">
-              {email ?? "Account"}
+              {email ?? t("account")}
             </p>
             {isPro && (
               <div className="mt-2 flex items-center justify-center gap-1 text-xs font-bold text-primary">
@@ -135,17 +135,17 @@ export function AccountButton({
 
             <dl className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <dt className="opacity-70">Credits</dt>
+                <dt className="opacity-70">{t("credits")}</dt>
                 <dd className="font-semibold">{balance}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="opacity-70">Photo scans</dt>
+                <dt className="opacity-70">{t("photoScans")}</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.photoScans ?? 0)}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="opacity-70">Credits spent</dt>
+                <dt className="opacity-70">{t("creditsSpent")}</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.creditsSpent ?? 0)}
                 </dd>
@@ -164,9 +164,9 @@ export function AccountButton({
                   ) : (
                     <Volume2 className="h-4 w-4" />
                   )}
-                  Sound effects
+                  {t("soundEffects")}
                 </span>
-                <span className="text-xs font-medium opacity-70">{muted ? "Muted" : "On"}</span>
+                <span className="text-xs font-medium opacity-70">{muted ? t("muted") : t("on")}</span>
               </button>
               <div className="flex items-center gap-3 px-3 pb-3">
                 <input
@@ -204,7 +204,7 @@ export function AccountButton({
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 font-semibold text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
               >
                 <Crown className="h-4 w-4" />
-                {managing ? "Opening portal…" : "Manage subscription"}
+                {managing ? t("openingPortal") : t("manageSubscription")}
                 {managing && <Loader2 className="h-4 w-4 animate-spin" />}
               </button>
             ) : (
@@ -214,7 +214,7 @@ export function AccountButton({
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 font-semibold text-primary transition-colors hover:bg-primary/20"
               >
                 <Crown className="h-4 w-4" />
-                Upgrade to Pro
+                {t("upgradeToPro")}
               </Link>
             )}
 
@@ -227,7 +227,7 @@ export function AccountButton({
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <Trophy className="h-4 w-4" />
-              Play: 400m Hurdles
+              {t("playHurdles")}
             </button>
 
 
@@ -290,7 +290,7 @@ export function AccountButton({
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <Download className="h-4 w-4" />
-              {installed ? "App installed" : canInstall ? "Install app" : "Add to desktop / home screen"}
+              {installed ? t("appInstalled") : canInstall ? t("installApp") : t("addToHomeScreen")}
             </button>
             )}
 
@@ -301,7 +301,7 @@ export function AccountButton({
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
               >
                 <ShieldCheck className="h-4 w-4" />
-                Admin
+                {t("admin")}
               </Link>
             )}
 
@@ -311,7 +311,7 @@ export function AccountButton({
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <LogOut className="h-4 w-4" />
-              Log out
+              {t("logOut")}
             </button>
 
             <Link
@@ -319,7 +319,7 @@ export function AccountButton({
               onClick={() => setOpen(false)}
               className="mt-3 block text-center text-xs text-muted-foreground underline"
             >
-              Delete my account
+              {t("deleteMyAccount")}
             </Link>
 
             <div className="mt-3 flex justify-center">
