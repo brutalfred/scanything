@@ -1479,11 +1479,22 @@ function Scanner() {
                     className="w-full max-w-xs"
                   >
                     <Camera className="mr-2 h-5 w-5" />
-                    {mode === "document"
-                      ? `Scan document · ${CREDIT_COSTS.document_scan}`
-                      : `Scan · ${CREDIT_COSTS.photo_scan}`}
+                    {mode === "document" ? "Scan document · " : "Scan · "}
+                    {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
+                    {scanEstimate[mode === "document" ? "document" : "photo"].credits}
                   </Button>
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    {(() => {
+                      const key: ScanMode = mode === "document" ? "document" : "photo";
+                      const est = scanEstimate[key];
+                      const base = baseScanCost(key);
+                      return est.learned && est.credits > base
+                        ? `Est. ~${est.credits} credits — ${base} to scan plus extra passes you usually run. Balance: ${credits.balance}`
+                        : `Estimated cost: ${base} credits. Balance: ${credits.balance}`;
+                    })()}
+                  </p>
                 </div>
+
               )
             )}
 
