@@ -551,6 +551,7 @@ function Scanner() {
       }
       setItems(detected);
       setPhase("results");
+      historyIdRef.current = null;
       if (detected.length) {
         void saveScanHistory({
           data: {
@@ -564,7 +565,11 @@ function Scanner() {
               priceMax: d.priceMax,
             })),
           },
-        }).catch(() => {});
+        })
+          .then((row) => {
+            historyIdRef.current = row.id;
+          })
+          .catch(() => {});
       }
       try {
         sessionStorage.setItem(
