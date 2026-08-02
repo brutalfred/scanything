@@ -64,6 +64,7 @@ import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import { saveScanHistory, appendScanHistory } from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useLanguage } from "@/hooks/useLanguage";
 
 
 
@@ -265,6 +266,7 @@ function Index() {
 
 function Scanner() {
   const credits = useCreditsContext();
+  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -1168,7 +1170,7 @@ function Scanner() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Filter</span>
+                <span className="hidden sm:inline">{t("filters")}</span>
                 <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
                   {filters.size}
                 </span>
@@ -1178,7 +1180,7 @@ function Scanner() {
             {snapshot && (
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                New scan
+                {t("newScan")}
               </Button>
             )}
           </div>
@@ -1196,7 +1198,7 @@ function Scanner() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold gold-text">Scan filters</h2>
+              <h2 className="text-sm font-semibold gold-text">{t("filters")}</h2>
               <div className="flex gap-1">
                 <button
                   onClick={() => setFilters(new Set(CATEGORY_FILTERS.map((c) => c.key)))}
@@ -1263,7 +1265,7 @@ function Scanner() {
                   }`}
                 >
                   <ImageIcon className="h-3.5 w-3.5" />
-                  Photo Scan
+                  {t("photoScan")}
                 </button>
                 <button
                   onClick={() => {
@@ -1280,7 +1282,7 @@ function Scanner() {
                   }`}
                 >
                   <Video className="h-3.5 w-3.5" />
-                  Video Scan
+                  {t("videoScan")}
                 </button>
                 {credits.signedIn && (
                   <button
@@ -1288,7 +1290,7 @@ function Scanner() {
                     className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
                     <History className="h-3.5 w-3.5" />
-                    Scan History
+                    {t("scanHistory")}
                   </button>
                 )}
               </div>
@@ -1305,7 +1307,7 @@ function Scanner() {
                 }`}
               >
                 <FileText className="h-3.5 w-3.5" />
-                Document Scan
+                {t("documentScan")}
                 <Crown className="h-3 w-3 text-primary" />
               </button>
             </div>
@@ -1372,7 +1374,7 @@ function Scanner() {
                           : "bg-emerald-400"
                     }`}
                   />
-                  {videoPaused ? "Paused" : scanning ? "Scanning…" : "Live"}
+                  {videoPaused ? t("pause") : scanning ? t("analyzing") : "Live"}
                 </div>
               )}
 
@@ -1392,7 +1394,7 @@ function Scanner() {
                     to="/auth"
                     className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                   >
-                    Sign in
+                    {t("signIn")}
                   </Link>
                 </div>
               )}
@@ -1418,12 +1420,12 @@ function Scanner() {
                       {videoPaused ? (
                         <>
                           <Play className="mr-2 h-5 w-5" />
-                          Resume scanning
+                          {t("resume")}
                         </>
                       ) : (
                         <>
                           <Pause className="mr-2 h-5 w-5" />
-                          Pause scanning
+                          {t("pause")}
                         </>
                       )}
                     </Button>
@@ -1440,13 +1442,13 @@ function Scanner() {
                         onClick={() => setListTab("items")}
                         className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "items" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                       >
-                        Items
+                        {t("items")}
                       </button>
                       <button
                         onClick={() => setListTab("categories")}
                         className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                       >
-                        Categories
+                        {t("categories")}
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1581,15 +1583,15 @@ function Scanner() {
               {phase === "analyzing" && (
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-background/80 p-3 text-foreground backdrop-blur-sm">
                   <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="text-sm">Analyzing room…</p>
+                  <p className="text-sm">{t("analyzing")}</p>
                 </div>
               )}
               <div className="absolute bottom-2 right-2 z-10 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleSharePicture}
-                  aria-label="Share picture"
-                  title="Share picture"
+                  aria-label={t("share")}
+                  title={t("share")}
                   className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
                 >
                   <Share2 className="h-4 w-4" />
@@ -1597,8 +1599,8 @@ function Scanner() {
                 <button
                   type="button"
                   onClick={handleSavePicture}
-                  aria-label="Save picture"
-                  title="Save picture to device"
+                  aria-label={t("save")}
+                  title={t("save")}
                   className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
                 >
                   <Download className="h-4 w-4" />
@@ -1628,13 +1630,13 @@ function Scanner() {
                       onClick={() => setListTab("items")}
                       className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "items" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      Items
+                      {t("items")}
                     </button>
                     <button
                       onClick={() => setListTab("categories")}
                       className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      Categories
+                      {t("categories")}
                     </button>
                   </div>
                   <span className="text-[11px] text-muted-foreground">
@@ -1706,10 +1708,10 @@ function Scanner() {
                   {loadingMore ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Looking for more…
+                      {t("loading")}
                     </>
                   ) : (
-                    `Load more · ${CREDIT_COSTS.photo_scan}`
+                    `${t("loadMore")} · ${CREDIT_COSTS.photo_scan}`
                   )}
                 </Button>
                 <p className="text-center text-[11px] text-muted-foreground">
@@ -1727,13 +1729,13 @@ function Scanner() {
         <div className="mx-auto max-w-4xl px-4">
           <div className="mb-2 flex flex-wrap items-center justify-center gap-4">
             <Link to="/terms" className="hover:text-foreground hover:underline">
-              Terms & Conditions
+              {t("terms")}
             </Link>
             <Link to="/refund-policy" className="hover:text-foreground hover:underline">
-              Refund Policy
+              {t("refunds")}
             </Link>
             <Link to="/privacy" className="hover:text-foreground hover:underline">
-              Privacy Notice
+              {t("privacy")}
             </Link>
           </div>
           <p>© {new Date().getFullYear()} Scanything. All rights reserved.</p>
@@ -2093,9 +2095,9 @@ function Scanner() {
             className="gold-glow w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-bold text-primary">Warning</h2>
+            <h2 className="text-lg font-bold text-primary">{t("warning")}</h2>
             <p className="mt-3 text-sm text-foreground">
-              Warning: Videoscanning drains credits fast!
+              {t("videoDrainsCredits")}
             </p>
             <div className="mt-6 flex gap-3">
               <button
@@ -2103,7 +2105,7 @@ function Scanner() {
                 onClick={() => setVideoWarningOpen(false)}
                 className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
               >
-                Go back
+                {t("goBack")}
               </button>
               <button
                 type="button"
@@ -2113,7 +2115,7 @@ function Scanner() {
                 }}
                 className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                Continue
+                {t("continueAction")}
               </button>
             </div>
           </div>
@@ -2230,6 +2232,19 @@ function plateLookupLinks(plate: string, description: string): PlateLink[] {
 }
 
 
+/** Session cache of AI translations, keyed by language + item, so reopening a box is instant. */
+const TRANSLATION_CACHE = new Map<
+  string,
+  {
+    language: string;
+    translation: string;
+    transliteration: string;
+    description: string;
+    category: string;
+    labels: string[];
+  }
+>();
+
 function DetailPanel({
   item,
   imageBase64,
@@ -2257,6 +2272,7 @@ function DetailPanel({
       };
 
   const panelCredits = useCreditsContext();
+  const { language: appLanguage, t } = useLanguage();
   const [deep, setDeep] = useState<DeepAnalysis | null>(null);
   const [deepLoading, setDeepLoading] = useState(false);
   const [deepError, setDeepError] = useState<string | null>(null);
@@ -2316,12 +2332,19 @@ function DetailPanel({
   >(null);
 
   const PANEL_LABELS = useMemo(
-    () => ["Estimated price range", "Shop this item", "Learn more", "Official vehicle lookup"],
-    [],
+    () => [t("estimatedPriceRange"), t("shopThisItem"), t("learnMore"), t("officialVehicleLookup")],
+    [t],
   );
 
   const runNameTranslate = useCallback(
     async (language: string) => {
+      const cacheKey = `${language}|${name}|${enrichment?.description ?? ""}`;
+      const cached = TRANSLATION_CACHE.get(cacheKey);
+      if (cached) {
+        setNameTranslation(cached);
+        setNamePickerOpen(false);
+        return;
+      }
       setNameTranslating(true);
       setNameTranslateError(null);
       setNameTranslation(null);
@@ -2335,7 +2358,9 @@ function DetailPanel({
             labels: PANEL_LABELS,
           },
         });
-        setNameTranslation({ language, ...result });
+        const next = { language, ...result };
+        TRANSLATION_CACHE.set(cacheKey, next);
+        setNameTranslation(next);
         setNamePickerOpen(false);
       } catch (e) {
         setNameTranslateError(e instanceof Error ? e.message : "Translation failed.");
@@ -2346,27 +2371,42 @@ function DetailPanel({
     [name, enrichment?.description, enrichment?.category, PANEL_LABELS],
   );
 
-  /** Localized UI label helper: falls back to English until a translation is picked. */
+  /**
+   * Follow the app-wide language: scan content is auto-translated whenever the
+   * user browses the app in something other than English.
+   */
+  useEffect(() => {
+    if (appLanguage === "English") return;
+    if (nameTranslation?.language === appLanguage) return;
+    void runNameTranslate(appLanguage);
+    // Re-run when the item, its details or the app language change.
+  }, [appLanguage, nameTranslation?.language, runNameTranslate]);
+
+  /** Localized UI label helper: AI translation first, then the built-in dictionary. */
   const tl = useCallback(
-    (label: string) => {
-      const i = PANEL_LABELS.indexOf(label);
-      const translated = nameTranslation?.labels?.[i];
-      return translated || label;
-    },
+    (i: number) => nameTranslation?.labels?.[i] || PANEL_LABELS[i] || "",
     [nameTranslation, PANEL_LABELS],
   );
 
+
+
   // --- Deep analysis auto-translation (follows the language picked above) ---
   const DEEP_LABELS = useMemo(
-    () => ["Deep analysis", "confidence", "Best guess", "Buy this exact product", "Reviews & specs"],
-    [],
+    () => [
+      t("deepAnalysis"),
+      t("confidence"),
+      t("bestGuess"),
+      t("buyExactProduct"),
+      t("reviewsSpecs"),
+    ],
+    [t],
   );
   const [deepTranslation, setDeepTranslation] = useState<{
     language: string;
     description: string;
     labels: string[];
   } | null>(null);
-  const deepLang = nameTranslation?.language ?? null;
+  const deepLang = nameTranslation?.language ?? (appLanguage === "English" ? null : appLanguage);
 
   useEffect(() => {
     if (!deep || !deepLang) {
@@ -2398,10 +2438,7 @@ function DetailPanel({
 
   /** Localized deep-analysis label helper. */
   const dl = useCallback(
-    (label: string) => {
-      const i = DEEP_LABELS.indexOf(label);
-      return deepTranslation?.labels?.[i] || label;
-    },
+    (i: number) => deepTranslation?.labels?.[i] || DEEP_LABELS[i] || "",
     [deepTranslation, DEEP_LABELS],
   );
 
@@ -2430,8 +2467,8 @@ function DetailPanel({
                 className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
               >
                 <Languages className="h-3 w-3" />
-                Translate
-                <span className="text-muted-foreground">· free</span>
+                {t("translate")}
+                <span className="text-muted-foreground">· {t("free")}</span>
               </button>
             </div>
             {namePickerOpen && (
@@ -2450,7 +2487,7 @@ function DetailPanel({
               </div>
             )}
             {nameTranslating && (
-              <p className="mt-1 text-[11px] text-muted-foreground">Translating…</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("translating")}</p>
             )}
             {nameTranslateError && (
               <p className="mt-1 text-[11px] text-destructive">{nameTranslateError}</p>
@@ -2494,7 +2531,7 @@ function DetailPanel({
             {!["person", "plate"].includes(enrichment.category) && (
               <div className="mt-4 rounded-lg bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
-                  {tl("Estimated price range")}
+                  {tl(0)}
                 </div>
                 <div className="text-xl font-semibold text-foreground">
                   ${enrichment.priceMin}
@@ -2509,7 +2546,7 @@ function DetailPanel({
             {enrichment.category === "plate" && (
               <div className="mt-4 rounded-lg border border-border bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
-                  {tl("Official vehicle lookup")}
+                  {tl(3)}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Owner details are not public. Use an official registry below — you must be
@@ -2541,7 +2578,7 @@ function DetailPanel({
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
               >
-                {tl("Shop this item")}
+                {tl(1)}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
               <a
@@ -2550,7 +2587,7 @@ function DetailPanel({
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
               >
-                {tl("Learn more")}
+                {tl(2)}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
 
@@ -2563,12 +2600,12 @@ function DetailPanel({
                 {deepLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing further…
+                    {t("analyzing")}
                   </>
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Analyze further · {CREDIT_COSTS.analyze_further}
+                    {t("analyzeFurther")} · {CREDIT_COSTS.analyze_further}
                   </>
                 )}
               </Button>
@@ -2583,12 +2620,12 @@ function DetailPanel({
                   {translating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Translating…
+                      {t("translating")}
                     </>
                   ) : (
                     <>
                       <Languages className="mr-2 h-4 w-4" />
-                      Translate · {CREDIT_COSTS.translate}
+                      {t("translate")} · {CREDIT_COSTS.translate}
                     </>
                   )}
                 </Button>
@@ -2603,10 +2640,10 @@ function DetailPanel({
             {deep && (
               <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                  {dl("Deep analysis")} · {Math.round(deep.confidence)}% {dl("confidence")}
+                  {dl(0)} · {Math.round(deep.confidence)}% {dl(1)}
                 </div>
                 <div className="mt-1 text-sm font-semibold">
-                  {[deep.brand, deep.product].filter(Boolean).join(" — ") || dl("Best guess")}
+                  {[deep.brand, deep.product].filter(Boolean).join(" — ") || dl(2)}
                 </div>
                 {deep.description && (
                   <p className="mt-1 text-sm leading-relaxed">
@@ -2626,7 +2663,7 @@ function DetailPanel({
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                     >
-                      {dl("Buy this exact product")}
+                      {dl(3)}
                       <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   )}
@@ -2637,7 +2674,7 @@ function DetailPanel({
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                     >
-                      {dl("Reviews & specs")}
+                      {dl(4)}
                       <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   )}

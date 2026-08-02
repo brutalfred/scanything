@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
 import { THEMES } from "@/lib/theme";
+import { LANGUAGES, LANGUAGE_NATIVE } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useSounds } from "@/hooks/useSounds";
@@ -36,6 +38,7 @@ export function AccountButton({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const { muted, volume, toggleMute, setVolume } = useSounds();
   const { isPro } = useSubscription(signedIn && open);
@@ -92,7 +95,7 @@ export function AccountButton({
         className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary/40 bg-card px-2.5 py-1 text-[11px] font-semibold text-primary gold-glow sm:px-3 sm:py-1.5 sm:text-xs"
       >
         <LogIn className="h-3.5 w-3.5" />
-        Sign in
+        {t("signIn")}
       </Link>
     );
   }
@@ -120,7 +123,7 @@ export function AccountButton({
             className="theme-panel gold-glow max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-2xl p-5 text-sm shadow-2xl"
           >
             <p className="truncate text-center text-base font-semibold">
-              {email ?? "Account"}
+              {email ?? t("account")}
             </p>
             {isPro && (
               <div className="mt-2 flex items-center justify-center gap-1 text-xs font-bold text-primary">
@@ -132,17 +135,17 @@ export function AccountButton({
 
             <dl className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <dt className="opacity-70">Credits</dt>
+                <dt className="opacity-70">{t("credits")}</dt>
                 <dd className="font-semibold">{balance}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="opacity-70">Photo scans</dt>
+                <dt className="opacity-70">{t("photoScans")}</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.photoScans ?? 0)}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="opacity-70">Credits spent</dt>
+                <dt className="opacity-70">{t("creditsSpent")}</dt>
                 <dd className="font-semibold">
                   {stats.isLoading ? "…" : (stats.data?.creditsSpent ?? 0)}
                 </dd>
@@ -161,9 +164,9 @@ export function AccountButton({
                   ) : (
                     <Volume2 className="h-4 w-4" />
                   )}
-                  Sound effects
+                  {t("soundEffects")}
                 </span>
-                <span className="text-xs font-medium opacity-70">{muted ? "Muted" : "On"}</span>
+                <span className="text-xs font-medium opacity-70">{muted ? t("muted") : t("on")}</span>
               </button>
               <div className="flex items-center gap-3 px-3 pb-3">
                 <input
@@ -201,7 +204,7 @@ export function AccountButton({
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 font-semibold text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
               >
                 <Crown className="h-4 w-4" />
-                {managing ? "Opening portal…" : "Manage subscription"}
+                {managing ? t("openingPortal") : t("manageSubscription")}
                 {managing && <Loader2 className="h-4 w-4 animate-spin" />}
               </button>
             ) : (
@@ -211,7 +214,7 @@ export function AccountButton({
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 font-semibold text-primary transition-colors hover:bg-primary/20"
               >
                 <Crown className="h-4 w-4" />
-                Upgrade to Pro
+                {t("upgradeToPro")}
               </Link>
             )}
 
@@ -224,36 +227,60 @@ export function AccountButton({
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <Trophy className="h-4 w-4" />
-              Play: 400m Hurdles
+              {t("playHurdles")}
             </button>
 
 
             <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Theme</p>
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{t("theme")}</p>
               <div className="mt-2 grid grid-cols-5 gap-2">
-                {THEMES.map((t) => (
+                {THEMES.map((th) => (
                   <button
-                    key={t.key}
+                    key={th.key}
                     type="button"
-                    onClick={() => setTheme(t.key)}
-                    aria-label={`${t.label} theme`}
-                    aria-pressed={theme === t.key}
+                    onClick={() => setTheme(th.key)}
+                    aria-label={`${th.label} theme`}
+                    aria-pressed={theme === th.key}
                     className={`rounded-lg border p-1 transition-transform hover:scale-105 ${
-                      theme === t.key ? "border-current" : "border-transparent opacity-70"
+                      theme === th.key ? "border-current" : "border-transparent opacity-70"
                     }`}
                   >
                     <span className="flex h-6 w-full overflow-hidden rounded">
-                      {t.swatch.map((c) => (
+                      {th.swatch.map((c) => (
                         <span key={c} className="flex-1" style={{ backgroundColor: c }} />
                       ))}
                     </span>
                     <span className="mt-1 block text-[9px] font-medium leading-tight">
-                      {t.label}
+                      {th.label}
                     </span>
                   </button>
                 ))}
               </div>
             </div>
+
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">
+                {t("language")}
+              </p>
+              <div className="mt-2 grid grid-cols-3 gap-1.5">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setLanguage(lang)}
+                    aria-pressed={language === lang}
+                    className={`rounded-lg border px-2 py-1.5 text-[10px] font-medium leading-tight transition-colors ${
+                      language === lang
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-current/25 opacity-70 hover:bg-current/10"
+                    }`}
+                  >
+                    {LANGUAGE_NATIVE[lang]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
 
 
             {!isNative() && (
@@ -263,7 +290,7 @@ export function AccountButton({
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <Download className="h-4 w-4" />
-              {installed ? "App installed" : canInstall ? "Install app" : "Add to desktop / home screen"}
+              {installed ? t("appInstalled") : canInstall ? t("installApp") : t("addToHomeScreen")}
             </button>
             )}
 
@@ -274,7 +301,7 @@ export function AccountButton({
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
               >
                 <ShieldCheck className="h-4 w-4" />
-                Admin
+                {t("admin")}
               </Link>
             )}
 
@@ -284,7 +311,7 @@ export function AccountButton({
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <LogOut className="h-4 w-4" />
-              Log out
+              {t("logOut")}
             </button>
 
             <Link
@@ -292,7 +319,7 @@ export function AccountButton({
               onClick={() => setOpen(false)}
               className="mt-3 block text-center text-xs text-muted-foreground underline"
             >
-              Delete my account
+              {t("deleteMyAccount")}
             </Link>
 
             <div className="mt-3 flex justify-center">

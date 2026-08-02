@@ -7,6 +7,7 @@ import {
   type ScanHistoryEntry,
   type ScanHistoryItem,
 } from "@/lib/scan-history.functions";
+import { useLanguage } from "@/hooks/useLanguage";
 
 function formatStamp(iso: string) {
   const d = new Date(iso);
@@ -102,6 +103,7 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
 
 
 export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useLanguage();
   const [entries, setEntries] = useState<ScanHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,7 +169,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
             <History className="h-4 w-4 text-primary" />
           )}
           <h2 className="flex-1 text-sm font-semibold text-foreground">
-            {selected ? selected.title || formatStamp(selected.createdAt) : "Scan History"}
+            {selected ? selected.title || formatStamp(selected.createdAt) : t("scanHistory")}
           </h2>
           <button
             onClick={onClose}

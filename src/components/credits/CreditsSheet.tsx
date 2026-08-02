@@ -15,6 +15,7 @@ import { isNativeAndroid } from "@/lib/platform";
 import { buyWithPlay, playBillingAvailable } from "@/lib/play-billing";
 import type { CreditsApi } from "@/hooks/useCredits";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useLanguage } from "@/hooks/useLanguage";
 
 
 
@@ -35,6 +36,7 @@ function reasonLabel(reason: string) {
 
 export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClose: () => void }) {
   const { openCheckout } = usePaddleCheckout();
+  const { t } = useLanguage();
   const [buying, setBuying] = useState<string | null>(null);
   const [adOpen, setAdOpen] = useState(false);
   const { isPro } = useSubscription(credits.signedIn);
@@ -105,7 +107,7 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
             </p>
           </div>
 
-          <button onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-primary">
+          <button onClick={onClose} aria-label={t("close")} className="text-muted-foreground hover:text-primary">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -120,11 +122,11 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
             to="/auth"
             className="mb-5 block rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground"
           >
-            Sign in to buy credits and keep your balance
+            {t("signInToScan")}
           </Link>
         )}
 
-        <h3 className="mb-2 text-sm font-semibold text-primary">Top up</h3>
+        <h3 className="mb-2 text-sm font-semibold text-primary">{t("topUp")}</h3>
         <div className="mb-4 grid grid-cols-2 gap-2">
           {CREDIT_PACKS.map((pack) => (
             <button

@@ -1,22 +1,32 @@
 ## Goal
 
-After a photo scan, let the user tap **Load more** to re-query the same captured image for objects the first pass missed, and append the new finds to the existing results list.
+Add a **Language** section to the account tab that switches the whole app — interface text, scan item boxes, detail cards and deep analysis — into the chosen language, and remembers the choice across sessions.
 
-## Behavior
+## Language list
 
-- Button appears under the results list only when a photo scan has produced results (snapshot exists, not scanning).
-- Tapping it re-analyzes the *same* snapshot with a "second pass" prompt that tells the model which items were already found and to look specifically for smaller/occluded/background objects.
-- New items are merged into the list, de-duplicated against existing names (and against the 60-second delete-blocklist), and the "Detected in view" / Categories tabs update.
-- Costs the normal photo-scan credit price; the button label shows the cost (e.g. `Load more · 2`) and is disabled without enough credits, same gating as the scan button. Camera shutter/pop sounds stay consistent with existing behavior.
-- If the pass returns nothing new, show a short "No additional items found" note instead of an empty change.
-- Repeatable: can be pressed again, each time passing the full accumulated list as exclusions. Results are re-saved to the session snapshot cache and scan history like a normal scan.
+The same 15 options already used by the item Translate picker: English, Spanish, French, German, Swedish, Italian, Portuguese, Polish, Arabic, Chinese, Japanese, Korean, Hindi, Russian, Thai (ไทย). English is the default.
 
-## Technical details
+## How it works
 
-- `src/lib/analyze-room.functions.ts`
-  - Extend the photo-scan input schema with optional `excludeNames: string[]` and `pass: number`.
-  - Add a `SECOND_PASS_SUFFIX` appended to the user message when `excludeNames` is non-empty: lists already-found names, instructs the model to skip them and hunt for small, partially hidden, background, or clustered objects; keeps the same JSON output shape and the same people/body-part and structural-surface rules.
-  - Same model (`google/gemini-3-flash-preview`) and same `withCredits("photo_scan", ...)` wrapper, so the credit accounting and refund-on-failure path are unchanged.
-- `src/routes/index.tsx`
-  - New `loadingMore` state and a `loadMore()` handler that calls `analyzeRoom` with the stored snapshot plus the current item names, then merges results with normalized-name de-dup (reusing the existing `normName` helper) and keeps prior items' order.
-  - Render the button below the results list inside the existing snapshot results block, styled with the current theme tokens.
+**1. Interface text — built-in dictionary (free, instant, offline)**
+- New `src/lib/i18n/` with one dictionary per language and a `useLanguage()` hook plus a `t("key")` helper.
+- The setting is stored in `localStorage` and broadcast app-wide with the same event pattern already used for themes, so every open panel updates immediately and the choice survives reloads and sign-outs.
+- Right-to-left languages (Arabic) set `dir="rtl"` on the document so layout mirrors correctly.
+- Strings covered: home screen and scan controls, filters, item list tabs, credits/top-up sheet, account tab, daily check-in, welcome popup, scan history, video warning, pricing page, auth screen, cookie banner, footer, and toast messages. Legal pages (terms, privacy, refund) stay in English, with a note, since they are legal documents.
+
+**2. Scan content — automatic AI translation (free to the user)**
+- When the app language is not English, scan results translate automatically instead of requiring a per-item Translate tap: item names on the green boxes, the detail card (description, category, price notes) and Analyze-further output.
+- Reuses the existing translation server function and its fallback behaviour, so a failed translation shows the original English text rather than a blank card.
+- Translations are cached per item and language in memory for the session, so reopening a box is instant and doesn't re-translate.
+- The per-item Translate button stays, letting a user peek at one item in another language without changing the app language.
+
+## Account tab UI
+
+Under the existing Theme section: a "Language" heading with a compact grid of language chips (same visual style as the theme swatches), the active one highlighted. Selecting one applies instantly and closes nothing else.
+
+## Technical notes
+
+- New: `src/lib/i18n/index.ts` (types, language list, `t`), `src/lib/i18n/locales/*.ts` (dictionaries), `src/hooks/useLanguage.ts`.
+- Edited: `AccountButton.tsx` (picker), `__root.tsx` (mount language + `dir`), `src/routes/index.tsx` (largest change — swap hardcoded strings for `t()`, auto-translate scan data), plus the credits, check-in, welcome, history, pricing and auth components.
+- No database or backend schema changes; the existing `translateName` server function is reused as-is.
+- Because `src/routes/index.tsx` is ~2800 lines, its string replacement is done in passes, verifying the app renders between passes.
