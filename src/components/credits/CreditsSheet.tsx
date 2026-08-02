@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getAdRewardStatus } from "@/lib/ad-reward.functions";
 import { Link } from "@tanstack/react-router";
-import { Coins, Crown, Loader2, Play, X } from "lucide-react";
+import { Coins, Crown, Loader2, X } from "lucide-react";
 import { playSound } from "@/lib/sounds";
 
 import { toast } from "sonner";
@@ -10,7 +8,6 @@ import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { getPaddleEnvironment } from "@/lib/paddle";
-import { AdRewardModal } from "./AdRewardModal";
 import { isNativeAndroid } from "@/lib/platform";
 import { buyWithPlay, playBillingAvailable } from "@/lib/play-billing";
 import type { CreditsApi } from "@/hooks/useCredits";
