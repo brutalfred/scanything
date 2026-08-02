@@ -24,7 +24,6 @@ import {
   Download,
   FileText,
   Tag,
-  Crown,
 } from "lucide-react";
 
 import { toast } from "sonner";
