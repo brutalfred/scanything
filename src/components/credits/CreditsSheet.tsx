@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Coins, Crown, Loader2, X } from "lucide-react";
+import { Coins, Loader2, X } from "lucide-react";
 import { playSound } from "@/lib/sounds";
 
 import { toast } from "sonner";
@@ -11,7 +11,6 @@ import { getPaddleEnvironment } from "@/lib/paddle";
 import { isNativeAndroid } from "@/lib/platform";
 import { buyWithPlay, playBillingAvailable } from "@/lib/play-billing";
 import type { CreditsApi } from "@/hooks/useCredits";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/hooks/useLanguage";
 
 
@@ -35,7 +34,6 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const { openCheckout } = usePaddleCheckout();
   const { t } = useLanguage();
   const [buying, setBuying] = useState<string | null>(null);
-  const { isPro } = useSubscription(credits.signedIn);
   const environment = getPaddleEnvironment();
 
 
