@@ -2255,6 +2255,19 @@ const PLATE_REGISTRIES: { match: RegExp; label: string; url: string }[] = [
   },
 ];
 
+/** Marketplace research links for a resale-scanned item. */
+function resaleMarketLinks(name: string): { label: string; url: string }[] {
+  const q = encodeURIComponent(name);
+  return [
+    {
+      label: "eBay sold",
+      url: `https://www.ebay.com/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1`,
+    },
+    { label: "Facebook", url: `https://www.facebook.com/marketplace/search/?query=${q}` },
+    { label: "Etsy", url: `https://www.etsy.com/search?q=${q}` },
+  ];
+}
+
 function plateLookupLinks(plate: string, description: string): PlateLink[] {
   const hay = `${plate} ${description}`;
   const links: PlateLink[] = PLATE_REGISTRIES.filter((r) => r.match.test(hay)).map((r) => ({
