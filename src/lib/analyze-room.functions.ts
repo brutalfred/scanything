@@ -208,13 +208,18 @@ export const analyzeRoom = createServerFn({ method: "POST" })
           .slice(0, 120)
           .join(", ")}.
 Look again at the SAME photo and find ONLY additional objects that were missed: small items, partially hidden or occluded objects, things in the background or at the edges, individual objects inside clusters/shelves/tables, and items behind or on top of the ones already listed. Keep all the same rules (no human body parts, structural surfaces only as a last resort) and the exact same JSON shape. If you truly find nothing new, return {"items":[]}. Return JSON only.`
-      : "Analyze this room photo. Return JSON only.";
+      : data.resale
+        ? "Resale scan of this photo — value every sellable item. Return JSON only."
+        : "Analyze this room photo. Return JSON only.";
     const content = await withCredits("photo_scan", context.userId, () =>
       callGateway("photo_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: FULL_SYSTEM },
+          {
+            role: "system",
+            content: data.resale ? FULL_SYSTEM + RESALE_ADDENDUM : FULL_SYSTEM,
+          },
           {
             role: "user",
             content: [
