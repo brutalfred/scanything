@@ -38,6 +38,7 @@ export function AccountButton({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const { muted, volume, toggleMute, setVolume } = useSounds();
   const { isPro } = useSubscription(signedIn && open);
