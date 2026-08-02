@@ -55,7 +55,7 @@ const FEATURES = [
   "Photo and live video scanning",
   "Real-time detected-item list",
   "Translation and deeper analysis",
-  "Document & receipt scanning (Pro)",
+  "Document & receipt scanning",
 ];
 
 
@@ -75,28 +75,7 @@ function PricingPage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold gold-text sm:text-5xl">Simple scan pricing</h1>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Pay per scan with prepaid credits, or go Pro for unlimited photo, video and document scans.
-          </p>
-        </div>
-
-        <div className="relative mx-auto mt-10 max-w-md rounded-2xl border-2 border-primary bg-primary/10 p-6 text-center gold-glow sm:p-8">
-          <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase text-primary-foreground">
-            Best value
-          </span>
-          <h2 className="text-2xl font-bold text-foreground">Scanything Pro</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Unlimited scans + Document mode</p>
-          <div className="mt-5 flex items-stretch justify-center gap-3">
-            <div className="flex flex-col items-center rounded-xl border border-primary/50 bg-background/50 px-4 py-3">
-              <span className="text-2xl font-bold text-primary">$9.99</span>
-              <span className="text-xs text-muted-foreground">/ month</span>
-            </div>
-            <div className="flex flex-col items-center rounded-xl border border-primary/50 bg-background/50 px-4 py-3">
-              <span className="text-2xl font-bold text-primary">$79.99</span>
-              <span className="text-xs text-muted-foreground">/ year</span>
-            </div>
-          </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Subscribe inside the app from the credit counter or account tab.
+            Pay per scan with prepaid credits. Every scan mode is included — no subscription.
           </p>
         </div>
 
