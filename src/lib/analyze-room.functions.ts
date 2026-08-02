@@ -579,15 +579,25 @@ export const analyzeDocument = createServerFn({ method: "POST" })
 const NameTranslateInput = z.object({
   text: z.string().min(1).max(200),
   targetLanguage: z.string().min(1).max(40),
+  description: z.string().max(2000).optional(),
+  category: z.string().max(80).optional(),
+  labels: z.array(z.string().max(120)).max(30).optional(),
 });
 
-export type NameTranslation = { translation: string; transliteration: string };
+export type NameTranslation = {
+  translation: string;
+  transliteration: string;
+  description: string;
+  category: string;
+  labels: string[];
+};
 
-/** Free (no credit cost) translation of a scanned item's name into a chosen language. */
+/** Free (no credit cost) translation of a scanned item's whole info card into a chosen language. */
 export const translateName = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => NameTranslateInput.parse(data))
   .handler(async ({ data, context }): Promise<NameTranslation> => {
+    const labels = data.labels ?? [];
     const content = await callGateway(
       "translate_name",
       {
@@ -597,19 +607,30 @@ export const translateName = createServerFn({ method: "POST" })
           {
             role: "system",
             content:
-              'You translate a short object name into a target language. Respond ONLY with compact JSON: {"translation":"the name in the target language","transliteration":"Latin-alphabet reading if the target script is not Latin, else empty"}',
+              'You translate an object info card into a target language. Keep numbers, prices, currency codes and brand names unchanged. Respond ONLY with compact JSON: {"translation":"the item name in the target language","transliteration":"Latin-alphabet reading if the target script is not Latin, else empty","description":"the description translated (empty if none given)","category":"the category word translated (empty if none given)","labels":["each provided UI label translated, same order and count"]}',
           },
           {
             role: "user",
-            content: `Translate this object name into ${data.targetLanguage}: ${data.text}`,
+            content: JSON.stringify({
+              targetLanguage: data.targetLanguage,
+              name: data.text,
+              description: data.description ?? "",
+              category: data.category ?? "",
+              labels,
+            }),
           },
         ],
       },
       context.userId,
     );
     const parsed = safeParse<Partial<NameTranslation>>(content, {});
+    const outLabels = Array.isArray(parsed.labels) ? parsed.labels.map((l) => String(l)) : [];
     return {
       translation: String(parsed.translation ?? ""),
       transliteration: String(parsed.transliteration ?? ""),
+      description: String(parsed.description ?? ""),
+      category: String(parsed.category ?? ""),
+      labels: labels.map((l, i) => outLabels[i] || l),
     };
   });
+
