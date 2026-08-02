@@ -55,6 +55,7 @@ export function useCredits() {
         queryClient.setQueryData<CreditState>(["credits"], (prev) => ({
           balance: result.balance,
           lastDailyGrantAt: prev?.lastDailyGrantAt ?? null,
+          freeScanAvailable: prev?.freeScanAvailable ?? true,
           ledger: prev?.ledger ?? [],
         }));
         if (result.status === "granted") {
