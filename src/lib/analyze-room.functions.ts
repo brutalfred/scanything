@@ -8,6 +8,8 @@ const EnvironmentSchema = z.object({
 
 const InputSchema = z.object({
   imageBase64: z.string().min(100),
+  excludeNames: z.array(z.string()).optional(),
+  pass: z.number().optional(),
 }).merge(EnvironmentSchema);
 
 
