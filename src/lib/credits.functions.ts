@@ -12,8 +12,11 @@ export type LedgerEntry = {
 export type CreditState = {
   balance: number;
   lastDailyGrantAt: string | null;
+  /** True when today's one free photo/resale scan has not been used yet. */
+  freeScanAvailable: boolean;
   ledger: LedgerEntry[];
 };
+
 
 export const getCreditState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
