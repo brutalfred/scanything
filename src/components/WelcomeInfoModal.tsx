@@ -1,7 +1,31 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, Coins, Video, Sparkles, Aperture } from "lucide-react";
 
 const KEY = "scanything.welcome.seen";
+
+const tips = [
+  {
+    icon: Coins,
+    title: "AI analysis costs credits",
+    body: "Every scan uses AI processing, so each analysis deducts credits from your balance.",
+  },
+  {
+    icon: Video,
+    title: "Video mode drains credits fast",
+    body: "Continuous video scanning processes many frames per second. Use it sparingly.",
+    highlight: true,
+  },
+  {
+    icon: Sparkles,
+    title: "Built for discovery",
+    body: "Identify items, animals, plants and more with prices, links, translations and a bit of fun.",
+  },
+  {
+    icon: Aperture,
+    title: "Clear photos work best",
+    body: "Close-up shots with a clean, well-lit lens make scans much more accurate.",
+  },
+];
 
 export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; userId: string | null }) {
   const [open, setOpen] = useState(false);
@@ -25,38 +49,57 @@ export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; user
       onClick={() => setOpen(false)}
     >
       <div
-        className="gold-glow max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-primary/70 bg-card p-5 text-foreground"
+        className="gold-glow relative max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-primary/30 bg-card p-7 text-foreground"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-xl font-bold text-primary">Good to know</h2>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Close"
-            className="text-muted-foreground hover:text-primary"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Close"
+          className="absolute right-4 top-4 text-muted-foreground transition-colors hover:text-primary"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-        <ul className="list-disc space-y-3 pl-5 text-sm">
-          <li>Analyzing things through AI costs money.</li>
-          <li className="font-semibold text-destructive">
-            In Videomode, the credits will burn fast.
-          </li>
-          <li>
-            This app is created to help people identify items, animals, plants etc with ease, price estimations, translations and having fun. I hope you find this app helpful. Enjoy!
-          </li>
-          <li>
-            Clear close-up photos with a clean lens will make the scans more accurate.
-          </li>
+        <header className="mb-6 text-center">
+          <span className="font-heading mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Welcome
+          </span>
+          <h2 className="font-heading text-2xl font-semibold tracking-tight text-primary">
+            Good to know
+          </h2>
+          <div className="gold-line mx-auto mt-4 h-px w-12" />
+        </header>
+
+        <ul className="space-y-5">
+          {tips.map((tip) => {
+            const Icon = tip.icon;
+            return (
+              <li key={tip.title} className="flex items-start gap-4">
+                <div className="mt-0.5 flex-shrink-0 rounded-lg border border-primary/20 bg-primary/10 p-2">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p
+                    className={`font-body text-sm font-medium ${
+                      tip.highlight ? "text-destructive" : "text-foreground"
+                    }`}
+                  >
+                    {tip.title}
+                  </p>
+                  <p className="font-body mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                    {tip.body}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
         </ul>
 
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="mt-5 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+          className="mt-7 w-full rounded-xl bg-gradient-to-r from-primary via-primary to-primary/80 px-4 py-3.5 font-heading text-sm font-semibold text-primary-foreground shadow-[0_4px_20px_-5px_color-mix(in_oklab,oklch(0.82_0.15_85)_40%,transparent)] transition-all duration-300 active:scale-[0.98]"
         >
           Got it
         </button>
