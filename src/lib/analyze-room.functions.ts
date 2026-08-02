@@ -10,8 +10,19 @@ const InputSchema = z.object({
   imageBase64: z.string().min(100),
   excludeNames: z.array(z.string()).optional(),
   pass: z.number().optional(),
+  resale: z.boolean().optional(),
 }).merge(EnvironmentSchema);
 
+
+export type ResaleInfo = {
+  low: number;
+  typical: number;
+  high: number;
+  currency: string;
+  /** "sell" = worth listing, "keep" = not worth the effort. */
+  verdict: "sell" | "keep";
+  reason: string;
+};
 
 export type DetectedItem = {
   name: string;
@@ -24,7 +35,9 @@ export type DetectedItem = {
   infoUrl: string;
   confidence: number; // 0..100
   box: { x: number; y: number; w: number; h: number }; // 0..1 normalized (top-left)
+  resale?: ResaleInfo;
 };
+
 
 export type QuickItem = {
   name: string;
@@ -82,6 +95,21 @@ For each object, respond with a compact JSON object matching:
 box is the object's bounding box in NORMALIZED image coordinates where (0,0) is the TOP-LEFT of the image and (1,1) is the bottom-right. x,y is the top-left corner of the box. Be accurate with boxes.
 
 There is NO maximum number of items — list everything you can identify. Prefer confident guesses. Output ONLY JSON, no markdown.`;
+
+/** Appended to FULL_SYSTEM when the user runs a Resale Scan. */
+const RESALE_ADDENDUM = `
+
+RESALE MODE — this scan is for someone deciding what is worth selling. For EVERY item (except category "person", "plate" and "text") ALSO include a "resale" object:
+"resale": {
+  "low": <realistic USED second-hand sale price, low end, USD number>,
+  "typical": <most likely actual selling price used, USD number>,
+  "high": <best realistic used price in great condition, USD number>,
+  "currency": "USD",
+  "verdict": "sell" | "keep",
+  "reason": "one short sentence — why it is or isn't worth listing (demand, effort, shipping, typical payout)"
+}
+Use real second-hand marketplace prices (eBay sold listings, Facebook Marketplace, Etsy for vintage/handmade), NOT retail. Be conservative and honest — most everyday used items sell for far less than retail. Set verdict to "keep" when typical resale is under about $15 or when shipping/effort would eat the payout. Also mention brand/model in the description whenever you can see it, since that drives resale value.`;
+
 
 const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name every distinct object you can identify, at any size. There is no maximum — name as many as you can see, starting with objects near the CENTER of the frame.
 
@@ -180,13 +208,18 @@ export const analyzeRoom = createServerFn({ method: "POST" })
           .slice(0, 120)
           .join(", ")}.
 Look again at the SAME photo and find ONLY additional objects that were missed: small items, partially hidden or occluded objects, things in the background or at the edges, individual objects inside clusters/shelves/tables, and items behind or on top of the ones already listed. Keep all the same rules (no human body parts, structural surfaces only as a last resort) and the exact same JSON shape. If you truly find nothing new, return {"items":[]}. Return JSON only.`
-      : "Analyze this room photo. Return JSON only.";
+      : data.resale
+        ? "Resale scan of this photo — value every sellable item. Return JSON only."
+        : "Analyze this room photo. Return JSON only.";
     const content = await withCredits("photo_scan", context.userId, () =>
       callGateway("photo_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: FULL_SYSTEM },
+          {
+            role: "system",
+            content: data.resale ? FULL_SYSTEM + RESALE_ADDENDUM : FULL_SYSTEM,
+          },
           {
             role: "user",
             content: [
@@ -317,8 +350,22 @@ function normalizeFull(it: DetectedItem): DetectedItem {
       w: clamp01(it.box.w),
       h: clamp01(it.box.h),
     },
+    ...(it.resale ? { resale: normalizeResale(it.resale) } : {}),
   };
 }
+
+function normalizeResale(r: ResaleInfo): ResaleInfo {
+  const num = (v: unknown) => Math.max(0, Math.round(Number(v) || 0));
+  return {
+    low: num(r.low),
+    typical: num(r.typical),
+    high: num(r.high),
+    currency: String(r.currency ?? "USD"),
+    verdict: r.verdict === "keep" ? "keep" : "sell",
+    reason: String(r.reason ?? ""),
+  };
+}
+
 
 function clampPct(n: unknown) {
   const v = Number(n);

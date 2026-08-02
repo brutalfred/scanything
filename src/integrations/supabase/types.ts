@@ -185,6 +185,27 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_free_scans: {
+        Row: {
+          created_at: string
+          id: string
+          scan_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scan_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scan_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       device_grants: {
         Row: {
           created_at: string
@@ -419,6 +440,7 @@ export type Database = {
           status: string
         }[]
       }
+      claim_free_scan_for: { Args: { _user_id: string }; Returns: boolean }
       claim_signup_grant_for: {
         Args: { _device_hash: string; _user_id: string }
         Returns: {
@@ -463,6 +485,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: {
           balance: number
+          free_scan_available: boolean
           last_daily_grant_at: string
         }[]
       }
@@ -515,6 +538,7 @@ export type Database = {
         Args: { _amount: number; _reason: string; _user_id: string }
         Returns: number
       }
+      release_free_scan_for: { Args: { _user_id: string }; Returns: undefined }
       spend_credits_for: {
         Args: {
           _amount: number

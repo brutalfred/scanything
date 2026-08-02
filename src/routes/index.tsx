@@ -23,6 +23,7 @@ import {
   Share2,
   Download,
   FileText,
+  Tag,
   Crown,
 } from "lucide-react";
 
@@ -89,7 +90,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video" | "document";
+type Mode = "photo" | "video" | "document" | "resale";
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -541,6 +542,7 @@ function Scanner() {
 
   const capture = useCallback(async () => {
     const isDoc = mode === "document";
+    const isResale = mode === "resale";
     if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
     startScanSpend(isDoc ? "document" : "photo");
 
@@ -564,13 +566,16 @@ function Scanner() {
         detected = (doc.items ?? []).filter(Boolean);
         setRawItemCount(detected.length);
       } else {
-        const result = await analyzeRoom({ data: { imageBase64: dataUrl, environment } });
+        const result = await analyzeRoom({
+          data: { imageBase64: dataUrl, environment, resale: isResale },
+        });
         setRawItemCount(result.items.length);
         detected = result.items.filter(
           (it) => it.category === "person" || !isBodyPart(it.name),
         );
 
       }
+      credits.refresh();
       setItems(detected);
       setPhase("results");
       historyIdRef.current = null;
@@ -604,6 +609,7 @@ function Scanner() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
       setPhase("results");
+      credits.refresh();
       try {
         sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
       } catch {
@@ -627,6 +633,7 @@ function Scanner() {
           environment,
           excludeNames: items.map((it) => it.name),
           pass: 2,
+          resale: mode === "resale",
         },
       });
       const fresh = result.items.filter(
@@ -682,7 +689,7 @@ function Scanner() {
     } finally {
       setLoadingMore(false);
     }
-  }, [snapshot, loadingMore, credits, environment, items, isBlocked, addScanSpend]);
+  }, [snapshot, loadingMore, credits, environment, items, isBlocked, addScanSpend, mode]);
 
 
 
@@ -1296,7 +1303,18 @@ function Scanner() {
               </div>
             </div>
 
-            <div className="flex items-center justify-center">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => switchMode("resale")}
+                className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-medium transition-colors ${
+                  mode === "resale"
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Tag className="h-3.5 w-3.5" />
+                Resale Scan
+              </button>
               <button
                 onClick={() => (isPro ? switchMode("document") : setProUpsellOpen(true))}
 
@@ -1311,6 +1329,14 @@ function Scanner() {
                 <Crown className="h-3 w-3 text-primary" />
               </button>
             </div>
+
+            {mode === "resale" && (
+              <p className="text-center text-[11px] text-muted-foreground">
+                Resale Scan values everything for second-hand sale and tells you what's worth
+                listing.
+              </p>
+            )}
+
 
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
@@ -1514,20 +1540,34 @@ function Scanner() {
                     className="w-full max-w-xs"
                   >
                     <Camera className="mr-2 h-5 w-5" />
-                    {mode === "document" ? "Scan document · " : "Scan · "}
-                    {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
-                    {scanEstimate[mode === "document" ? "document" : "photo"].credits}
+                    {mode === "document"
+                      ? "Scan document · "
+                      : mode === "resale"
+                        ? "Resale scan · "
+                        : "Scan · "}
+                    {credits.freeScanAvailable && mode !== "document" ? (
+                      "Free"
+                    ) : (
+                      <>
+                        {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
+                        {scanEstimate[mode === "document" ? "document" : "photo"].credits}
+                      </>
+                    )}
                   </Button>
                   <p className="text-center text-[11px] text-muted-foreground">
                     {(() => {
                       const key: ScanMode = mode === "document" ? "document" : "photo";
                       const est = scanEstimate[key];
                       const base = baseScanCost(key);
+                      if (credits.freeScanAvailable && key === "photo") {
+                        return `Your free daily scan is ready — this one is on us. Balance: ${credits.balance}`;
+                      }
                       return est.learned && est.credits > base
                         ? `Est. ~${est.credits} credits — ${base} to scan plus extra passes you usually run. Balance: ${credits.balance}`
                         : `Estimated cost: ${base} credits. Balance: ${credits.balance}`;
                     })()}
                   </p>
+
                 </div>
 
               )
@@ -1624,7 +1664,29 @@ function Scanner() {
 
             {phase === "results" && visibleItems.length > 0 && (
               <div>
+                {(() => {
+                  const resaleItems = visibleItems.filter((it) => it.resale);
+                  if (!resaleItems.length) return null;
+                  const total = resaleItems.reduce((s, it) => s + (it.resale?.typical ?? 0), 0);
+                  const sellable = resaleItems.filter((it) => it.resale?.verdict === "sell");
+                  const sellTotal = sellable.reduce((s, it) => s + (it.resale?.typical ?? 0), 0);
+                  return (
+                    <div className="mb-3 rounded-xl border border-primary/40 bg-primary/5 p-3">
+                      <div className="text-xs font-medium text-muted-foreground">
+                        Estimated resale value in this shot
+                      </div>
+                      <div className="mt-0.5 text-2xl font-bold text-primary tabular-nums">
+                        ${total}
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {sellable.length} of {resaleItems.length} items worth listing · ~$
+                        {sellTotal} from those
+                      </p>
+                    </div>
+                  );
+                })()}
                 <div className="mb-2 flex items-center justify-between gap-2">
+
                   <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
                     <button
                       onClick={() => setListTab("items")}
@@ -2216,6 +2278,19 @@ const PLATE_REGISTRIES: { match: RegExp; label: string; url: string }[] = [
   },
 ];
 
+/** Marketplace research links for a resale-scanned item. */
+function resaleMarketLinks(name: string): { label: string; url: string }[] {
+  const q = encodeURIComponent(name);
+  return [
+    {
+      label: "eBay sold",
+      url: `https://www.ebay.com/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1`,
+    },
+    { label: "Facebook", url: `https://www.facebook.com/marketplace/search/?query=${q}` },
+    { label: "Etsy", url: `https://www.etsy.com/search?q=${q}` },
+  ];
+}
+
 function plateLookupLinks(plate: string, description: string): PlateLink[] {
   const hay = `${plate} ${description}`;
   const links: PlateLink[] = PLATE_REGISTRIES.filter((r) => r.match.test(hay)).map((r) => ({
@@ -2543,6 +2618,50 @@ function DetailPanel({
               </div>
             )}
 
+            {"resale" in item && item.resale && (
+              <div className="mt-4 rounded-lg border border-primary/40 bg-primary/5 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Second-hand resale value
+                  </div>
+                  <span
+                    className={`rounded-full border px-2 py-[2px] text-[10px] font-bold uppercase leading-none ${
+                      item.resale.verdict === "sell"
+                        ? "border-primary/60 bg-primary/20 text-primary"
+                        : "border-border bg-secondary text-muted-foreground"
+                    }`}
+                  >
+                    {item.resale.verdict === "sell" ? "Worth selling" : "Not worth it"}
+                  </span>
+                </div>
+                <div className="mt-1 text-xl font-semibold text-foreground tabular-nums">
+                  ${item.resale.typical}
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    typical (${item.resale.low}–${item.resale.high} {item.resale.currency})
+                  </span>
+                </div>
+                {item.resale.reason && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">{item.resale.reason}</p>
+                )}
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {resaleMarketLinks(name).map((l) => (
+                    <a
+                      key={l.url}
+                      href={l.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      {l.label}
+                      <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+
+
             {enrichment.category === "plate" && (
               <div className="mt-4 rounded-lg border border-border bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
@@ -2808,6 +2927,23 @@ function PhotoItemCard({
             ${item.priceMin}–${item.priceMax}
           </div>
         )}
+        {item.resale && (
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <span
+              className={`rounded-full border px-1.5 py-[1px] text-[10px] font-bold uppercase leading-none ${
+                item.resale.verdict === "sell"
+                  ? "border-primary/50 bg-primary/15 text-primary"
+                  : "border-border bg-secondary text-muted-foreground"
+              }`}
+            >
+              {item.resale.verdict === "sell" ? "Worth selling" : "Keep"}
+            </span>
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              ~${item.resale.typical} used
+            </span>
+          </div>
+        )}
+
       </button>
       <button
         onClick={onBlock}
