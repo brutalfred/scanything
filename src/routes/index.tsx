@@ -633,6 +633,7 @@ function Scanner() {
           environment,
           excludeNames: items.map((it) => it.name),
           pass: 2,
+          resale: mode === "resale",
         },
       });
       const fresh = result.items.filter(
