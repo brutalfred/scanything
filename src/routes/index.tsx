@@ -158,6 +158,24 @@ function isBodyPart(name: string) {
 }
 
 
+/** Languages offered by the free item-name translator. */
+const NAME_LANGUAGES = [
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Swedish",
+  "Italian",
+  "Portuguese",
+  "Polish",
+  "Arabic",
+  "Chinese",
+  "Japanese",
+  "Korean",
+  "Hindi",
+  "Russian",
+] as const;
+
 // Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
 // Any code point >= U+0370 excluding common punctuation counts as non-Latin.
 function hasNonLatin(text: string) {
