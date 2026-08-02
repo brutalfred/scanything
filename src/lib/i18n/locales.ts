@@ -77,6 +77,9 @@ const Spanish: Dictionary = {
   refunds: "Reembolsos",
   contact: "Contacto",
   signInToScan: "Inicia sesión para escanear",
+  photoScanDescription: "Identifica objetos, personas y texto en una foto fija.",
+  resaleScanDescription: "Valora todo para la venta de segunda mano y te dice qué merece la pena publicar.",
+  documentScanDescription: "Lee texto, formularios y documentos con claridad para copiarlos fácilmente.",
 };
 
 const French: Dictionary = {
@@ -156,6 +159,9 @@ const French: Dictionary = {
   refunds: "Remboursements",
   contact: "Contact",
   signInToScan: "Connectez-vous pour scanner",
+  photoScanDescription: "Identifie objets, personnes et texte sur une photo fixe.",
+  resaleScanDescription: "Estime la valeur de revente de tout et indique ce qui vaut le coup d'être mis en vente.",
+  documentScanDescription: "Lit texte, formulaires et documents clairement pour les copier facilement.",
 };
 
 const German: Dictionary = {
@@ -235,6 +241,9 @@ const German: Dictionary = {
   refunds: "Rückerstattungen",
   contact: "Kontakt",
   signInToScan: "Zum Scannen anmelden",
+  photoScanDescription: "Erkennt Objekte, Personen und Text in einem einzigen Foto.",
+  resaleScanDescription: "Schätzt alles für den Weiterverkauf und sagt, was sich zum Einstellen lohnt.",
+  documentScanDescription: "Liest Text, Formulare und Dokumente klar, um sie einfach zu kopieren.",
 };
 
 const Swedish: Dictionary = {
@@ -314,6 +323,9 @@ const Swedish: Dictionary = {
   refunds: "Återbetalningar",
   contact: "Kontakt",
   signInToScan: "Logga in för att skanna",
+  photoScanDescription: "Identifierar föremål, personer och text i ett foto.",
+  resaleScanDescription: "Värderar allt för andrahandsförsäljning och visar vad som är värt att lägga upp.",
+  documentScanDescription: "Läser text, formulär och dokument tydligt för enkel kopiering.",
 };
 
 const Italian: Dictionary = {
@@ -393,6 +405,9 @@ const Italian: Dictionary = {
   refunds: "Rimborsi",
   contact: "Contatti",
   signInToScan: "Accedi per scansionare",
+  photoScanDescription: "Identifica oggetti, persone e testo in una singola foto.",
+  resaleScanDescription: "Valuta tutto per la rivendita e ti dice cosa conviene mettere in vendita.",
+  documentScanDescription: "Legge testo, moduli e documenti chiaramente per copiarli facilmente.",
 };
 
 const Portuguese: Dictionary = {
