@@ -1545,14 +1545,8 @@ function Scanner() {
                       : mode === "resale"
                         ? "Resale scan · "
                         : "Scan · "}
-                    {credits.freeScanAvailable && mode !== "document" ? (
-                      "Free"
-                    ) : (
-                      <>
-                        {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
-                        {scanEstimate[mode === "document" ? "document" : "photo"].credits}
-                      </>
-                    )}
+                    {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
+                    {scanEstimate[mode === "document" ? "document" : "photo"].credits}
                   </Button>
                   <p className="text-center text-[11px] text-muted-foreground">
                     {(() => {
