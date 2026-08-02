@@ -96,6 +96,8 @@ box is the object's bounding box in NORMALIZED image coordinates where (0,0) is 
 
 There is NO maximum number of items — list everything you can identify. Prefer confident guesses. Output ONLY JSON, no markdown.`;
 
+const RESALE_SYSTEM = `${""}`;
+
 const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name every distinct object you can identify, at any size. There is no maximum — name as many as you can see, starting with objects near the CENTER of the frame.
 
 PRIORITY — spot everyday human-use items: furniture, toys, plants, clothes, shoes, bags, books, electronics, appliances, kitchenware, decor, instruments, sports gear, doors, windows.
