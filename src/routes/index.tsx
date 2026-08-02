@@ -64,6 +64,7 @@ import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import { saveScanHistory, appendScanHistory } from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useLanguage } from "@/hooks/useLanguage";
 
 
 
@@ -265,6 +266,7 @@ function Index() {
 
 function Scanner() {
   const credits = useCreditsContext();
+  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -1168,7 +1170,7 @@ function Scanner() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Filter</span>
+                <span className="hidden sm:inline">{t("filters")}</span>
                 <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
                   {filters.size}
                 </span>
@@ -1178,7 +1180,7 @@ function Scanner() {
             {snapshot && (
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                New scan
+                {t("newScan")}
               </Button>
             )}
           </div>
@@ -1196,7 +1198,7 @@ function Scanner() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold gold-text">Scan filters</h2>
+              <h2 className="text-sm font-semibold gold-text">{t("filters")}</h2>
               <div className="flex gap-1">
                 <button
                   onClick={() => setFilters(new Set(CATEGORY_FILTERS.map((c) => c.key)))}
@@ -1263,7 +1265,7 @@ function Scanner() {
                   }`}
                 >
                   <ImageIcon className="h-3.5 w-3.5" />
-                  Photo Scan
+                  {t("photoScan")}
                 </button>
                 <button
                   onClick={() => {
@@ -1280,7 +1282,7 @@ function Scanner() {
                   }`}
                 >
                   <Video className="h-3.5 w-3.5" />
-                  Video Scan
+                  {t("videoScan")}
                 </button>
                 {credits.signedIn && (
                   <button
@@ -1288,7 +1290,7 @@ function Scanner() {
                     className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
                     <History className="h-3.5 w-3.5" />
-                    Scan History
+                    {t("scanHistory")}
                   </button>
                 )}
               </div>
@@ -1305,7 +1307,7 @@ function Scanner() {
                 }`}
               >
                 <FileText className="h-3.5 w-3.5" />
-                Document Scan
+                {t("documentScan")}
                 <Crown className="h-3 w-3 text-primary" />
               </button>
             </div>
@@ -1372,7 +1374,7 @@ function Scanner() {
                           : "bg-emerald-400"
                     }`}
                   />
-                  {videoPaused ? "Paused" : scanning ? "Scanning…" : "Live"}
+                  {videoPaused ? t("pause") : scanning ? t("analyzing") : "Live"}
                 </div>
               )}
 
@@ -1418,12 +1420,12 @@ function Scanner() {
                       {videoPaused ? (
                         <>
                           <Play className="mr-2 h-5 w-5" />
-                          Resume scanning
+                          {t("resume")}
                         </>
                       ) : (
                         <>
                           <Pause className="mr-2 h-5 w-5" />
-                          Pause scanning
+                          {t("pause")}
                         </>
                       )}
                     </Button>
@@ -1440,13 +1442,13 @@ function Scanner() {
                         onClick={() => setListTab("items")}
                         className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "items" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                       >
-                        Items
+                        {t("items")}
                       </button>
                       <button
                         onClick={() => setListTab("categories")}
                         className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                       >
-                        Categories
+                        {t("categories")}
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1581,15 +1583,15 @@ function Scanner() {
               {phase === "analyzing" && (
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-background/80 p-3 text-foreground backdrop-blur-sm">
                   <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="text-sm">Analyzing room…</p>
+                  <p className="text-sm">{t("analyzing")}</p>
                 </div>
               )}
               <div className="absolute bottom-2 right-2 z-10 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleSharePicture}
-                  aria-label="Share picture"
-                  title="Share picture"
+                  aria-label={t("share")}
+                  title={t("share")}
                   className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
                 >
                   <Share2 className="h-4 w-4" />
@@ -1597,8 +1599,8 @@ function Scanner() {
                 <button
                   type="button"
                   onClick={handleSavePicture}
-                  aria-label="Save picture"
-                  title="Save picture to device"
+                  aria-label={t("save")}
+                  title={t("save")}
                   className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
                 >
                   <Download className="h-4 w-4" />
@@ -1628,13 +1630,13 @@ function Scanner() {
                       onClick={() => setListTab("items")}
                       className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "items" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      Items
+                      {t("items")}
                     </button>
                     <button
                       onClick={() => setListTab("categories")}
                       className={`rounded-full px-2.5 py-0.5 font-medium transition-colors ${listTab === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      Categories
+                      {t("categories")}
                     </button>
                   </div>
                   <span className="text-[11px] text-muted-foreground">
@@ -1706,10 +1708,10 @@ function Scanner() {
                   {loadingMore ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Looking for more…
+                      {t("loading")}
                     </>
                   ) : (
-                    `Load more · ${CREDIT_COSTS.photo_scan}`
+                    `${t("loadMore")} · ${CREDIT_COSTS.photo_scan}`
                   )}
                 </Button>
                 <p className="text-center text-[11px] text-muted-foreground">
@@ -2093,9 +2095,9 @@ function Scanner() {
             className="gold-glow w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-bold text-primary">Warning</h2>
+            <h2 className="text-lg font-bold text-primary">{t("warning")}</h2>
             <p className="mt-3 text-sm text-foreground">
-              Warning: Videoscanning drains credits fast!
+              {t("videoDrainsCredits")}
             </p>
             <div className="mt-6 flex gap-3">
               <button
@@ -2103,7 +2105,7 @@ function Scanner() {
                 onClick={() => setVideoWarningOpen(false)}
                 className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
               >
-                Go back
+                {t("goBack")}
               </button>
               <button
                 type="button"
