@@ -1539,20 +1539,34 @@ function Scanner() {
                     className="w-full max-w-xs"
                   >
                     <Camera className="mr-2 h-5 w-5" />
-                    {mode === "document" ? "Scan document · " : "Scan · "}
-                    {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
-                    {scanEstimate[mode === "document" ? "document" : "photo"].credits}
+                    {mode === "document"
+                      ? "Scan document · "
+                      : mode === "resale"
+                        ? "Resale scan · "
+                        : "Scan · "}
+                    {credits.freeScanAvailable && mode !== "document" ? (
+                      "Free"
+                    ) : (
+                      <>
+                        {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
+                        {scanEstimate[mode === "document" ? "document" : "photo"].credits}
+                      </>
+                    )}
                   </Button>
                   <p className="text-center text-[11px] text-muted-foreground">
                     {(() => {
                       const key: ScanMode = mode === "document" ? "document" : "photo";
                       const est = scanEstimate[key];
                       const base = baseScanCost(key);
+                      if (credits.freeScanAvailable && key === "photo") {
+                        return `Your free daily scan is ready — this one is on us. Balance: ${credits.balance}`;
+                      }
                       return est.learned && est.credits > base
                         ? `Est. ~${est.credits} credits — ${base} to scan plus extra passes you usually run. Balance: ${credits.balance}`
                         : `Estimated cost: ${base} credits. Balance: ${credits.balance}`;
                     })()}
                   </p>
+
                 </div>
 
               )
