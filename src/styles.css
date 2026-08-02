@@ -18,6 +18,23 @@
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/sora/v12/xMQ9uFFYT72X5yhsbc4.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/manrope/v15/xn7_YHE41ni1AdIRp_1_.woff2") format("woff2");
+}
+
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
