@@ -96,7 +96,20 @@ box is the object's bounding box in NORMALIZED image coordinates where (0,0) is 
 
 There is NO maximum number of items — list everything you can identify. Prefer confident guesses. Output ONLY JSON, no markdown.`;
 
-const RESALE_SYSTEM = `${""}`;
+/** Appended to FULL_SYSTEM when the user runs a Resale Scan. */
+const RESALE_ADDENDUM = `
+
+RESALE MODE — this scan is for someone deciding what is worth selling. For EVERY item (except category "person", "plate" and "text") ALSO include a "resale" object:
+"resale": {
+  "low": <realistic USED second-hand sale price, low end, USD number>,
+  "typical": <most likely actual selling price used, USD number>,
+  "high": <best realistic used price in great condition, USD number>,
+  "currency": "USD",
+  "verdict": "sell" | "keep",
+  "reason": "one short sentence — why it is or isn't worth listing (demand, effort, shipping, typical payout)"
+}
+Use real second-hand marketplace prices (eBay sold listings, Facebook Marketplace, Etsy for vintage/handmade), NOT retail. Be conservative and honest — most everyday used items sell for far less than retail. Set verdict to "keep" when typical resale is under about $15 or when shipping/effort would eat the payout. Also mention brand/model in the description whenever you can see it, since that drives resale value.`;
+
 
 const QUICK_SYSTEM = `You are a REAL-TIME object spotter. Look at the photo and quickly name every distinct object you can identify, at any size. There is no maximum — name as many as you can see, starting with objects near the CENTER of the frame.
 
