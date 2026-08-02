@@ -51,6 +51,13 @@ import { CreditsProvider, useCreditsContext } from "@/components/credits/Credits
 import { CreditMeter } from "@/components/credits/CreditMeter";
 import { AccountButton } from "@/components/credits/AccountButton";
 import { CREDIT_COSTS } from "@/lib/credits";
+import {
+  baseScanCost,
+  estimateScanCost,
+  recordScanCost,
+  type ScanMode,
+} from "@/lib/scan-estimate";
+
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import { saveScanHistory } from "@/lib/scan-history.functions";
@@ -316,6 +323,37 @@ function Scanner() {
   const enrichingIdsRef = useRef<Set<string>>(new Set());
   const [scanning, setScanning] = useState(false);
 
+  // Estimated credit cost for the next scan, learned from recent real sessions.
+  const [scanEstimate, setScanEstimate] = useState<Record<ScanMode, { credits: number; learned: boolean }>>({
+    photo: { credits: baseScanCost("photo"), learned: false },
+    document: { credits: baseScanCost("document"), learned: false },
+  });
+  const scanSpendRef = useRef<{ mode: ScanMode; cost: number } | null>(null);
+
+  const refreshEstimates = useCallback(() => {
+    setScanEstimate({ photo: estimateScanCost("photo"), document: estimateScanCost("document") });
+  }, []);
+
+  useEffect(() => {
+    refreshEstimates();
+  }, [refreshEstimates]);
+
+  /** Closes out the previous scan session and starts counting a new one. */
+  const startScanSpend = useCallback(
+    (mode: ScanMode) => {
+      const prev = scanSpendRef.current;
+      if (prev) recordScanCost(prev.mode, prev.cost);
+      scanSpendRef.current = { mode, cost: baseScanCost(mode) };
+      if (prev) refreshEstimates();
+    },
+    [refreshEstimates],
+  );
+
+  const addScanSpend = useCallback((cost: number) => {
+    if (scanSpendRef.current) scanSpendRef.current.cost += cost;
+  }, []);
+
+
   // Blocklist: name -> expiry timestamp (ms). Prevents rescan for 60s.
   const BLOCK_MS = 60_000;
   const [blocked, setBlocked] = useState<Record<string, number>>({});
@@ -480,6 +518,8 @@ function Scanner() {
   const capture = useCallback(async () => {
     const isDoc = mode === "document";
     if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
+    startScanSpend(isDoc ? "document" : "photo");
+
     void playSound("shutter");
     const dataUrl = grabFrame(1024, 0.8);
     if (!dataUrl) return;
@@ -541,11 +581,13 @@ function Scanner() {
         /* ignore */
       }
     }
-  }, [grabFrame, stopCamera, credits, mode, environment]);
+  }, [grabFrame, stopCamera, credits, mode, environment, startScanSpend]);
 
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
     if (!credits.spend("photo_scan")) return;
+    addScanSpend(CREDIT_COSTS.photo_scan);
+
     setLoadingMore(true);
     setLoadMoreNote(null);
     setError(null);
@@ -605,7 +647,7 @@ function Scanner() {
     } finally {
       setLoadingMore(false);
     }
-  }, [snapshot, loadingMore, credits, environment, items, isBlocked]);
+  }, [snapshot, loadingMore, credits, environment, items, isBlocked, addScanSpend]);
 
 
 
@@ -1437,11 +1479,22 @@ function Scanner() {
                     className="w-full max-w-xs"
                   >
                     <Camera className="mr-2 h-5 w-5" />
-                    {mode === "document"
-                      ? `Scan document · ${CREDIT_COSTS.document_scan}`
-                      : `Scan · ${CREDIT_COSTS.photo_scan}`}
+                    {mode === "document" ? "Scan document · " : "Scan · "}
+                    {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
+                    {scanEstimate[mode === "document" ? "document" : "photo"].credits}
                   </Button>
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    {(() => {
+                      const key: ScanMode = mode === "document" ? "document" : "photo";
+                      const est = scanEstimate[key];
+                      const base = baseScanCost(key);
+                      return est.learned && est.credits > base
+                        ? `Est. ~${est.credits} credits — ${base} to scan plus extra passes you usually run. Balance: ${credits.balance}`
+                        : `Estimated cost: ${base} credits. Balance: ${credits.balance}`;
+                    })()}
+                  </p>
                 </div>
+
               )
             )}
 
