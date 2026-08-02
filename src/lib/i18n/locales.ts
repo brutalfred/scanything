@@ -897,6 +897,9 @@ const Korean: Dictionary = {
   refunds: "환불",
   contact: "문의",
   signInToScan: "스캔하려면 로그인",
+  photoScanDescription: "한 장의 사진에서 사물, 사람, 텍스트를 식별합니다.",
+  resaleScanDescription: "중고 판매를 위해 모든 것을 가치 평가하고 팔 가치가 있는지 알려줍니다.",
+  documentScanDescription: "텍스트, 서식, 문서를 선명하게 읽어 쉽게 복사할 수 있게 합니다.",
 };
 
 const Hindi: Dictionary = {
@@ -976,6 +979,9 @@ const Hindi: Dictionary = {
   refunds: "रिफ़ंड",
   contact: "संपर्क",
   signInToScan: "स्कैन करने के लिए साइन इन करें",
+  photoScanDescription: "एक स्थिर फोटो में वस्तुएँ, लोग और टेक्स्ट पहचानता है।",
+  resaleScanDescription: "सब कुछ सेकेंड-हैंड बिक्री के लिए मूल्यांकित करता है और बताता है कि क्या सूचीबद्ध करना है।",
+  documentScanDescription: "टेक्स्ट, फ़ॉर्म और दस्तावेज़ साफ़ पढ़ता है ताकि आसानी से कॉपी किया जा सके।",
 };
 
 const Russian: Dictionary = {
@@ -1055,6 +1061,9 @@ const Russian: Dictionary = {
   refunds: "Возвраты",
   contact: "Контакты",
   signInToScan: "Войдите, чтобы сканировать",
+  photoScanDescription: "Распознаёт предметы, людей и текст на одном фото.",
+  resaleScanDescription: "Оценивает всё для перепродажи и подсказывает, что стоит выставить.",
+  documentScanDescription: "Чётко читает текст, формы и документы для удобного копирования.",
 };
 
 const Thai: Dictionary = {
@@ -1134,6 +1143,9 @@ const Thai: Dictionary = {
   refunds: "การคืนเงิน",
   contact: "ติดต่อ",
   signInToScan: "เข้าสู่ระบบเพื่อสแกน",
+  photoScanDescription: "ระบุวัตถุ บุคคล และข้อความในภาพนิ่งเพียงภาพเดียว",
+  resaleScanDescription: "ประเมินมูลค่าทุกอย่างสำหรับขายมือสอง และบอกว่าอะไรควรลงขาย",
+  documentScanDescription: "อ่านข้อความ แบบฟอร์ม และเอกสารได้ชัดเจน เพื่อให้คัดลอกง่าย",
 };
 
 export const DICTIONARIES: Partial<Record<Language, Dictionary>> = {
