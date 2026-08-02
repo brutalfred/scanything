@@ -1394,7 +1394,7 @@ function Scanner() {
                     to="/auth"
                     className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                   >
-                    Sign in
+                    {t("signIn")}
                   </Link>
                 </div>
               )}
@@ -1729,13 +1729,13 @@ function Scanner() {
         <div className="mx-auto max-w-4xl px-4">
           <div className="mb-2 flex flex-wrap items-center justify-center gap-4">
             <Link to="/terms" className="hover:text-foreground hover:underline">
-              Terms & Conditions
+              {t("terms")}
             </Link>
             <Link to="/refund-policy" className="hover:text-foreground hover:underline">
-              Refund Policy
+              {t("refunds")}
             </Link>
             <Link to="/privacy" className="hover:text-foreground hover:underline">
-              Privacy Notice
+              {t("privacy")}
             </Link>
           </div>
           <p>© {new Date().getFullYear()} Scanything. All rights reserved.</p>
