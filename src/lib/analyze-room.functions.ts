@@ -575,3 +575,41 @@ export const analyzeDocument = createServerFn({ method: "POST" })
   });
 
 
+
+const NameTranslateInput = z.object({
+  text: z.string().min(1).max(200),
+  targetLanguage: z.string().min(1).max(40),
+});
+
+export type NameTranslation = { translation: string; transliteration: string };
+
+/** Free (no credit cost) translation of a scanned item's name into a chosen language. */
+export const translateName = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => NameTranslateInput.parse(data))
+  .handler(async ({ data, context }): Promise<NameTranslation> => {
+    const content = await callGateway(
+      "translate_name",
+      {
+        model: "google/gemini-3-flash-preview",
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              'You translate a short object name into a target language. Respond ONLY with compact JSON: {"translation":"the name in the target language","transliteration":"Latin-alphabet reading if the target script is not Latin, else empty"}',
+          },
+          {
+            role: "user",
+            content: `Translate this object name into ${data.targetLanguage}: ${data.text}`,
+          },
+        ],
+      },
+      context.userId,
+    );
+    const parsed = safeParse<Partial<NameTranslation>>(content, {});
+    return {
+      translation: String(parsed.translation ?? ""),
+      transliteration: String(parsed.transliteration ?? ""),
+    };
+  });

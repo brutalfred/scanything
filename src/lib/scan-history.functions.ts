@@ -120,3 +120,36 @@ export const deleteScanHistory = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Appends newly-found items ("Load more") to an existing scan history entry. */
+export const appendScanHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; items: ScanHistoryItem[] }) => ({
+    id: String(input?.id ?? ""),
+    items: (Array.isArray(input?.items) ? input.items : []).slice(0, 200).map((i) => ({
+      name: String(i?.name ?? "").slice(0, 120),
+      category: i?.category ? String(i.category).slice(0, 40) : undefined,
+      description: i?.description ? String(i.description).slice(0, 600) : undefined,
+      confidence: typeof i?.confidence === "number" ? i.confidence : undefined,
+      priceMin: typeof i?.priceMin === "number" ? i.priceMin : undefined,
+      priceMax: typeof i?.priceMax === "number" ? i.priceMax : undefined,
+    })),
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { data: row, error: readError } = await supabase
+      .from("scan_history")
+      .select("items")
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .single();
+    if (readError) throw new Error(readError.message);
+    const existing = (Array.isArray(row?.items) ? row.items : []) as ScanHistoryItem[];
+    const { error } = await supabase
+      .from("scan_history")
+      .update({ items: [...existing, ...data.items].slice(0, 400) })
+      .eq("id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
