@@ -609,6 +609,7 @@ function Scanner() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
       setPhase("results");
+      credits.refresh();
       try {
         sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
       } catch {
