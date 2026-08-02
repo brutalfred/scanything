@@ -90,7 +90,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video" | "document";
+type Mode = "photo" | "video" | "document" | "resale";
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
