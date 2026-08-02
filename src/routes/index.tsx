@@ -2356,6 +2356,56 @@ function DetailPanel({
     [nameTranslation, PANEL_LABELS],
   );
 
+  // --- Deep analysis auto-translation (follows the language picked above) ---
+  const DEEP_LABELS = useMemo(
+    () => ["Deep analysis", "confidence", "Best guess", "Buy this exact product", "Reviews & specs"],
+    [],
+  );
+  const [deepTranslation, setDeepTranslation] = useState<{
+    language: string;
+    description: string;
+    labels: string[];
+  } | null>(null);
+  const deepLang = nameTranslation?.language ?? null;
+
+  useEffect(() => {
+    if (!deep || !deepLang) {
+      setDeepTranslation(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await translateName({
+          data: {
+            text: name,
+            targetLanguage: deepLang,
+            description: deep.description ?? "",
+            labels: DEEP_LABELS,
+          },
+        });
+        if (!cancelled) {
+          setDeepTranslation({ language: deepLang, description: r.description, labels: r.labels });
+        }
+      } catch {
+        // Keep the English deep-analysis text if translation fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [deep, deepLang, name, DEEP_LABELS]);
+
+  /** Localized deep-analysis label helper. */
+  const dl = useCallback(
+    (label: string) => {
+      const i = DEEP_LABELS.indexOf(label);
+      return deepTranslation?.labels?.[i] || label;
+    },
+    [deepTranslation, DEEP_LABELS],
+  );
+
+
 
 
   return (
@@ -2553,13 +2603,15 @@ function DetailPanel({
             {deep && (
               <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                  Deep analysis · {Math.round(deep.confidence)}% confidence
+                  {dl("Deep analysis")} · {Math.round(deep.confidence)}% {dl("confidence")}
                 </div>
                 <div className="mt-1 text-sm font-semibold">
-                  {[deep.brand, deep.product].filter(Boolean).join(" — ") || "Best guess"}
+                  {[deep.brand, deep.product].filter(Boolean).join(" — ") || dl("Best guess")}
                 </div>
                 {deep.description && (
-                  <p className="mt-1 text-sm leading-relaxed">{deep.description}</p>
+                  <p className="mt-1 text-sm leading-relaxed">
+                    {deepTranslation?.description || deep.description}
+                  </p>
                 )}
                 {enrichment && !["person", "plate"].includes(enrichment.category) && (deep.priceMin > 0 || deep.priceMax > 0) && (
                   <div className="mt-2 text-sm font-medium text-primary">
@@ -2574,7 +2626,7 @@ function DetailPanel({
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                     >
-                      Buy this exact product
+                      {dl("Buy this exact product")}
                       <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   )}
@@ -2585,10 +2637,11 @@ function DetailPanel({
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                     >
-                      Reviews & specs
+                      {dl("Reviews & specs")}
                       <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   )}
+
                 </div>
               </div>
             )}
