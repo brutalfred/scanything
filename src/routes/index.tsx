@@ -64,7 +64,6 @@ import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import { saveScanHistory, appendScanHistory } from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/hooks/useLanguage";
 
 
@@ -319,10 +318,8 @@ function Scanner() {
   });
   const [filterOpen, setFilterOpen] = useState(false);
   const [videoWarningOpen, setVideoWarningOpen] = useState(false);
-  const [proUpsellOpen, setProUpsellOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const environment = getPaddleEnvironment();
-  const { isPro } = useSubscription(credits.signedIn);
 
 
   useEffect(() => {
@@ -1316,7 +1313,7 @@ function Scanner() {
                 Resale Scan
               </button>
               <button
-                onClick={() => (isPro ? switchMode("document") : setProUpsellOpen(true))}
+                onClick={() => switchMode("document")}
 
                 className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-medium transition-colors ${
                   mode === "document"
@@ -1326,7 +1323,6 @@ function Scanner() {
               >
                 <FileText className="h-3.5 w-3.5" />
                 {t("documentScan")}
-                <Crown className="h-3 w-3 text-primary" />
               </button>
             </div>
 
@@ -2175,51 +2171,6 @@ function Scanner() {
         </div>
       )}
 
-      {proUpsellOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setProUpsellOpen(false)}
-        >
-          <div
-            className="gold-glow w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
-              <Crown className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-lg font-bold text-primary">Scanything Pro</h2>
-            <p className="mt-2 text-sm text-foreground">
-              Unlock Document Scanning and unlimited photo / video scans.
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-3 text-foreground">
-              <div className="rounded-xl border border-primary/30 bg-background/50 px-3 py-1.5">
-                <span className="font-bold text-primary">$9.99</span>
-                <span className="text-xs text-muted-foreground">/mo</span>
-              </div>
-              <div className="rounded-xl border border-primary/30 bg-background/50 px-3 py-1.5">
-                <span className="font-bold text-primary">$79.99</span>
-                <span className="text-xs text-muted-foreground">/yr</span>
-              </div>
-            </div>
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setProUpsellOpen(false)}
-                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-              >
-                Maybe later
-              </button>
-              <Link
-                to="/pricing"
-                onClick={() => setProUpsellOpen(false)}
-                className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                View plans
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
 
   );
