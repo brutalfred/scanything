@@ -566,13 +566,16 @@ function Scanner() {
         detected = (doc.items ?? []).filter(Boolean);
         setRawItemCount(detected.length);
       } else {
-        const result = await analyzeRoom({ data: { imageBase64: dataUrl, environment } });
+        const result = await analyzeRoom({
+          data: { imageBase64: dataUrl, environment, resale: isResale },
+        });
         setRawItemCount(result.items.length);
         detected = result.items.filter(
           (it) => it.category === "person" || !isBodyPart(it.name),
         );
 
       }
+      credits.refresh();
       setItems(detected);
       setPhase("results");
       historyIdRef.current = null;
