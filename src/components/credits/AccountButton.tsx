@@ -41,7 +41,11 @@ export function AccountButton({
   const { language, setLanguage, t } = useLanguage();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const { muted, volume, toggleMute, setVolume } = useSounds();
-  const { isPro } = useSubscription(signedIn && open);
+  const { isPro, subscription } = useSubscription(signedIn && open);
+  const isComp = !!subscription && (
+    subscription.price_id === "pro_lifetime" ||
+    (subscription.paddle_customer_id ?? "").startsWith("comp_")
+  );
 
 
   async function handleInstall() {
@@ -186,7 +190,12 @@ export function AccountButton({
               </div>
             </div>
 
-            {isPro ? (
+            {isPro && isComp ? (
+              <div className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 font-semibold text-primary">
+                <Crown className="h-4 w-4" />
+                Lifetime Pro — no billing to manage
+              </div>
+            ) : isPro ? (
               <button
                 type="button"
                 disabled={managing}
