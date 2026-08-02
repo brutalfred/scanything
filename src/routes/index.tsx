@@ -1296,7 +1296,18 @@ function Scanner() {
               </div>
             </div>
 
-            <div className="flex items-center justify-center">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => switchMode("resale")}
+                className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-medium transition-colors ${
+                  mode === "resale"
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Tag className="h-3.5 w-3.5" />
+                Resale Scan
+              </button>
               <button
                 onClick={() => (isPro ? switchMode("document") : setProUpsellOpen(true))}
 
@@ -1311,6 +1322,14 @@ function Scanner() {
                 <Crown className="h-3 w-3 text-primary" />
               </button>
             </div>
+
+            {mode === "resale" && (
+              <p className="text-center text-[11px] text-muted-foreground">
+                Resale Scan values everything for second-hand sale and tells you what's worth
+                listing.
+              </p>
+            )}
+
 
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
