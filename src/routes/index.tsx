@@ -586,6 +586,8 @@ function Scanner() {
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
     if (!credits.spend("photo_scan")) return;
+    addScanSpend(CREDIT_COSTS.photo_scan);
+
     setLoadingMore(true);
     setLoadMoreNote(null);
     setError(null);
