@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Download, Loader2, LogIn, LogOut, ShieldCheck, Trophy, User2, Volume2, VolumeX, X } from "lucide-react";
+import { Download, LogIn, LogOut, ShieldCheck, Trophy, User2, Volume2, VolumeX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
@@ -13,9 +13,6 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useSounds } from "@/hooks/useSounds";
-import { useSubscription } from "@/hooks/useSubscription";
-import { createPortalSession } from "@/lib/subscription.functions";
-import { getPaddleEnvironment } from "@/lib/paddle";
 import { DailyCheckin } from "./DailyCheckin";
 import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
@@ -34,18 +31,12 @@ export function AccountButton({
 }) {
   const [open, setOpen] = useState(false);
   const [gameOpen, setGameOpen] = useState(false);
-  const [managing, setManaging] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const { muted, volume, toggleMute, setVolume } = useSounds();
-  const { isPro, subscription } = useSubscription(signedIn && open);
-  const isComp = !!subscription && (
-    subscription.price_id === "pro_lifetime" ||
-    (subscription.paddle_customer_id ?? "").startsWith("comp_")
-  );
 
 
   async function handleInstall() {
