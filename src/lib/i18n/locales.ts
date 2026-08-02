@@ -1030,7 +1030,7 @@ const Russian: Dictionary = {
 const Thai: Dictionary = {
   photoScan: "สแกนรูปภาพ",
   videoScan: "สแกนวิดีโอ",
-  resaleScan: "Resale Scan",
+  resaleScan: "สแกนขายต่อ",
   documentScan: "สแกนเอกสาร",
   scanHistory: "ประวัติการสแกน",
   scan: "สแกน",
