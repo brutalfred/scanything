@@ -2297,7 +2297,50 @@ function DetailPanel({
               <ConfidenceBadge
                 value={isTracked(item) ? (item.confidence ?? item.enrichment?.confidence) : item.confidence}
               />
+              <button
+                type="button"
+                onClick={() => setNamePickerOpen((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
+              >
+                <Languages className="h-3 w-3" />
+                Translate
+                <span className="text-muted-foreground">· free</span>
+              </button>
             </div>
+            {namePickerOpen && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {NAME_LANGUAGES.map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => void runNameTranslate(lang)}
+                    disabled={nameTranslating}
+                    className="rounded-full border border-border px-2 py-0.5 text-[10px] text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            )}
+            {nameTranslating && (
+              <p className="mt-1 text-[11px] text-muted-foreground">Translating…</p>
+            )}
+            {nameTranslateError && (
+              <p className="mt-1 text-[11px] text-destructive">{nameTranslateError}</p>
+            )}
+            {nameTranslation && !nameTranslating && (
+              <p className="mt-1 text-sm font-medium text-primary">
+                {nameTranslation.translation || "—"}
+                <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {nameTranslation.language}
+                </span>
+                {nameTranslation.transliteration && (
+                  <span className="ml-1 text-[11px] text-muted-foreground">
+                    ({nameTranslation.transliteration})
+                  </span>
+                )}
+              </p>
+            )}
             {enrichment ? (
               <p className="text-xs capitalize text-muted-foreground">
                 {enrichment.category}
