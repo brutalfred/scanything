@@ -84,9 +84,16 @@ export function useCredits() {
     if (signedIn) queryClient.invalidateQueries({ queryKey: ["credits"] });
   }, [signedIn, queryClient]);
 
+  /** True when today's one free photo/resale scan is still unused. */
+  const freeScanAvailable = signedIn ? (query.data?.freeScanAvailable ?? false) : false;
+
+  /** Reasons that today's free scan can cover. */
+  const isFreeScanReason = (reason: CreditReason) => reason === "photo_scan";
+
   const canAfford = useCallback(
-    (reason: CreditReason) => balance >= CREDIT_COSTS[reason],
-    [balance],
+    (reason: CreditReason) =>
+      (freeScanAvailable && isFreeScanReason(reason)) || balance >= CREDIT_COSTS[reason],
+    [balance, freeScanAvailable],
   );
 
   /** Optimistically records a spend locally. The server is the source of truth for signed-in users. */
@@ -94,11 +101,16 @@ export function useCredits() {
     (reason: CreditReason) => {
       const cost = CREDIT_COSTS[reason];
       if (!signedIn) return;
-      queryClient.setQueryData(["credits"], (prev: typeof query.data) =>
-        prev ? { ...prev, balance: Math.max(0, prev.balance - cost) } : prev,
-      );
+      queryClient.setQueryData<CreditState>(["credits"], (prev) => {
+        if (!prev) return prev;
+        // The daily free scan covers this one — don't debit the balance.
+        if (prev.freeScanAvailable && isFreeScanReason(reason)) {
+          return { ...prev, freeScanAvailable: false };
+        }
+        return { ...prev, balance: Math.max(0, prev.balance - cost) };
+      });
     },
-    [signedIn, queryClient, query.data],
+    [signedIn, queryClient],
   );
 
 
@@ -110,6 +122,7 @@ export function useCredits() {
     email: session?.user.email ?? null,
     ledger: query.data?.ledger ?? [],
     lastDailyGrantAt: query.data?.lastDailyGrantAt ?? null,
+    freeScanAvailable,
     trialNotice,
     dismissTrialNotice: () => setTrialNotice(null),
     loading: signedIn && query.isLoading,
