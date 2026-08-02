@@ -633,19 +633,25 @@ function Scanner() {
       });
       if (added.length) {
         void playSound("bubble");
-        void saveScanHistory({
-          data: {
-            mode: "photo",
-            items: added.map((d) => ({
-              name: d.name,
-              category: d.category,
-              description: d.description,
-              confidence: d.confidence,
-              priceMin: d.priceMin,
-              priceMax: d.priceMax,
-            })),
-          },
-        }).catch(() => {});
+        const payload = added.map((d) => ({
+          name: d.name,
+          category: d.category,
+          description: d.description,
+          confidence: d.confidence,
+          priceMin: d.priceMin,
+          priceMax: d.priceMax,
+        }));
+        const existingId = historyIdRef.current;
+        if (existingId) {
+          // Same scan — append to the existing history entry instead of creating a new one.
+          void appendScanHistory({ data: { id: existingId, items: payload } }).catch(() => {});
+        } else {
+          void saveScanHistory({ data: { mode: "photo", items: payload } })
+            .then((row) => {
+              historyIdRef.current = row.id;
+            })
+            .catch(() => {});
+        }
       } else {
         setLoadMoreNote("No additional items found in this photo.");
       }
