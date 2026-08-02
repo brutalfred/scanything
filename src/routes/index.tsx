@@ -251,6 +251,8 @@ function Scanner() {
   const [items, setItems] = useState<DetectedItem[]>([]);
   /** How many items the AI actually returned before any local filtering. */
   const [rawItemCount, setRawItemCount] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreNote, setLoadMoreNote] = useState<string | null>(null);
 
 
   // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
