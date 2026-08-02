@@ -543,6 +543,72 @@ function Scanner() {
     }
   }, [grabFrame, stopCamera, credits, mode, environment]);
 
+  const loadMore = useCallback(async () => {
+    if (!snapshot || loadingMore) return;
+    if (!credits.spend("photo_scan")) return;
+    setLoadingMore(true);
+    setLoadMoreNote(null);
+    setError(null);
+    try {
+      const result = await analyzeRoom({
+        data: {
+          imageBase64: snapshot,
+          environment,
+          excludeNames: items.map((it) => it.name),
+          pass: 2,
+        },
+      });
+      const fresh = result.items.filter(
+        (it) => it.category === "person" || !isBodyPart(it.name),
+      );
+      let added: DetectedItem[] = [];
+      setItems((prev) => {
+        const seen = new Set(prev.map((it) => normName(it.name)));
+        added = fresh.filter((it) => {
+          const key = normName(it.name);
+          if (!key || seen.has(key) || isBlocked(it.name)) return false;
+          seen.add(key);
+          return true;
+        });
+        const next = [...prev, ...added];
+        setRawItemCount((c) => c + result.items.length);
+        try {
+          sessionStorage.setItem(
+            LAST_SCAN_KEY,
+            JSON.stringify({ snapshot, items: next }),
+          );
+        } catch {
+          /* storage full — keep the in-memory view */
+        }
+        return next;
+      });
+      if (added.length) {
+        void playSound("pop");
+        void saveScanHistory({
+          data: {
+            mode: "photo",
+            items: added.map((d) => ({
+              name: d.name,
+              category: d.category,
+              description: d.description,
+              confidence: d.confidence,
+              priceMin: d.priceMin,
+              priceMax: d.priceMax,
+            })),
+          },
+        }).catch(() => {});
+      } else {
+        setLoadMoreNote("No additional items found in this photo.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Analysis failed.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [snapshot, loadingMore, credits, environment, items, isBlocked]);
+
+
+
 
   const isGuest = !credits.signedIn;
 
