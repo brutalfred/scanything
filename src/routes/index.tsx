@@ -36,6 +36,7 @@ import {
   enrichItem,
   analyzeFurther,
   translateText,
+  translateName,
   personInfo,
   personSearch,
   type DetectedItem,
