@@ -129,12 +129,6 @@ export function AccountButton({
             <p className="truncate text-center text-base font-semibold">
               {email ?? t("account")}
             </p>
-            {isPro && (
-              <div className="mt-2 flex items-center justify-center gap-1 text-xs font-bold text-primary">
-                <Crown className="h-3.5 w-3.5" />
-                Scanything Pro
-              </div>
-            )}
 
 
             <dl className="mt-4 space-y-2">
