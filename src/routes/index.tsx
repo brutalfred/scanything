@@ -1553,9 +1553,6 @@ function Scanner() {
                       const key: ScanMode = mode === "document" ? "document" : "photo";
                       const est = scanEstimate[key];
                       const base = baseScanCost(key);
-                      if (credits.freeScanAvailable && key === "photo") {
-                        return `Your free daily scan is ready — this one is on us. Balance: ${credits.balance}`;
-                      }
                       return est.learned && est.credits > base
                         ? `Est. ~${est.credits} credits — ${base} to scan plus extra passes you usually run. Balance: ${credits.balance}`
                         : `Estimated cost: ${base} credits. Balance: ${credits.balance}`;
