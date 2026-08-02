@@ -771,6 +771,8 @@ function Scanner() {
     }
     setSnapshot(null);
     setItems([]);
+    setRawItemCount(0);
+    setLoadMoreNote(null);
     setSelected(null);
     setError(null);
     setTracked([]);
