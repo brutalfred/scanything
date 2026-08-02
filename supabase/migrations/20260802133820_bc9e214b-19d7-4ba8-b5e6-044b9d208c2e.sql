@@ -1,0 +1,1 @@
+DELETE FROM public.game_scores WHERE month_key <> to_char(now() AT TIME ZONE 'utc', 'YYYY-MM');
