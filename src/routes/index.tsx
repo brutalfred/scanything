@@ -260,6 +260,8 @@ function Scanner() {
   const [rawItemCount, setRawItemCount] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreNote, setLoadMoreNote] = useState<string | null>(null);
+  /** History row of the current photo scan, so "Load more" appends to the same entry. */
+  const historyIdRef = useRef<string | null>(null);
 
 
   // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
