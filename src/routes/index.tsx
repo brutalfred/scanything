@@ -2356,6 +2356,56 @@ function DetailPanel({
     [nameTranslation, PANEL_LABELS],
   );
 
+  // --- Deep analysis auto-translation (follows the language picked above) ---
+  const DEEP_LABELS = useMemo(
+    () => ["Deep analysis", "confidence", "Best guess", "Buy this exact product", "Reviews & specs"],
+    [],
+  );
+  const [deepTranslation, setDeepTranslation] = useState<{
+    language: string;
+    description: string;
+    labels: string[];
+  } | null>(null);
+  const deepLang = nameTranslation?.language ?? null;
+
+  useEffect(() => {
+    if (!deep || !deepLang) {
+      setDeepTranslation(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await translateName({
+          data: {
+            text: name,
+            targetLanguage: deepLang,
+            description: deep.description ?? "",
+            labels: DEEP_LABELS,
+          },
+        });
+        if (!cancelled) {
+          setDeepTranslation({ language: deepLang, description: r.description, labels: r.labels });
+        }
+      } catch {
+        // Keep the English deep-analysis text if translation fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [deep, deepLang, name, DEEP_LABELS]);
+
+  /** Localized deep-analysis label helper. */
+  const dl = useCallback(
+    (label: string) => {
+      const i = DEEP_LABELS.indexOf(label);
+      return deepTranslation?.labels?.[i] || label;
+    },
+    [deepTranslation, DEEP_LABELS],
+  );
+
+
 
 
   return (
