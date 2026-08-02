@@ -60,6 +60,7 @@ export const getCreditState = createServerFn({ method: "POST" })
     return {
       balance: Number(row?.balance ?? 0),
       lastDailyGrantAt: (row?.last_daily_grant_at as string | null) ?? null,
+      freeScanAvailable: row?.free_scan_available !== false,
       ledger: (ledger ?? []).map((l) => ({
         id: l.id,
         delta: l.delta,
