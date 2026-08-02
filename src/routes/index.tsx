@@ -2384,11 +2384,7 @@ function DetailPanel({
 
   /** Localized UI label helper: AI translation first, then the built-in dictionary. */
   const tl = useCallback(
-    (label: string) => {
-      const i = PANEL_LABELS.indexOf(label);
-      const translated = nameTranslation?.labels?.[i];
-      return translated || label;
-    },
+    (i: number) => nameTranslation?.labels?.[i] || PANEL_LABELS[i] || "",
     [nameTranslation, PANEL_LABELS],
   );
 
@@ -2410,7 +2406,7 @@ function DetailPanel({
     description: string;
     labels: string[];
   } | null>(null);
-  const deepLang = nameTranslation?.language ?? null;
+  const deepLang = nameTranslation?.language ?? (appLanguage === "English" ? null : appLanguage);
 
   useEffect(() => {
     if (!deep || !deepLang) {
@@ -2442,10 +2438,7 @@ function DetailPanel({
 
   /** Localized deep-analysis label helper. */
   const dl = useCallback(
-    (label: string) => {
-      const i = DEEP_LABELS.indexOf(label);
-      return deepTranslation?.labels?.[i] || label;
-    },
+    (i: number) => deepTranslation?.labels?.[i] || DEEP_LABELS[i] || "",
     [deepTranslation, DEEP_LABELS],
   );
 
@@ -2538,7 +2531,7 @@ function DetailPanel({
             {!["person", "plate"].includes(enrichment.category) && (
               <div className="mt-4 rounded-lg bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
-                  {tl("Estimated price range")}
+                  {tl(0)}
                 </div>
                 <div className="text-xl font-semibold text-foreground">
                   ${enrichment.priceMin}
@@ -2553,7 +2546,7 @@ function DetailPanel({
             {enrichment.category === "plate" && (
               <div className="mt-4 rounded-lg border border-border bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
-                  {tl("Official vehicle lookup")}
+                  {tl(3)}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Owner details are not public. Use an official registry below — you must be
@@ -2585,7 +2578,7 @@ function DetailPanel({
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
               >
-                {tl("Shop this item")}
+                {tl(1)}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
               <a
@@ -2594,7 +2587,7 @@ function DetailPanel({
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
               >
-                {tl("Learn more")}
+                {tl(2)}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
 
@@ -2607,7 +2600,7 @@ function DetailPanel({
                 {deepLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing further…
+                    {t("analyzing")}
                   </>
                 ) : (
                   <>
@@ -2647,10 +2640,10 @@ function DetailPanel({
             {deep && (
               <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                  {dl("Deep analysis")} · {Math.round(deep.confidence)}% {dl("confidence")}
+                  {dl(0)} · {Math.round(deep.confidence)}% {dl(1)}
                 </div>
                 <div className="mt-1 text-sm font-semibold">
-                  {[deep.brand, deep.product].filter(Boolean).join(" — ") || dl("Best guess")}
+                  {[deep.brand, deep.product].filter(Boolean).join(" — ") || dl(2)}
                 </div>
                 {deep.description && (
                   <p className="mt-1 text-sm leading-relaxed">
@@ -2670,7 +2663,7 @@ function DetailPanel({
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                     >
-                      {dl("Buy this exact product")}
+                      {dl(3)}
                       <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   )}
@@ -2681,7 +2674,7 @@ function DetailPanel({
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                     >
-                      {dl("Reviews & specs")}
+                      {dl(4)}
                       <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   )}
