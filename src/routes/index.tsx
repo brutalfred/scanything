@@ -128,12 +128,27 @@ function normName(n: string) {
   return n.toLowerCase().trim();
 }
 
-const BODY_PART_RE =
-  /\b(hand|hands|arm|arms|leg|legs|foot|feet|toe|toes|finger|fingers|thumb|torso|chest|shoulder|shoulders|face|faces|head|heads|hair|skin|nose|ear|ears|eye|eyes|mouth|lip|lips|neck|knee|knees|elbow|elbows|belly|stomach|back|butt|body|bodies|person|people|human|humans|man|woman|boy|girl|child|kid|baby)\b/i;
+// Words that are body parts only when they ARE the whole item name.
+// Matching them anywhere in the name wrongly removed real objects
+// ("Baby rattle", "Handbag", "Backpack", "Armchair", "Headphones"...).
+const BODY_PART_WORDS =
+  "hand|arm|leg|foot|feet|toe|finger|thumb|torso|chest|shoulder|face|head|hair|skin|nose|ear|eye|mouth|lip|neck|knee|elbow|belly|stomach|person|people|human";
+
+const BODY_PART_RE = new RegExp(
+  `^(?:(?:left|right|his|her|their|a|an|the|human|bare)\\s+)*(?:${BODY_PART_WORDS})s?$`,
+  "i",
+);
+
+// Object names that contain a body-part word but are clearly objects.
+const OBJECT_NOT_BODY_RE =
+  /\b(bag|chair|phone|phones|set|rest|stool|pack|rail|band|cream|lotion|mirror|towel|brush|dryer|board|rail|warmer|wear|light|lamp|rest|guard|strap|cuff|watch|ring|glove|sock|shoe|boot|nail|polish|soap|wash|gel|piece|band|pad|print|toy|doll|rattle|monitor|bottle|seat|cot|crib|stroller|pram|carrier|blanket|clothes|shirt|pants|jacket|book|mannequin|statue|figure|poster|photo|picture|painting)\b/i;
 
 function isBodyPart(name: string) {
-  return BODY_PART_RE.test(name);
+  const n = name.toLowerCase().trim();
+  if (OBJECT_NOT_BODY_RE.test(n)) return false;
+  return BODY_PART_RE.test(n);
 }
+
 
 // Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
 // Any code point >= U+0370 excluding common punctuation counts as non-Latin.
