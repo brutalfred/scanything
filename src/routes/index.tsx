@@ -689,7 +689,7 @@ function Scanner() {
     } finally {
       setLoadingMore(false);
     }
-  }, [snapshot, loadingMore, credits, environment, items, isBlocked, addScanSpend]);
+  }, [snapshot, loadingMore, credits, environment, items, isBlocked, addScanSpend, mode]);
 
 
 
