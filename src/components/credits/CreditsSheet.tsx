@@ -164,55 +164,6 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           </p>
         )}
 
-        <div className="mb-5 rounded-2xl border-2 border-primary/60 bg-gradient-to-br from-primary/10 to-transparent p-4">
-          <div className="mb-3 flex items-center gap-2 text-primary">
-            <Crown className="h-5 w-5" />
-            <h3 className="text-sm font-bold">Scanything Pro</h3>
-          </div>
-
-          {isPro ? (
-            <p className="text-sm font-semibold text-foreground">
-              Pro is active — unlimited scans, no per-scan credits.
-            </p>
-          ) : !credits.signedIn ? (
-            <p className="text-sm text-muted-foreground">Sign in to upgrade to Pro.</p>
-          ) : (
-            <>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Unlimited photo, video and document scans for one low price.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={buying !== null}
-                  onClick={() => buy("pro_monthly")}
-                  className="relative rounded-xl border-2 border-primary/50 bg-secondary/40 p-3 text-left transition-colors hover:border-primary"
-                >
-                  <div className="text-lg font-bold text-foreground">$9.99</div>
-                  <div className="text-xs text-muted-foreground">/ month</div>
-                  {buying === "pro_monthly" && (
-                    <Loader2 className="absolute right-2 top-2 h-4 w-4 animate-spin" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  disabled={buying !== null}
-                  onClick={() => buy("pro_yearly")}
-                  className="relative rounded-xl border-2 border-primary bg-primary/10 p-3 text-left transition-colors hover:border-primary/80"
-                >
-                  <span className="absolute right-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
-                    Save 33%
-                  </span>
-                  <div className="text-lg font-bold text-foreground">$79.99</div>
-                  <div className="text-xs text-muted-foreground">/ year</div>
-                  {buying === "pro_yearly" && (
-                    <Loader2 className="absolute right-2 top-2 mt-4 h-4 w-4 animate-spin" />
-                  )}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
 
         <h3 className="mb-2 text-sm font-semibold text-primary">What each action costs</h3>
 
