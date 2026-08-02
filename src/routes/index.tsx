@@ -2318,12 +2318,19 @@ function DetailPanel({
   >(null);
 
   const PANEL_LABELS = useMemo(
-    () => ["Estimated price range", "Shop this item", "Learn more", "Official vehicle lookup"],
-    [],
+    () => [t("estimatedPriceRange"), t("shopThisItem"), t("learnMore"), t("officialVehicleLookup")],
+    [t],
   );
 
   const runNameTranslate = useCallback(
     async (language: string) => {
+      const cacheKey = `${language}|${name}|${enrichment?.description ?? ""}`;
+      const cached = TRANSLATION_CACHE.get(cacheKey);
+      if (cached) {
+        setNameTranslation(cached);
+        setNamePickerOpen(false);
+        return;
+      }
       setNameTranslating(true);
       setNameTranslateError(null);
       setNameTranslation(null);
@@ -2337,7 +2344,9 @@ function DetailPanel({
             labels: PANEL_LABELS,
           },
         });
-        setNameTranslation({ language, ...result });
+        const next = { language, ...result };
+        TRANSLATION_CACHE.set(cacheKey, next);
+        setNameTranslation(next);
         setNamePickerOpen(false);
       } catch (e) {
         setNameTranslateError(e instanceof Error ? e.message : "Translation failed.");
@@ -2348,7 +2357,18 @@ function DetailPanel({
     [name, enrichment?.description, enrichment?.category, PANEL_LABELS],
   );
 
-  /** Localized UI label helper: falls back to English until a translation is picked. */
+  /**
+   * Follow the app-wide language: scan content is auto-translated whenever the
+   * user browses the app in something other than English.
+   */
+  useEffect(() => {
+    if (appLanguage === "English") return;
+    if (nameTranslation?.language === appLanguage) return;
+    void runNameTranslate(appLanguage);
+    // Re-run when the item, its details or the app language change.
+  }, [appLanguage, nameTranslation?.language, runNameTranslate]);
+
+  /** Localized UI label helper: AI translation first, then the built-in dictionary. */
   const tl = useCallback(
     (label: string) => {
       const i = PANEL_LABELS.indexOf(label);
@@ -2357,6 +2377,8 @@ function DetailPanel({
     },
     [nameTranslation, PANEL_LABELS],
   );
+
+
 
   // --- Deep analysis auto-translation (follows the language picked above) ---
   const DEEP_LABELS = useMemo(
