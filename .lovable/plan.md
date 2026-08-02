@@ -1,32 +1,39 @@
+# Plan: Professional Welcome Modal Redesign
+
 ## Goal
+Redesign the "Good to know" sign-in popup to feel more premium, polished, and on-brand while keeping the existing dark theme and the same informational content.
 
-Add a **Language** section to the account tab that switches the whole app — interface text, scan item boxes, detail cards and deep analysis — into the chosen language, and remembers the choice across sessions.
+## Chosen direction
+**Premium obsidian gold** — single-column layout, centered heading with a subtle "Welcome" label, icon-driven list items, and a gold gradient CTA button.
 
-## Language list
+## Locked constraints from your choices
+- **Palette:** Same as the active Scanything theme (dark background, gold/primary accents).
+- **Typography:** Sora for headings, Manrope for body text.
+- **Layout:** Single column, centered, compact modal.
 
-The same 15 options already used by the item Translate picker: English, Spanish, French, German, Swedish, Italian, Portuguese, Polish, Arabic, Chinese, Japanese, Korean, Hindi, Russian, Thai (ไทย). English is the default.
+## What will change
 
-## How it works
+### 1. `src/components/WelcomeInfoModal.tsx`
+- Replace the plain bullet list with a vertically spaced list of icon + text rows.
+- Add a centered header block: small "Welcome" label above the "Good to know" title, with a short decorative gold divider below.
+- Keep the current backdrop (`bg-black/80`) and modal container (`bg-card`, `rounded-2xl`, `gold-glow`) but refine inner spacing to match the prototype.
+- Redesign the "Got it" button to use the gold gradient with a subtle shadow and active-scale press state.
+- Preserve existing behavior: opens once per signed-in session via `sessionStorage`, dismisses on backdrop click or close button, and closes with the CTA.
+- Keep the original warning items: AI costs, video-mode drains credits, app purpose, and photo-quality tip.
 
-**1. Interface text — built-in dictionary (free, instant, offline)**
-- New `src/lib/i18n/` with one dictionary per language and a `useLanguage()` hook plus a `t("key")` helper.
-- The setting is stored in `localStorage` and broadcast app-wide with the same event pattern already used for themes, so every open panel updates immediately and the choice survives reloads and sign-outs.
-- Right-to-left languages (Arabic) set `dir="rtl"` on the document so layout mirrors correctly.
-- Strings covered: home screen and scan controls, filters, item list tabs, credits/top-up sheet, account tab, daily check-in, welcome popup, scan history, video warning, pricing page, auth screen, cookie banner, footer, and toast messages. Legal pages (terms, privacy, refund) stay in English, with a note, since they are legal documents.
+### 2. `src/routes/__root.tsx`
+- Add Google Fonts `<link>` tags for **Sora** and **Manrope** so the chosen typography can be applied safely without relying on system fonts.
+- Add CSS font-family variables to `src/styles.css` (or theme) mapping `--font-heading` and `--font-body` to Sora and Manrope.
 
-**2. Scan content — automatic AI translation (free to the user)**
-- When the app language is not English, scan results translate automatically instead of requiring a per-item Translate tap: item names on the green boxes, the detail card (description, category, price notes) and Analyze-further output.
-- Reuses the existing translation server function and its fallback behaviour, so a failed translation shows the original English text rather than a blank card.
-- Translations are cached per item and language in memory for the session, so reopening a box is instant and doesn't re-translate.
-- The per-item Translate button stays, letting a user peek at one item in another language without changing the app language.
+### 3. `src/styles.css` (minor)
+- Add `font-heading` and `font-body` utilities if they are not already present, so the modal can use them without hardcoded font names.
+- Ensure the new modal still uses semantic tokens (`bg-card`, `text-primary`, `border-primary/70`, etc.) so it adapts to the user's theme (Gold, Matrix, Camo, Peach, Water).
 
-## Account tab UI
+## What will not change
+- No functional changes to the app's scanning, credits, or auth flows.
+- No new content/copy beyond what already exists in the modal.
+- No new routes or dependencies other than the Google Fonts links.
 
-Under the existing Theme section: a "Language" heading with a compact grid of language chips (same visual style as the theme swatches), the active one highlighted. Selecting one applies instantly and closes nothing else.
-
-## Technical notes
-
-- New: `src/lib/i18n/index.ts` (types, language list, `t`), `src/lib/i18n/locales/*.ts` (dictionaries), `src/hooks/useLanguage.ts`.
-- Edited: `AccountButton.tsx` (picker), `__root.tsx` (mount language + `dir`), `src/routes/index.tsx` (largest change — swap hardcoded strings for `t()`, auto-translate scan data), plus the credits, check-in, welcome, history, pricing and auth components.
-- No database or backend schema changes; the existing `translateName` server function is reused as-is.
-- Because `src/routes/index.tsx` is ~2800 lines, its string replacement is done in passes, verifying the app renders between passes.
+## Verification
+- After the change, the modal will be manually opened in the preview and compared to the selected prototype for visual match.
+- The close/dismiss behavior will be tested to ensure it still works via the backdrop, X button, and "Got it" button.
