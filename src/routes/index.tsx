@@ -2232,6 +2232,19 @@ function plateLookupLinks(plate: string, description: string): PlateLink[] {
 }
 
 
+/** Session cache of AI translations, keyed by language + item, so reopening a box is instant. */
+const TRANSLATION_CACHE = new Map<
+  string,
+  {
+    language: string;
+    translation: string;
+    transliteration: string;
+    description: string;
+    category: string;
+    labels: string[];
+  }
+>();
+
 function DetailPanel({
   item,
   imageBase64,
@@ -2259,6 +2272,7 @@ function DetailPanel({
       };
 
   const panelCredits = useCreditsContext();
+  const { language: appLanguage, t } = useLanguage();
   const [deep, setDeep] = useState<DeepAnalysis | null>(null);
   const [deepLoading, setDeepLoading] = useState(false);
   const [deepError, setDeepError] = useState<string | null>(null);
