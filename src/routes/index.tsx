@@ -2582,6 +2582,50 @@ function DetailPanel({
               </div>
             )}
 
+            {"resale" in item && item.resale && (
+              <div className="mt-4 rounded-lg border border-primary/40 bg-primary/5 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Second-hand resale value
+                  </div>
+                  <span
+                    className={`rounded-full border px-2 py-[2px] text-[10px] font-bold uppercase leading-none ${
+                      item.resale.verdict === "sell"
+                        ? "border-primary/60 bg-primary/20 text-primary"
+                        : "border-border bg-secondary text-muted-foreground"
+                    }`}
+                  >
+                    {item.resale.verdict === "sell" ? "Worth selling" : "Not worth it"}
+                  </span>
+                </div>
+                <div className="mt-1 text-xl font-semibold text-foreground tabular-nums">
+                  ${item.resale.typical}
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    typical (${item.resale.low}–${item.resale.high} {item.resale.currency})
+                  </span>
+                </div>
+                {item.resale.reason && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">{item.resale.reason}</p>
+                )}
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {resaleMarketLinks(name).map((l) => (
+                    <a
+                      key={l.url}
+                      href={l.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      {l.label}
+                      <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+
+
             {enrichment.category === "plate" && (
               <div className="mt-4 rounded-lg border border-border bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
