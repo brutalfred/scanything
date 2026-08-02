@@ -1663,7 +1663,29 @@ function Scanner() {
 
             {phase === "results" && visibleItems.length > 0 && (
               <div>
+                {(() => {
+                  const resaleItems = visibleItems.filter((it) => it.resale);
+                  if (!resaleItems.length) return null;
+                  const total = resaleItems.reduce((s, it) => s + (it.resale?.typical ?? 0), 0);
+                  const sellable = resaleItems.filter((it) => it.resale?.verdict === "sell");
+                  const sellTotal = sellable.reduce((s, it) => s + (it.resale?.typical ?? 0), 0);
+                  return (
+                    <div className="mb-3 rounded-xl border border-primary/40 bg-primary/5 p-3">
+                      <div className="text-xs font-medium text-muted-foreground">
+                        Estimated resale value in this shot
+                      </div>
+                      <div className="mt-0.5 text-2xl font-bold text-primary tabular-nums">
+                        ${total}
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {sellable.length} of {resaleItems.length} items worth listing · ~$
+                        {sellTotal} from those
+                      </p>
+                    </div>
+                  );
+                })()}
                 <div className="mb-2 flex items-center justify-between gap-2">
+
                   <div className="inline-flex rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
                     <button
                       onClick={() => setListTab("items")}
