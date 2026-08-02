@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLanguage } from "@/hooks/useLanguage";
 import { CalendarCheck, Flame } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -72,7 +73,7 @@ export function DailyCheckin({ enabled }: { enabled: boolean }) {
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10 disabled:opacity-50"
       >
         <CalendarCheck className="h-4 w-4" />
-        {done ? "Checked in today" : claim.isPending ? "Checking in…" : "Check in"}
+        {done ? t("checkedIn") : claim.isPending ? t("loading") : t("checkInToday")}
       </button>
 
       <p className="mt-2 text-center text-[11px] opacity-60">
