@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getAdRewardStatus } from "@/lib/ad-reward.functions";
 import { Link } from "@tanstack/react-router";
-import { Coins, Crown, Loader2, Play, X } from "lucide-react";
+import { Coins, Crown, Loader2, X } from "lucide-react";
 import { playSound } from "@/lib/sounds";
 
 import { toast } from "sonner";
@@ -10,7 +8,6 @@ import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { getPaddleEnvironment } from "@/lib/paddle";
-import { AdRewardModal } from "./AdRewardModal";
 import { isNativeAndroid } from "@/lib/platform";
 import { buyWithPlay, playBillingAvailable } from "@/lib/play-billing";
 import type { CreditsApi } from "@/hooks/useCredits";
@@ -38,18 +35,8 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const { openCheckout } = usePaddleCheckout();
   const { t } = useLanguage();
   const [buying, setBuying] = useState<string | null>(null);
-  const [adOpen, setAdOpen] = useState(false);
   const { isPro } = useSubscription(credits.signedIn);
   const environment = getPaddleEnvironment();
-  const adStatus = useQuery({
-    queryKey: ["ad-reward-status"],
-    queryFn: () => getAdRewardStatus(),
-    enabled: credits.signedIn,
-    staleTime: 10_000,
-  });
-  const adsWatched = adStatus.data?.claimsToday ?? 0;
-  const adLimit = adStatus.data?.dailyLimit ?? 5;
-  const adLimitReached = credits.signedIn && adsWatched >= adLimit;
 
 
 
@@ -158,28 +145,6 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           ))}
         </div>
 
-        <button
-          type="button"
-          disabled={!credits.signedIn || adLimitReached}
-          onClick={() => {
-            if (!credits.signedIn || adLimitReached) return;
-            setAdOpen(true);
-          }}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 bg-secondary/40 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-        >
-          <Play className="h-4 w-4" />
-          {adLimitReached ? "Daily commercial limit reached" : "Watch a commercial for 1 credit"}
-        </button>
-        {credits.signedIn && (
-          <p className="mb-4 mt-1.5 text-center text-[11px] text-muted-foreground">
-            {adsWatched}/{adLimit} commercials watched today
-          </p>
-        )}
-        {!credits.signedIn && <div className="mb-4" />}
-
-
-
-
         <div className="mb-5 text-right">
           <Link
             to="/pricing"
@@ -279,20 +244,6 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           </p>
         )}
       </div>
-
-      {adOpen && (
-        <div onClick={(e) => e.stopPropagation()}>
-          <AdRewardModal
-            onClose={() => setAdOpen(false)}
-            onRewarded={() => {
-              credits.refresh();
-              void adStatus.refetch();
-            }}
-          />
-
-        </div>
-      )}
     </div>
-
   );
 }
