@@ -316,6 +316,37 @@ function Scanner() {
   const enrichingIdsRef = useRef<Set<string>>(new Set());
   const [scanning, setScanning] = useState(false);
 
+  // Estimated credit cost for the next scan, learned from recent real sessions.
+  const [scanEstimate, setScanEstimate] = useState<Record<ScanMode, { credits: number; learned: boolean }>>({
+    photo: { credits: baseScanCost("photo"), learned: false },
+    document: { credits: baseScanCost("document"), learned: false },
+  });
+  const scanSpendRef = useRef<{ mode: ScanMode; cost: number } | null>(null);
+
+  const refreshEstimates = useCallback(() => {
+    setScanEstimate({ photo: estimateScanCost("photo"), document: estimateScanCost("document") });
+  }, []);
+
+  useEffect(() => {
+    refreshEstimates();
+  }, [refreshEstimates]);
+
+  /** Closes out the previous scan session and starts counting a new one. */
+  const startScanSpend = useCallback(
+    (mode: ScanMode) => {
+      const prev = scanSpendRef.current;
+      if (prev) recordScanCost(prev.mode, prev.cost);
+      scanSpendRef.current = { mode, cost: baseScanCost(mode) };
+      if (prev) refreshEstimates();
+    },
+    [refreshEstimates],
+  );
+
+  const addScanSpend = useCallback((cost: number) => {
+    if (scanSpendRef.current) scanSpendRef.current.cost += cost;
+  }, []);
+
+
   // Blocklist: name -> expiry timestamp (ms). Prevents rescan for 60s.
   const BLOCK_MS = 60_000;
   const [blocked, setBlocked] = useState<Record<string, number>>({});
