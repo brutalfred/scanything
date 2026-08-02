@@ -2847,6 +2847,23 @@ function PhotoItemCard({
             ${item.priceMin}–${item.priceMax}
           </div>
         )}
+        {item.resale && (
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <span
+              className={`rounded-full border px-1.5 py-[1px] text-[10px] font-bold uppercase leading-none ${
+                item.resale.verdict === "sell"
+                  ? "border-primary/50 bg-primary/15 text-primary"
+                  : "border-border bg-secondary text-muted-foreground"
+              }`}
+            >
+              {item.resale.verdict === "sell" ? "Worth selling" : "Keep"}
+            </span>
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              ~${item.resale.typical} used
+            </span>
+          </div>
+        )}
+
       </button>
       <button
         onClick={onBlock}
