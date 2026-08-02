@@ -54,6 +54,9 @@ PERSON: Include ONE item with category="person" and name="Person" ONLY IF a huma
 
 NEVER include isolated human body parts (hand, arm, leg, foot, torso, face without a portrait context, head, hair, skin, finger). Skip them entirely.
 
+NAMING: name the OBJECT itself, never the person who uses it. Small handheld things (baby rattles, teethers, toys, tools, utensils, remotes, phones, cups) must be named as the object, e.g. "Baby rattle", "Teething toy", "Screwdriver" — never "Baby", "Child" or "Person".
+
+
 DO NOT include structural/architectural surfaces (walls, wall paint, floor, ceiling, beams, pillars, concrete, tiles, carpet, molding, radiators, empty corners) UNLESS the photo contains essentially no everyday items — only then may you include at most 1-2 structural elements as a last resort.
 
 For each object, respond with a compact JSON object matching:
