@@ -174,7 +174,7 @@ const NAME_LANGUAGES = [
   "Korean",
   "Hindi",
   "Russian",
-  "Thai",
+  "Thai (ไทย)",
 ] as const;
 
 // Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
