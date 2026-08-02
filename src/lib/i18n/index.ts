@@ -79,6 +79,7 @@ export const EN = {
   // scan surface
   photoScan: "Photo Scan",
   videoScan: "Video Scan",
+  resaleScan: "Resale Scan",
   documentScan: "Document Scan",
   scanHistory: "Scan History",
   scan: "Scan",
