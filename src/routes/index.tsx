@@ -174,6 +174,7 @@ const NAME_LANGUAGES = [
   "Korean",
   "Hindi",
   "Russian",
+  "Thai",
 ] as const;
 
 // Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
@@ -2304,8 +2305,20 @@ function DetailPanel({
   const [nameTranslating, setNameTranslating] = useState(false);
   const [nameTranslateError, setNameTranslateError] = useState<string | null>(null);
   const [nameTranslation, setNameTranslation] = useState<
-    { language: string; translation: string; transliteration: string } | null
+    {
+      language: string;
+      translation: string;
+      transliteration: string;
+      description: string;
+      category: string;
+      labels: string[];
+    } | null
   >(null);
+
+  const PANEL_LABELS = useMemo(
+    () => ["Estimated price range", "Shop this item", "Learn more", "Official vehicle lookup"],
+    [],
+  );
 
   const runNameTranslate = useCallback(
     async (language: string) => {
@@ -2313,7 +2326,15 @@ function DetailPanel({
       setNameTranslateError(null);
       setNameTranslation(null);
       try {
-        const result = await translateName({ data: { text: name, targetLanguage: language } });
+        const result = await translateName({
+          data: {
+            text: name,
+            targetLanguage: language,
+            description: enrichment?.description ?? "",
+            category: enrichment?.category ?? "",
+            labels: PANEL_LABELS,
+          },
+        });
         setNameTranslation({ language, ...result });
         setNamePickerOpen(false);
       } catch (e) {
@@ -2322,7 +2343,17 @@ function DetailPanel({
         setNameTranslating(false);
       }
     },
-    [name],
+    [name, enrichment?.description, enrichment?.category, PANEL_LABELS],
+  );
+
+  /** Localized UI label helper: falls back to English until a translation is picked. */
+  const tl = useCallback(
+    (label: string) => {
+      const i = PANEL_LABELS.indexOf(label);
+      const translated = nameTranslation?.labels?.[i];
+      return translated || label;
+    },
+    [nameTranslation, PANEL_LABELS],
   );
 
 
@@ -2389,7 +2420,7 @@ function DetailPanel({
             )}
             {enrichment ? (
               <p className="text-xs capitalize text-muted-foreground">
-                {enrichment.category}
+                {nameTranslation?.category || enrichment.category}
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">Analyzing details…</p>
@@ -2406,12 +2437,14 @@ function DetailPanel({
 
         {enrichment ? (
           <>
-            <p className="mt-3 text-sm leading-relaxed">{enrichment.description}</p>
+            <p className="mt-3 text-sm leading-relaxed">
+              {nameTranslation?.description || enrichment.description}
+            </p>
 
             {!["person", "plate"].includes(enrichment.category) && (
               <div className="mt-4 rounded-lg bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
-                  Estimated price range
+                  {tl("Estimated price range")}
                 </div>
                 <div className="text-xl font-semibold text-foreground">
                   ${enrichment.priceMin}
@@ -2426,7 +2459,7 @@ function DetailPanel({
             {enrichment.category === "plate" && (
               <div className="mt-4 rounded-lg border border-border bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
-                  Official vehicle lookup
+                  {tl("Official vehicle lookup")}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Owner details are not public. Use an official registry below — you must be
@@ -2458,7 +2491,7 @@ function DetailPanel({
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
               >
-                Shop this item
+                {tl("Shop this item")}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
               <a
@@ -2467,7 +2500,7 @@ function DetailPanel({
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
               >
-                Learn more
+                {tl("Learn more")}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
 
