@@ -111,7 +111,6 @@ export function useCredits() {
     email: session?.user.email ?? null,
     ledger: query.data?.ledger ?? [],
     lastDailyGrantAt: query.data?.lastDailyGrantAt ?? null,
-    freeScanAvailable,
     trialNotice,
     dismissTrialNotice: () => setTrialNotice(null),
     loading: signedIn && query.isLoading,
