@@ -518,6 +518,8 @@ function Scanner() {
   const capture = useCallback(async () => {
     const isDoc = mode === "document";
     if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
+    startScanSpend(isDoc ? "document" : "photo");
+
     void playSound("shutter");
     const dataUrl = grabFrame(1024, 0.8);
     if (!dataUrl) return;
