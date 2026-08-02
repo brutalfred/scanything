@@ -487,6 +487,9 @@ const Portuguese: Dictionary = {
   refunds: "Reembolsos",
   contact: "Contato",
   signInToScan: "Entre para digitalizar",
+  photoScanDescription: "Identifica objetos, pessoas e texto em uma foto.",
+  resaleScanDescription: "Avalia tudo para revenda e diz o que vale a pena anunciar.",
+  documentScanDescription: "Lê texto, formulários e documentos com clareza para copiar facilmente.",
 };
 
 const Polish: Dictionary = {
@@ -566,6 +569,9 @@ const Polish: Dictionary = {
   refunds: "Zwroty",
   contact: "Kontakt",
   signInToScan: "Zaloguj się, aby skanować",
+  photoScanDescription: "Rozpoznaje przedmioty, osoby i tekst na jednym zdjęciu.",
+  resaleScanDescription: "Wycenia wszystko pod używany rynek i mówi, co warto wystawić.",
+  documentScanDescription: "Czyta tekst, formularze i dokumenty wyraźnie, by łatwo je skopiować.",
 };
 
 const Arabic: Dictionary = {
@@ -645,6 +651,9 @@ const Arabic: Dictionary = {
   refunds: "المبالغ المستردة",
   contact: "اتصل بنا",
   signInToScan: "سجّل الدخول للمسح",
+  photoScanDescription: "تعرف على الأشياء والأشخاص والنصوص في صورة ثابتة واحدة.",
+  resaleScanDescription: "يقيّم كل شيء للبيع المستعمل ويخبرك بما يستحق النشر.",
+  documentScanDescription: "يقرأ النصوص والاستمارات والمستندات بوضوح لنسخها بسهولة.",
 };
 
 const Chinese: Dictionary = {
@@ -724,6 +733,9 @@ const Chinese: Dictionary = {
   refunds: "退款",
   contact: "联系",
   signInToScan: "登录后扫描",
+  photoScanDescription: "识别一张静态照片中的物体、人物和文字。",
+  resaleScanDescription: "评估所有物品的二手价值，并告诉你哪些值得上架。",
+  documentScanDescription: "清晰读取文字、表格和文档，方便复制。",
 };
 
 const Japanese: Dictionary = {
@@ -803,6 +815,9 @@ const Japanese: Dictionary = {
   refunds: "返金",
   contact: "お問い合わせ",
   signInToScan: "ログインしてスキャン",
+  photoScanDescription: "1枚の静止画から物体、人物、文字を認識します。",
+  resaleScanDescription: "すべてのものを中古販売用に査定し、出品に値するか教えます。",
+  documentScanDescription: "テキスト、フォーム、書類をはっきり読み取り、コピーしやすくします。",
 };
 
 const Korean: Dictionary = {
