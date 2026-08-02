@@ -350,8 +350,22 @@ function normalizeFull(it: DetectedItem): DetectedItem {
       w: clamp01(it.box.w),
       h: clamp01(it.box.h),
     },
+    ...(it.resale ? { resale: normalizeResale(it.resale) } : {}),
   };
 }
+
+function normalizeResale(r: ResaleInfo): ResaleInfo {
+  const num = (v: unknown) => Math.max(0, Math.round(Number(v) || 0));
+  return {
+    low: num(r.low),
+    typical: num(r.typical),
+    high: num(r.high),
+    currency: String(r.currency ?? "USD"),
+    verdict: r.verdict === "keep" ? "keep" : "sell",
+    reason: String(r.reason ?? ""),
+  };
+}
+
 
 function clampPct(n: unknown) {
   const v = Number(n);
