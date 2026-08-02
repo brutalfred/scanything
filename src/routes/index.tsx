@@ -1265,67 +1265,71 @@ function Scanner() {
           <div className="space-y-3">
             {/* Mode toggle */}
             <div className="flex items-center justify-center">
-              <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-border bg-secondary p-1">
-                <button
-                  onClick={() => switchMode("photo")}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-                    mode === "photo"
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <ImageIcon className="h-3.5 w-3.5" />
-                  {t("photoScan")}
-                </button>
-                <button
-                  onClick={() => {
-                    if (credits.signedIn) {
-                      setVideoWarningOpen(true);
-                    } else {
-                      switchMode("video");
-                    }
-                  }}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-                    mode === "video"
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Video className="h-3.5 w-3.5" />
-                  {t("videoScan")}
-                </button>
-                <button
-                  onClick={() => switchMode("resale")}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-                    mode === "resale"
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Tag className="h-3.5 w-3.5" />
-                  Resale Scan
-                </button>
-                <button
-                  onClick={() => switchMode("document")}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-                    mode === "document"
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  {t("documentScan")}
-                </button>
-                {credits.signedIn && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <button
-                    onClick={() => setHistoryOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-secondary/80"
+                    aria-label="Choose scan mode"
                   >
-                    <History className="h-3.5 w-3.5" />
-                    {t("scanHistory")}
+                    {mode === "photo" && <ImageIcon className="h-4 w-4" />}
+                    {mode === "video" && <Video className="h-4 w-4" />}
+                    {mode === "resale" && <Tag className="h-4 w-4" />}
+                    {mode === "document" && <FileText className="h-4 w-4" />}
+                    <span>
+                      {mode === "photo" && t("photoScan")}
+                      {mode === "video" && t("videoScan")}
+                      {mode === "resale" && t("resaleScan")}
+                      {mode === "document" && t("documentScan")}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
-                )}
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="min-w-[10rem]">
+                  <DropdownMenuItem
+                    onClick={() => switchMode("photo")}
+                    className="flex items-center gap-2"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    {t("photoScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (credits.signedIn) {
+                        setVideoWarningOpen(true);
+                      } else {
+                        switchMode("video");
+                      }
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Video className="h-4 w-4" />
+                    {t("videoScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("resale")}
+                    className="flex items-center gap-2"
+                  >
+                    <Tag className="h-4 w-4" />
+                    {t("resaleScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("document")}
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    {t("documentScan")}
+                  </DropdownMenuItem>
+                  {credits.signedIn && (
+                    <DropdownMenuItem
+                      onClick={() => setHistoryOpen(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <History className="h-4 w-4" />
+                      {t("scanHistory")}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
 
