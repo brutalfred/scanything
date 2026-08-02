@@ -128,12 +128,27 @@ function normName(n: string) {
   return n.toLowerCase().trim();
 }
 
-const BODY_PART_RE =
-  /\b(hand|hands|arm|arms|leg|legs|foot|feet|toe|toes|finger|fingers|thumb|torso|chest|shoulder|shoulders|face|faces|head|heads|hair|skin|nose|ear|ears|eye|eyes|mouth|lip|lips|neck|knee|knees|elbow|elbows|belly|stomach|back|butt|body|bodies|person|people|human|humans|man|woman|boy|girl|child|kid|baby)\b/i;
+// Words that are body parts only when they ARE the whole item name.
+// Matching them anywhere in the name wrongly removed real objects
+// ("Baby rattle", "Handbag", "Backpack", "Armchair", "Headphones"...).
+const BODY_PART_WORDS =
+  "hand|arm|leg|foot|feet|toe|finger|thumb|torso|chest|shoulder|face|head|hair|skin|nose|ear|eye|mouth|lip|neck|knee|elbow|belly|stomach|person|people|human";
+
+const BODY_PART_RE = new RegExp(
+  `^(?:(?:left|right|his|her|their|a|an|the|human|bare)\\s+)*(?:${BODY_PART_WORDS})s?$`,
+  "i",
+);
+
+// Object names that contain a body-part word but are clearly objects.
+const OBJECT_NOT_BODY_RE =
+  /\b(bag|chair|phone|phones|set|rest|stool|pack|rail|band|cream|lotion|mirror|towel|brush|dryer|board|rail|warmer|wear|light|lamp|rest|guard|strap|cuff|watch|ring|glove|sock|shoe|boot|nail|polish|soap|wash|gel|piece|band|pad|print|toy|doll|rattle|monitor|bottle|seat|cot|crib|stroller|pram|carrier|blanket|clothes|shirt|pants|jacket|book|mannequin|statue|figure|poster|photo|picture|painting)\b/i;
 
 function isBodyPart(name: string) {
-  return BODY_PART_RE.test(name);
+  const n = name.toLowerCase().trim();
+  if (OBJECT_NOT_BODY_RE.test(n)) return false;
+  return BODY_PART_RE.test(n);
 }
+
 
 // Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
 // Any code point >= U+0370 excluding common punctuation counts as non-Latin.
@@ -234,6 +249,9 @@ function Scanner() {
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
+  /** How many items the AI actually returned before any local filtering. */
+  const [rawItemCount, setRawItemCount] = useState(0);
+
 
   // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
   useEffect(() => {
@@ -478,11 +496,14 @@ function Scanner() {
       if (isDoc) {
         const doc = await analyzeDocument({ data: { imageBase64: dataUrl, environment } });
         detected = (doc.items ?? []).filter(Boolean);
+        setRawItemCount(detected.length);
       } else {
         const result = await analyzeRoom({ data: { imageBase64: dataUrl, environment } });
+        setRawItemCount(result.items.length);
         detected = result.items.filter(
           (it) => it.category === "person" || !isBodyPart(it.name),
         );
+
       }
       setItems(detected);
       setPhase("results");
@@ -1508,10 +1529,13 @@ function Scanner() {
             {phase === "results" && visibleItems.length === 0 && !error && (
               <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
                 {items.length > 0
-                  ? "All items filtered out. Adjust filters to see them."
-                  : "No items detected. Try a clearer photo."}
+                  ? "All items were hidden by your category filters. Open Filters and turn them back on."
+                  : rawItemCount > 0
+                    ? `${rawItemCount} item${rawItemCount === 1 ? " was" : "s were"} hidden by the people/body-part filter. Try another angle.`
+                    : "Nothing identified in this shot. Try a closer, sharper photo with a clean lens."}
               </div>
             )}
+
           </div>
         )}
       </main>

@@ -1,63 +1,30 @@
-# Scanything growth plan
+## What happened
 
-## Goals
-- Turn the existing credit-pay-per-scan app into a recurring-revenue product with a Pro subscription tier.
-- Add differentiated AI scan modes that justify the subscription while keeping the core camera experience fast and mobile-native.
-- Keep the consumer core simple, but start a lightweight B2B path through exportable inventory reports.
+Your scan almost certainly *did* work — the app threw the results away before showing them.
 
-## Recommended monetization model
-- **Keep credit packs** ($1/$5/$10/$50) for casual / pay-as-you-go users.
-- **Add Pro monthly/yearly subscription** for power users: unlimited scans, plus Pro-only AI modes and sound/theme unlocks.
-- **Add Business/Team tier** (later): bulk scan exports, PDF reports, shared workspaces.
-- Retain 5-credit signup grant and daily check-in streak so free users still convert gradually.
+In `src/routes/index.tsx` there is a body-part blocklist regex (line 131) used to strip human body parts out of results. It matches any name **containing** these words:
 
-## Phase 1 — Subscription tier & pricing catalog
-1. Create Paddle products/prices for subscription plans: `pro_monthly`, `pro_yearly`.
-2. Extend the credit system to support subscription-derived allowances:
-   - Add `subscriptions` table (user_id, status, plan_id, current_period_end, environment).
-   - Gate free scan quota on active subscription status instead of only credit balance.
-3. Update the CreditsSheet/Account modal:
-   - Show "Upgrade to Pro" card alongside credit packs.
-   - Add a "Manage subscription" link to Paddle customer portal.
-4. Add a Pro badge to the UI and restrict Pro AI modes until subscribed.
+`hand, arm, leg, foot, finger, face, head, hair, skin, back, body, person, people, human, man, woman, boy, girl, child, kid, baby`
 
-## Phase 2 — Deeper AI scan modes
-Add at least four new scan modes behind the Pro tier or per-use credits. Each uses the existing Gemini image pipeline but with focused prompts and structured output.
+A baby rattle comes back from the AI as something like "Baby rattle" / "Baby toy" — the word `baby` matches, so the item is deleted. The couch behind it can come back as "Sofa arm" / "Armrest of couch" (matches `arm`), and the floor/rug is deliberately skipped by the prompt as structural. Net result: an empty result list even though the AI returned items.
 
-1. **Document / Receipt scanner** — extract text, totals, dates, line items; export as text or structured JSON. Useful for business users.
-2. **Barcode & QR scanner** — read UPC/EAN/ISBN and fetch product links/prices. Consumer convenience + affiliate potential.
-3. **Plant, pet & food identifier** — specialized classification with care/diet info. High shareability for social growth.
-4. **Room measurement estimator** — estimate dimensions from a photo and generate a simple inventory list. Bridges to insurance/moving use cases.
-5. **Batch / multi-item scan report** — take one photo, list all items with estimated resale value and export to CSV/PDF. B2B-ready.
+The same bug silently eats many everyday objects: "Baby monitor", "Man's shirt", "Kids' bike", "Hand mirror", "Handbag", "Headphones" (whole-word `head` in "Head phones"), "Backpack" ("back"), "Legos", "Foot stool", "Body lotion".
 
-Implementation path:
-- Reuse the existing `analyze-room.functions.ts` server function pattern.
-- Add `mode` parameter (`general`, `document`, `barcode`, `bio`, `room`, `batch`).
-- Keep each mode's prompt and schema in a dedicated server file (`src/lib/scan-modes/`) so future modes are cheap to add.
-- Return unified `ScanResult[]` shape so the existing bounding-box and detail UI works across modes.
+## The fix
 
-## Phase 3 — Mobile-first polish
-1. Improve PWA install flow:
-   - Prominent "Add to Home Screen" prompt in account tab (already partially there).
-   - Add standalone display mode and theme-color meta tags.
-2. Camera UX:
-   - Tap-to-focus hint on mobile.
-   - Haptic feedback on scan success (use `navigator.vibrate`).
-   - Keep scan history accessible offline via service worker / local cached reads.
-3. Sharing:
-   - Native `navigator.share` for scan results and exported reports.
-   - One-tap "Save report" as PDF on device.
+1. **Rewrite the body-part filter** in `src/routes/index.tsx`:
+   - Only reject when the *whole name* is a body part ("Hand", "Left arm", "Face"), not when the word appears inside a longer object name.
+   - Keep an explicit allowlist of object words that contain body-part words (baby toy/monitor/bottle, handbag, headphones, backpack, armchair, footstool, hand mirror, man's/woman's/kids' clothing, etc.).
+   - Drop `baby`, `child`, `kid`, `man`, `woman`, `boy`, `girl`, `back`, `body` from the plain word list — those are almost never a standalone body part and cause most false removals.
+   - Apply the same corrected helper to live video mode, which uses the same list.
 
-## Phase 4 — Analytics and operations
-1. Track subscription conversion funnel and scan-mode usage in project analytics.
-2. Add a simple admin view to top up users, issue refunds, and comp Pro access.
-3. A/B test pricing copy: "unlimited scans" vs "Pro AI modes" as the headline.
+2. **Never show a silent empty result**: when the AI returns items but every one is removed by the body-part filter or the category filters, show a short note under the photo ("Items were hidden by your filters" / "Nothing identified — try a closer shot") instead of a blank list, so this class of bug is visible rather than looking like a failed scan.
 
-## Why this order
-- Subscriptions unlock predictable revenue before building a long feature tail.
-- New AI modes give users a clear reason to subscribe and share the app.
-- Mobile polish increases retention and home-screen installs, which improves subscription conversion.
-- Business export features create a future upsell path without distracting the consumer core now.
+3. **Nudge the prompt** in `src/lib/analyze-room.functions.ts` so small handheld objects (toys, rattles, tools, utensils) are explicitly named as the object, not as the person who uses them.
 
-## Suggested first milestone
-Build the Pro subscription catalog and the Document/Receipt scan mode. This is the smallest slice that proves both the new revenue model and the "deeper AI features" direction while serving both consumers and early business users.
+No credits/backend/pricing logic changes.
+
+## Technical detail
+
+- `BODY_PART_RE` at `src/routes/index.tsx:131` is applied in `capture()` (line 483) for photo scans and in the video tracking path.
+- New helper: exact/leading-modifier match (`/^(left |right |his |her )?(hand|arm|leg|...)s?$/i`) plus an object allowlist check that short-circuits before the regex.
