@@ -2281,6 +2281,33 @@ function DetailPanel({
     }
   }, [name, panelCredits]);
 
+  const [namePickerOpen, setNamePickerOpen] = useState(false);
+  const [nameTranslating, setNameTranslating] = useState(false);
+  const [nameTranslateError, setNameTranslateError] = useState<string | null>(null);
+  const [nameTranslation, setNameTranslation] = useState<
+    { language: string; translation: string; transliteration: string } | null
+  >(null);
+
+  const runNameTranslate = useCallback(
+    async (language: string) => {
+      setNameTranslating(true);
+      setNameTranslateError(null);
+      setNameTranslation(null);
+      try {
+        const result = await translateName({ data: { text: name, targetLanguage: language } });
+        setNameTranslation({ language, ...result });
+        setNamePickerOpen(false);
+      } catch (e) {
+        setNameTranslateError(e instanceof Error ? e.message : "Translation failed.");
+      } finally {
+        setNameTranslating(false);
+      }
+    },
+    [name],
+  );
+
+
+
   return (
     <div
       className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
