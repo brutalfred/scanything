@@ -1333,10 +1333,11 @@ function Scanner() {
             </div>
 
 
-            {mode === "resale" && (
+            {(mode === "photo" || mode === "resale" || mode === "document") && (
               <p className="text-center text-[11px] text-muted-foreground">
-                Resale Scan values everything for second-hand sale and tells you what's worth
-                listing.
+                {mode === "photo" && t("photoScanDescription")}
+                {mode === "resale" && t("resaleScanDescription")}
+                {mode === "document" && t("documentScanDescription")}
               </p>
             )}
 
