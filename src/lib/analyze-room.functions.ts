@@ -142,17 +142,28 @@ async function callGateway(action: string, body: unknown, userId: string): Promi
 }
 
 function safeParse<T>(content: string, fallback: T): T {
+  const stripped = content
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim();
   try {
-    const stripped = content
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```\s*$/, "")
-      .trim();
     return JSON.parse(stripped) as T;
   } catch {
+    // Models sometimes wrap JSON in prose or truncate it — grab the outermost object.
+    const start = stripped.indexOf("{");
+    const end = stripped.lastIndexOf("}");
+    if (start !== -1 && end > start) {
+      try {
+        return JSON.parse(stripped.slice(start, end + 1)) as T;
+      } catch {
+        /* fall through */
+      }
+    }
     return fallback;
   }
 }
+
 
 function toDataUrl(b: string) {
   return b.startsWith("data:") ? b : `data:image/jpeg;base64,${b}`;
