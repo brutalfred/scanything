@@ -1605,6 +1605,33 @@ function Scanner() {
                     : "Nothing identified in this shot. Try a closer, sharper photo with a clean lens."}
               </div>
             )}
+            {phase === "results" && snapshot && mode !== "document" && (
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <Button
+                  data-no-sound
+                  variant="outline"
+                  onClick={() => {
+                    void playSound("click");
+                    void loadMore();
+                  }}
+                  disabled={loadingMore || !credits.signedIn}
+                  className="border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Looking for more…
+                    </>
+                  ) : (
+                    `Load more · ${CREDIT_COSTS.photo_scan}`
+                  )}
+                </Button>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  {loadMoreNote ?? "Re-checks the same photo for objects the first pass missed."}
+                </p>
+              </div>
+            )}
+
 
           </div>
         )}
