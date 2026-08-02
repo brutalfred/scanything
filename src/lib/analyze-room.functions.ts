@@ -142,17 +142,28 @@ async function callGateway(action: string, body: unknown, userId: string): Promi
 }
 
 function safeParse<T>(content: string, fallback: T): T {
+  const stripped = content
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim();
   try {
-    const stripped = content
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```\s*$/, "")
-      .trim();
     return JSON.parse(stripped) as T;
   } catch {
+    // Models sometimes wrap JSON in prose or truncate it — grab the outermost object.
+    const start = stripped.indexOf("{");
+    const end = stripped.lastIndexOf("}");
+    if (start !== -1 && end > start) {
+      try {
+        return JSON.parse(stripped.slice(start, end + 1)) as T;
+      } catch {
+        /* fall through */
+      }
+    }
     return fallback;
   }
 }
+
 
 function toDataUrl(b: string) {
   return b.startsWith("data:") ? b : `data:image/jpeg;base64,${b}`;
@@ -579,8 +590,12 @@ export const analyzeDocument = createServerFn({ method: "POST" })
 const NameTranslateInput = z.object({
   text: z.string().min(1).max(200),
   targetLanguage: z.string().min(1).max(40),
-  description: z.string().max(2000).optional(),
-  category: z.string().max(80).optional(),
+  // Deep-analysis descriptions can be long; trim instead of rejecting the request.
+  description: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v.slice(0, 2000) : v)),
+  category: z.string().max(200).optional(),
   labels: z.array(z.string().max(120)).max(30).optional(),
 });
 
@@ -598,39 +613,55 @@ export const translateName = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => NameTranslateInput.parse(data))
   .handler(async ({ data, context }): Promise<NameTranslation> => {
     const labels = data.labels ?? [];
-    const content = await callGateway(
-      "translate_name",
-      {
-        model: "google/gemini-3-flash-preview",
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content:
-              'You translate an object info card into a target language. Keep numbers, prices, currency codes and brand names unchanged. Respond ONLY with compact JSON: {"translation":"the item name in the target language","transliteration":"Latin-alphabet reading if the target script is not Latin, else empty","description":"the description translated (empty if none given)","category":"the category word translated (empty if none given)","labels":["each provided UI label translated, same order and count"]}',
-          },
-          {
-            role: "user",
-            content: JSON.stringify({
-              targetLanguage: data.targetLanguage,
-              name: data.text,
-              description: data.description ?? "",
-              category: data.category ?? "",
-              labels,
-            }),
-          },
-        ],
-      },
-      context.userId,
-    );
-    const parsed = safeParse<Partial<NameTranslation>>(content, {});
+
+    const run = async (strict: boolean) => {
+      const content = await callGateway(
+        "translate_name",
+        {
+          model: "google/gemini-3-flash-preview",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                'You are a translation engine. You ALWAYS translate, never refuse, never explain. Translate an object info card into the requested target language, writing in that language\'s native script. Keep numbers, prices, currency codes and brand names unchanged. Respond ONLY with compact JSON, no markdown: {"translation":"the item name in the target language","transliteration":"Latin-alphabet reading if the target script is not Latin, else empty","description":"the description translated (empty string only if no description was given)","category":"the category word translated (empty string only if none was given)","labels":["each provided UI label translated, same order and count"]}' +
+                (strict
+                  ? " The previous attempt returned empty or invalid output. Output valid JSON with every field filled in this time."
+                  : ""),
+            },
+            {
+              role: "user",
+              content: JSON.stringify({
+                targetLanguage: data.targetLanguage,
+                name: data.text,
+                description: data.description ?? "",
+                category: data.category ?? "",
+                labels,
+              }),
+            },
+          ],
+        },
+        context.userId,
+      );
+      return safeParse<Partial<NameTranslation>>(content, {});
+    };
+
+    let parsed = await run(false);
+    // A blank name translation means the model refused or emitted unusable JSON — retry once.
+    if (!String(parsed.translation ?? "").trim()) parsed = await run(true);
+
+    const translation = String(parsed.translation ?? "").trim();
+    if (!translation) throw new Error("Translation failed. Please try again.");
+
     const outLabels = Array.isArray(parsed.labels) ? parsed.labels.map((l) => String(l)) : [];
     return {
-      translation: String(parsed.translation ?? ""),
+      translation,
       transliteration: String(parsed.transliteration ?? ""),
-      description: String(parsed.description ?? ""),
-      category: String(parsed.category ?? ""),
+      // Fall back to the original text rather than blanking parts of the card.
+      description: String(parsed.description ?? "").trim() || (data.description ?? ""),
+      category: String(parsed.category ?? "").trim() || (data.category ?? ""),
       labels: labels.map((l, i) => outLabels[i] || l),
     };
   });
+
 
