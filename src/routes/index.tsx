@@ -581,7 +581,7 @@ function Scanner() {
         /* ignore */
       }
     }
-  }, [grabFrame, stopCamera, credits, mode, environment]);
+  }, [grabFrame, stopCamera, credits, mode, environment, startScanSpend]);
 
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
