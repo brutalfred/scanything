@@ -2115,7 +2115,7 @@ function Scanner() {
                 }}
                 className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                Continue
+                {t("continueAction")}
               </button>
             </div>
           </div>
