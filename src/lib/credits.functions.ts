@@ -26,7 +26,11 @@ export const getCreditState = createServerFn({ method: "POST" })
 
     // A freshly-minted token can be a second ahead of the database clock
     // ("JWT issued at future"). Retry briefly instead of failing the page.
-    let row: { balance?: number | string; last_daily_grant_at?: string | null } | null = null;
+    let row: {
+      balance?: number | string;
+      last_daily_grant_at?: string | null;
+      free_scan_available?: boolean | null;
+    } | null = null;
     let lastError: string | null = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       const { data, error } = await supabaseAdmin.rpc("get_credit_state_for", {
