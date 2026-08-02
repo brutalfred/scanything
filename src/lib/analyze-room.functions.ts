@@ -8,6 +8,8 @@ const EnvironmentSchema = z.object({
 
 const InputSchema = z.object({
   imageBase64: z.string().min(100),
+  excludeNames: z.array(z.string()).optional(),
+  pass: z.number().optional(),
 }).merge(EnvironmentSchema);
 
 
@@ -161,6 +163,13 @@ export const analyzeRoom = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data, context }): Promise<AnalyzeResult> => {
     const { withCredits } = await import("./credits.server");
+    const exclude = (data.excludeNames ?? []).map((n) => String(n).trim()).filter(Boolean);
+    const userText = exclude.length
+      ? `SECOND PASS. These objects were ALREADY found and must NOT be repeated: ${exclude
+          .slice(0, 120)
+          .join(", ")}.
+Look again at the SAME photo and find ONLY additional objects that were missed: small items, partially hidden or occluded objects, things in the background or at the edges, individual objects inside clusters/shelves/tables, and items behind or on top of the ones already listed. Keep all the same rules (no human body parts, structural surfaces only as a last resort) and the exact same JSON shape. If you truly find nothing new, return {"items":[]}. Return JSON only.`
+      : "Analyze this room photo. Return JSON only.";
     const content = await withCredits("photo_scan", context.userId, () =>
       callGateway("photo_scan", {
         model: "google/gemini-3-flash-preview",
@@ -170,7 +179,7 @@ export const analyzeRoom = createServerFn({ method: "POST" })
           {
             role: "user",
             content: [
-              { type: "text", text: "Analyze this room photo. Return JSON only." },
+              { type: "text", text: userText },
               { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
             ],
           },

@@ -1,30 +1,22 @@
-## What happened
+## Goal
 
-Your scan almost certainly *did* work — the app threw the results away before showing them.
+After a photo scan, let the user tap **Load more** to re-query the same captured image for objects the first pass missed, and append the new finds to the existing results list.
 
-In `src/routes/index.tsx` there is a body-part blocklist regex (line 131) used to strip human body parts out of results. It matches any name **containing** these words:
+## Behavior
 
-`hand, arm, leg, foot, finger, face, head, hair, skin, back, body, person, people, human, man, woman, boy, girl, child, kid, baby`
+- Button appears under the results list only when a photo scan has produced results (snapshot exists, not scanning).
+- Tapping it re-analyzes the *same* snapshot with a "second pass" prompt that tells the model which items were already found and to look specifically for smaller/occluded/background objects.
+- New items are merged into the list, de-duplicated against existing names (and against the 60-second delete-blocklist), and the "Detected in view" / Categories tabs update.
+- Costs the normal photo-scan credit price; the button label shows the cost (e.g. `Load more · 2`) and is disabled without enough credits, same gating as the scan button. Camera shutter/pop sounds stay consistent with existing behavior.
+- If the pass returns nothing new, show a short "No additional items found" note instead of an empty change.
+- Repeatable: can be pressed again, each time passing the full accumulated list as exclusions. Results are re-saved to the session snapshot cache and scan history like a normal scan.
 
-A baby rattle comes back from the AI as something like "Baby rattle" / "Baby toy" — the word `baby` matches, so the item is deleted. The couch behind it can come back as "Sofa arm" / "Armrest of couch" (matches `arm`), and the floor/rug is deliberately skipped by the prompt as structural. Net result: an empty result list even though the AI returned items.
+## Technical details
 
-The same bug silently eats many everyday objects: "Baby monitor", "Man's shirt", "Kids' bike", "Hand mirror", "Handbag", "Headphones" (whole-word `head` in "Head phones"), "Backpack" ("back"), "Legos", "Foot stool", "Body lotion".
-
-## The fix
-
-1. **Rewrite the body-part filter** in `src/routes/index.tsx`:
-   - Only reject when the *whole name* is a body part ("Hand", "Left arm", "Face"), not when the word appears inside a longer object name.
-   - Keep an explicit allowlist of object words that contain body-part words (baby toy/monitor/bottle, handbag, headphones, backpack, armchair, footstool, hand mirror, man's/woman's/kids' clothing, etc.).
-   - Drop `baby`, `child`, `kid`, `man`, `woman`, `boy`, `girl`, `back`, `body` from the plain word list — those are almost never a standalone body part and cause most false removals.
-   - Apply the same corrected helper to live video mode, which uses the same list.
-
-2. **Never show a silent empty result**: when the AI returns items but every one is removed by the body-part filter or the category filters, show a short note under the photo ("Items were hidden by your filters" / "Nothing identified — try a closer shot") instead of a blank list, so this class of bug is visible rather than looking like a failed scan.
-
-3. **Nudge the prompt** in `src/lib/analyze-room.functions.ts` so small handheld objects (toys, rattles, tools, utensils) are explicitly named as the object, not as the person who uses them.
-
-No credits/backend/pricing logic changes.
-
-## Technical detail
-
-- `BODY_PART_RE` at `src/routes/index.tsx:131` is applied in `capture()` (line 483) for photo scans and in the video tracking path.
-- New helper: exact/leading-modifier match (`/^(left |right |his |her )?(hand|arm|leg|...)s?$/i`) plus an object allowlist check that short-circuits before the regex.
+- `src/lib/analyze-room.functions.ts`
+  - Extend the photo-scan input schema with optional `excludeNames: string[]` and `pass: number`.
+  - Add a `SECOND_PASS_SUFFIX` appended to the user message when `excludeNames` is non-empty: lists already-found names, instructs the model to skip them and hunt for small, partially hidden, background, or clustered objects; keeps the same JSON output shape and the same people/body-part and structural-surface rules.
+  - Same model (`google/gemini-3-flash-preview`) and same `withCredits("photo_scan", ...)` wrapper, so the credit accounting and refund-on-failure path are unchanged.
+- `src/routes/index.tsx`
+  - New `loadingMore` state and a `loadMore()` handler that calls `analyzeRoom` with the stored snapshot plus the current item names, then merges results with normalized-name de-dup (reusing the existing `normName` helper) and keeps prior items' order.
+  - Render the button below the results list inside the existing snapshot results block, styled with the current theme tokens.

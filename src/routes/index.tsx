@@ -251,6 +251,8 @@ function Scanner() {
   const [items, setItems] = useState<DetectedItem[]>([]);
   /** How many items the AI actually returned before any local filtering. */
   const [rawItemCount, setRawItemCount] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreNote, setLoadMoreNote] = useState<string | null>(null);
 
 
   // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
@@ -541,6 +543,72 @@ function Scanner() {
     }
   }, [grabFrame, stopCamera, credits, mode, environment]);
 
+  const loadMore = useCallback(async () => {
+    if (!snapshot || loadingMore) return;
+    if (!credits.spend("photo_scan")) return;
+    setLoadingMore(true);
+    setLoadMoreNote(null);
+    setError(null);
+    try {
+      const result = await analyzeRoom({
+        data: {
+          imageBase64: snapshot,
+          environment,
+          excludeNames: items.map((it) => it.name),
+          pass: 2,
+        },
+      });
+      const fresh = result.items.filter(
+        (it) => it.category === "person" || !isBodyPart(it.name),
+      );
+      let added: DetectedItem[] = [];
+      setItems((prev) => {
+        const seen = new Set(prev.map((it) => normName(it.name)));
+        added = fresh.filter((it) => {
+          const key = normName(it.name);
+          if (!key || seen.has(key) || isBlocked(it.name)) return false;
+          seen.add(key);
+          return true;
+        });
+        const next = [...prev, ...added];
+        setRawItemCount((c) => c + result.items.length);
+        try {
+          sessionStorage.setItem(
+            LAST_SCAN_KEY,
+            JSON.stringify({ snapshot, items: next }),
+          );
+        } catch {
+          /* storage full — keep the in-memory view */
+        }
+        return next;
+      });
+      if (added.length) {
+        void playSound("bubble");
+        void saveScanHistory({
+          data: {
+            mode: "photo",
+            items: added.map((d) => ({
+              name: d.name,
+              category: d.category,
+              description: d.description,
+              confidence: d.confidence,
+              priceMin: d.priceMin,
+              priceMax: d.priceMax,
+            })),
+          },
+        }).catch(() => {});
+      } else {
+        setLoadMoreNote("No additional items found in this photo.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Analysis failed.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [snapshot, loadingMore, credits, environment, items, isBlocked]);
+
+
+
 
   const isGuest = !credits.signedIn;
 
@@ -703,6 +771,8 @@ function Scanner() {
     }
     setSnapshot(null);
     setItems([]);
+    setRawItemCount(0);
+    setLoadMoreNote(null);
     setSelected(null);
     setError(null);
     setTracked([]);
@@ -1535,6 +1605,33 @@ function Scanner() {
                     : "Nothing identified in this shot. Try a closer, sharper photo with a clean lens."}
               </div>
             )}
+            {phase === "results" && snapshot && mode !== "document" && (
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <Button
+                  data-no-sound
+                  variant="outline"
+                  onClick={() => {
+                    void playSound("click");
+                    void loadMore();
+                  }}
+                  disabled={loadingMore || !credits.signedIn}
+                  className="border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Looking for more…
+                    </>
+                  ) : (
+                    `Load more · ${CREDIT_COSTS.photo_scan}`
+                  )}
+                </Button>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  {loadMoreNote ?? "Re-checks the same photo for objects the first pass missed."}
+                </p>
+              </div>
+            )}
+
 
           </div>
         )}
