@@ -24,6 +24,9 @@ import {
   Download,
   FileText,
   Tag,
+  Copy,
+  Check,
+  Pencil,
   ChevronDown,
 } from "lucide-react";
 
