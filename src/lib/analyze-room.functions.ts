@@ -618,7 +618,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
           {
             role: "user",
             content: [
-              { type: "text", text: "Read this document/receipt. JSON only." },
+              { type: "text", text: "Transcribe every word of text in this image verbatim. JSON only." },
               { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
             ],
           },
