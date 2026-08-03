@@ -2962,6 +2962,50 @@ function DocumentTextBlock({ text }: { text: string }) {
     }
   };
 
+  const fileBase = `scanything-document-${new Date().toISOString().slice(0, 10)}`;
+
+  const download = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const exportTxt = () => {
+    if (!value.trim()) return toast.error("No text to export");
+    download(new Blob([value], { type: "text/plain;charset=utf-8" }), `${fileBase}.txt`);
+    toast.success("Saved .txt");
+  };
+
+  const exportPdf = async () => {
+    if (!value.trim()) return toast.error("No text to export");
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const margin = 48;
+      const width = doc.internal.pageSize.getWidth() - margin * 2;
+      const height = doc.internal.pageSize.getHeight();
+      doc.setFont("courier", "normal");
+      doc.setFontSize(10);
+      const lines = doc.splitTextToSize(value, width) as string[];
+      let y = margin;
+      for (const line of lines) {
+        if (y > height - margin) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(line, margin, y);
+        y += 14;
+      }
+      doc.save(`${fileBase}.pdf`);
+      toast.success("Saved .pdf");
+    } catch {
+      toast.error("Could not create PDF");
+    }
+  };
+
   return (
     <div className="mt-3">
       {editing ? (
