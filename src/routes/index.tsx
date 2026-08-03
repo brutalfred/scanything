@@ -2549,11 +2549,17 @@ function DetailPanel({
 
         {enrichment ? (
           <>
-            <p className="mt-3 text-sm leading-relaxed">
-              {nameTranslation?.description || enrichment.description}
-            </p>
+            {enrichment.category === "document" ? (
+              <DocumentTextBlock
+                text={nameTranslation?.description || enrichment.description}
+              />
+            ) : (
+              <p className="mt-3 text-sm leading-relaxed">
+                {nameTranslation?.description || enrichment.description}
+              </p>
+            )}
 
-            {!["person", "plate"].includes(enrichment.category) && (
+            {!["person", "plate", "document"].includes(enrichment.category) && (
               <div className="mt-4 rounded-lg bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
                   {tl(0)}
