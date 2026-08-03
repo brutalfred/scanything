@@ -24,6 +24,9 @@ import {
   Download,
   FileText,
   Tag,
+  Copy,
+  Check,
+  Pencil,
   ChevronDown,
 } from "lucide-react";
 
@@ -2549,11 +2552,17 @@ function DetailPanel({
 
         {enrichment ? (
           <>
-            <p className="mt-3 text-sm leading-relaxed">
-              {nameTranslation?.description || enrichment.description}
-            </p>
+            {enrichment.category === "document" ? (
+              <DocumentTextBlock
+                text={nameTranslation?.description || enrichment.description}
+              />
+            ) : (
+              <p className="mt-3 text-sm leading-relaxed">
+                {nameTranslation?.description || enrichment.description}
+              </p>
+            )}
 
-            {!["person", "plate"].includes(enrichment.category) && (
+            {!["person", "plate", "document"].includes(enrichment.category) && (
               <div className="mt-4 rounded-lg bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
                   {tl(0)}
@@ -2924,5 +2933,63 @@ function ConfidenceBadge({ value, className = "" }: { value?: number; className?
     >
       {v}%
     </span>
+  );
+}
+
+/** Scanned document text with copy + inline edit controls. */
+function DocumentTextBlock({ text }: { text: string }) {
+  const [value, setValue] = useState(text);
+  const [editing, setEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setValue(text);
+    setEditing(false);
+  }, [text]);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+      toast.success("Text copied");
+    } catch {
+      toast.error("Could not copy text");
+    }
+  };
+
+  return (
+    <div className="mt-3">
+      {editing ? (
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          rows={Math.min(20, Math.max(6, value.split("\n").length + 1))}
+          className="w-full rounded-lg border border-primary/40 bg-secondary p-3 font-mono text-xs leading-relaxed text-foreground outline-none focus:border-primary"
+        />
+      ) : (
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-secondary p-3 font-mono text-xs leading-relaxed text-foreground">
+          {value || "No text detected"}
+        </pre>
+      )}
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => void copy()}
+          className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
+        >
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          {copied ? "Copied" : "Copy to clipboard"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing((v) => !v)}
+          className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary"
+        >
+          <Pencil className="h-3 w-3" />
+          {editing ? "Done editing" : "Edit text"}
+        </button>
+      </div>
+    </div>
   );
 }
