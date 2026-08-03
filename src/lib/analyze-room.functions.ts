@@ -594,12 +594,15 @@ export const personSearch = createServerFn({ method: "POST" })
     return { matches };
   });
 
-const DOC_SYSTEM = `You are a document and receipt reader. Read the full image carefully.
-For a receipt/invoice: extract merchant name, date, total amount and itemized lines.
-For any other document: transcribe the main text and summarize key points.
-Priority is readable text, numbers and named entities.
+const DOC_SYSTEM = `You are an OCR engine. Transcribe ALL text visible in the image verbatim.
+Rules:
+- Output the literal text exactly as printed/written, preserving line breaks, order, numbers, dates, totals and punctuation.
+- Do NOT summarize, explain, describe the document, or add any commentary, headings or labels of your own.
+- Keep the original language and spelling. Use "?" only for characters you truly cannot read.
+- If the image contains no text, description must be an empty string.
 Respond ONLY with compact JSON:
-{"items":[{"name":"short title (e.g. 'Receipt from Store' or 'Document page')","category":"document","description":"summary or transcription (keep concise but complete)","priceMin":0,"priceMax":0,"currency":"USD","searchUrl":"https://www.google.com/search?q=url-encoded+title","infoUrl":"","confidence":85,"box":{"x":0,"y":0,"w":1,"h":1}}]}`;
+{"items":[{"name":"short title (e.g. 'Receipt' or 'Document page')","category":"document","description":"<the verbatim transcribed text, with \\n between lines>","priceMin":0,"priceMax":0,"currency":"USD","searchUrl":"","infoUrl":"","confidence":85,"box":{"x":0,"y":0,"w":1,"h":1}}]}`;
+
 
 export const analyzeDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
