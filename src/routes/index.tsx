@@ -553,7 +553,8 @@ function Scanner() {
     startScanSpend(isDoc ? "document" : "photo");
 
     void playSound("shutter");
-    const dataUrl = grabFrame(1024, 0.8);
+    // Documents need every glyph, so capture at a much higher resolution.
+    const dataUrl = grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
     if (!dataUrl) return;
     setSnapshot(dataUrl);
 
@@ -568,7 +569,10 @@ function Scanner() {
     try {
       let detected: DetectedItem[] = [];
       if (isDoc) {
-        const doc = await analyzeDocument({ data: { imageBase64: dataUrl, environment } });
+        // Deskew + flatten lighting + stretch contrast before OCR.
+        const { preprocessForOcr } = await import("@/lib/ocr-preprocess");
+        const cleaned = await preprocessForOcr(dataUrl);
+        const doc = await analyzeDocument({ data: { imageBase64: cleaned, environment } });
         detected = (doc.items ?? []).filter(Boolean);
         setRawItemCount(detected.length);
       } else {

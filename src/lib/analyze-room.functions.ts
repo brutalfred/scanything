@@ -594,11 +594,13 @@ export const personSearch = createServerFn({ method: "POST" })
     return { matches };
   });
 
-const DOC_SYSTEM = `You are an OCR engine. Transcribe ALL text visible in the image verbatim.
+const DOC_SYSTEM = `You are a high-accuracy OCR engine. Transcribe ALL text visible in the image verbatim.
 Rules:
-- Output the literal text exactly as printed/written, preserving line breaks, order, numbers, dates, totals and punctuation.
-- Do NOT summarize, explain, describe the document, or add any commentary, headings or labels of your own.
-- Keep the original language and spelling. Use "?" only for characters you truly cannot read.
+- Output the literal text exactly as printed/written: same words, spelling, capitalisation, punctuation, numbers, dates, currency symbols and totals.
+- Preserve the visual layout: one output line per printed line, blank line between blocks. Read multi-column pages column by column, left column fully before the right one. Keep table rows on one line with columns separated by " | ".
+- Transcribe headers, footers, page numbers, stamps, handwriting and small print too. Never stop early or truncate — continue until the last line of the page.
+- Do NOT summarize, explain, describe the document, translate it, correct spelling, or add commentary, headings or labels of your own.
+- Keep the original language and script. Use "?" only for individual characters you truly cannot read.
 - If the image contains no text, description must be an empty string.
 Respond ONLY with compact JSON:
 {"items":[{"name":"short title (e.g. 'Receipt' or 'Document page')","category":"document","description":"<the verbatim transcribed text, with \\n between lines>","priceMin":0,"priceMax":0,"currency":"USD","searchUrl":"","infoUrl":"","confidence":85,"box":{"x":0,"y":0,"w":1,"h":1}}]}`;
@@ -613,12 +615,20 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       callGateway("document_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
+        // Deterministic decoding: transcription must not be "creative".
+        temperature: 0,
+        top_p: 1,
+        // Long pages need room; truncated output loses the end of the document.
+        max_tokens: 8192,
         messages: [
           { role: "system", content: DOC_SYSTEM },
           {
             role: "user",
             content: [
-              { type: "text", text: "Transcribe every word of text in this image verbatim. JSON only." },
+              {
+                type: "text",
+                text: "Transcribe every word of text in this image verbatim, in reading order, to the very last line. JSON only.",
+              },
               { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
             ],
           },
@@ -630,10 +640,12 @@ export const analyzeDocument = createServerFn({ method: "POST" })
 
     const parsed = safeParse<AnalyzeResult>(content, { items: [] });
     const items = (parsed.items ?? [])
-      .filter((it) => it && it.box && typeof it.box.x === "number")
-      .map((it) => normalizeFull(it));
+      .filter(Boolean)
+      // A page transcription has no meaningful bounding box — default to full frame.
+      .map((it) => normalizeFull({ ...it, box: it.box ?? { x: 0, y: 0, w: 1, h: 1 } }));
     return { items };
   });
+
 
 
 
