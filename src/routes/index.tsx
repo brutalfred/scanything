@@ -2993,7 +2993,24 @@ function DocumentTextBlock({ text }: { text: string }) {
           <Pencil className="h-3 w-3" />
           {editing ? "Done editing" : "Edit text"}
         </button>
+        <button
+          type="button"
+          onClick={exportTxt}
+          className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary"
+        >
+          <Download className="h-3 w-3" />
+          Export .txt
+        </button>
+        <button
+          type="button"
+          onClick={() => void exportPdf()}
+          className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary"
+        >
+          <FileText className="h-3 w-3" />
+          Export .pdf
+        </button>
       </div>
+
     </div>
   );
 }
