@@ -2876,7 +2876,7 @@ function DetailPanel({
             {translation && (
               <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                  Translation
+                  {t("translationLabel")}
                   {translation.language && ` · ${translation.language}`}
                   {translation.script && ` (${translation.script})`}
                 </div>
@@ -2884,24 +2884,24 @@ function DetailPanel({
                   <div className="mt-1 text-sm font-medium">{translation.translation}</div>
                 ) : (
                   <div className="mt-1 text-sm text-muted-foreground">
-                    Couldn’t translate confidently.
+                    {t("couldNotTranslate")}
                   </div>
                 )}
                 {translation.transliteration && (
                   <div className="text-xs text-muted-foreground">
-                    Romanized: {translation.transliteration}
+                    {t("romanized")}: {translation.transliteration}
                   </div>
                 )}
                 {translation.note && (
                   <p className="mt-1 text-xs text-muted-foreground">{translation.note}</p>
                 )}
                 <a
-                  href={`https://translate.google.com/?sl=${encodeURIComponent(translation.languageCode || "auto")}&tl=en&text=${encodeURIComponent(name)}&op=translate`}
+                  href={`https://translate.google.com/?sl=${encodeURIComponent(translation.languageCode || "auto")}&tl=${LANGUAGE_TAG[appLanguage]}&text=${encodeURIComponent(name)}&op=translate`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 inline-flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                 >
-                  Open in Google Translate
+                  {t("openInGoogleTranslate")}
                   <ExternalLink className="h-4 w-4 opacity-60" />
                 </a>
               </div>
@@ -2910,9 +2910,10 @@ function DetailPanel({
         ) : (
           <div className="mt-6 flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading details…
+            {t("loadingDetails")}
           </div>
         )}
+
       </div>
     </div>
   );
