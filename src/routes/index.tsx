@@ -352,6 +352,8 @@ function Scanner() {
   const pausedRef = useRef(false);
   const modeRef = useRef<Mode>("photo");
   const enrichingIdsRef = useRef<Set<string>>(new Set());
+  /** Video mode: only items the user tapped get the deeper (paid) enrichment. */
+  const enrichWantedRef = useRef<Set<string>>(new Set());
   const [scanning, setScanning] = useState(false);
 
   // Estimated credit cost for the next scan, learned from recent real sessions.
@@ -771,9 +773,9 @@ function Scanner() {
           await new Promise((r) => setTimeout(r, 200));
           continue;
         }
-        const frame = grabFrame(512, 0.6);
+        const frame = grabFrame(384, 0.5);
         if (!frame) {
-          await new Promise((r) => setTimeout(r, 300));
+          await new Promise((r) => setTimeout(r, 200));
           continue;
         }
         if (!credits.spend("quick_scan", { silent: true })) {
@@ -796,7 +798,7 @@ function Scanner() {
           scanningRef.current = false;
           setScanning(false);
         }
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 60));
       }
     };
     void loop();
@@ -813,9 +815,12 @@ function Scanner() {
     const loop = async () => {
       while (!cancelled && modeRef.current === "video") {
         const target = trackedRef.current.find(
-          (t) => !t.enrichment && !enrichingIdsRef.current.has(t.id),
+          (t) =>
+            enrichWantedRef.current.has(t.id) &&
+            !t.enrichment &&
+            !enrichingIdsRef.current.has(t.id),
         );
-        if (!target || pausedRef.current) {
+        if (!target) {
           await new Promise((r) => setTimeout(r, 500));
           continue;
         }
@@ -956,6 +961,8 @@ function Scanner() {
         setPersonPrompt({ item });
         return;
       }
+      // Tapping a live box is what starts the deeper (paid) analysis.
+      if ("id" in item && item.id) enrichWantedRef.current.add(item.id as string);
       // Capture image at open time (snapshot for photo mode, live frame for video)
       const img = snapshot ?? grabFrame(1280, 0.9) ?? null;
       setSelectedImage(img);
@@ -1845,6 +1852,7 @@ function Scanner() {
       {selected && (
         <DetailPanel
           item={selected}
+          live={mode === "video"}
           imageBase64={selectedImage}
           onClose={() => {
             setSelected(null);
@@ -2280,12 +2288,16 @@ const TRANSLATION_CACHE = new Map<
 function DetailPanel({
   item,
   imageBase64,
+  live = false,
   onClose,
 }: {
   item: TrackedItem | DetectedItem;
   imageBase64: string | null;
+  /** Opened from a live video-mode box: deep analysis is half price. */
+  live?: boolean;
   onClose: () => void;
 }) {
+  const deepReason: CreditReason = live ? "analyze_further_live" : "analyze_further";
   const isTracked = (i: TrackedItem | DetectedItem): i is TrackedItem =>
     (i as TrackedItem).id !== undefined;
 
@@ -2315,7 +2327,7 @@ function DetailPanel({
   const showTranslate = hasNonLatin(name);
 
   const runDeep = useCallback(async () => {
-    if (!panelCredits.spend("analyze_further")) return;
+    if (!panelCredits.spend(deepReason)) return;
     if (!imageBase64) {
       setDeepError("No image available. Reopen from a scan.");
       return;
@@ -2324,7 +2336,12 @@ function DetailPanel({
     setDeepError(null);
     try {
       const result = await analyzeFurther({
-        data: { name, imageBase64: imageBase64.replace(/^data:[^,]+,/, ""), environment: getPaddleEnvironment() },
+        data: {
+          name,
+          imageBase64: imageBase64.replace(/^data:[^,]+,/, ""),
+          live,
+          environment: getPaddleEnvironment(),
+        },
       });
 
       setDeep(result);
@@ -2333,7 +2350,7 @@ function DetailPanel({
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits]);
+  }, [imageBase64, name, panelCredits, live, deepReason]);
 
   const runTranslate = useCallback(async () => {
     if (!panelCredits.spend("translate")) return;
@@ -2676,7 +2693,7 @@ function DetailPanel({
               <Button
                 variant="secondary"
                 onClick={runDeep}
-                disabled={deepLoading || !imageBase64 || !panelCredits.canAfford("analyze_further")}
+                disabled={deepLoading || !imageBase64 || !panelCredits.canAfford(deepReason)}
                 className="justify-start"
               >
                 {deepLoading ? (
@@ -2687,7 +2704,7 @@ function DetailPanel({
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    {t("analyzeFurther")} · {CREDIT_COSTS.analyze_further}
+                    {t("analyzeFurther")} · {CREDIT_COSTS[deepReason]}
                   </>
                 )}
               </Button>
