@@ -2438,12 +2438,18 @@ function DetailPanel({
       });
 
       setDeep(result);
+      if (historyId) {
+        void saveScanHistoryItemDeep({ data: { id: historyId, name, deep: result } }).catch(
+          () => {},
+        );
+      }
     } catch (e) {
       setDeepError(e instanceof Error ? e.message : "Analysis failed.");
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits, live, deepReason]);
+  }, [imageBase64, name, panelCredits, live, deepReason, historyId]);
+
 
   const runTranslate = useCallback(async () => {
     if (!panelCredits.spend("translate")) return;
