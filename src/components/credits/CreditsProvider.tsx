@@ -44,6 +44,11 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
 
   const spend = useCallback(
     (reason: CreditReason, opts?: { silent?: boolean }) => {
+      // One free photo/resale scan per day — no credits required or debited.
+      if (reason === "photo_scan" && credits.freeScanAvailable) {
+        setTimeout(() => credits.refresh(), 1200);
+        return true;
+      }
       if (!credits.canAfford(reason)) {
         if (!opts?.silent) {
           toast.error(`Out of credits for ${CREDIT_LABELS[reason].toLowerCase()}`);
