@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { X, Pencil, Trash2, Loader2, ChevronLeft, History, ExternalLink } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { X, Pencil, Trash2, Loader2, ChevronLeft, History, ExternalLink, Languages } from "lucide-react";
 import {
   listScanHistory,
   renameScanHistory,
@@ -7,7 +7,9 @@ import {
   type ScanHistoryEntry,
   type ScanHistoryItem,
 } from "@/lib/scan-history.functions";
+import { translateName } from "@/lib/analyze-room.functions";
 import { useLanguage } from "@/hooks/useLanguage";
+import { LANGUAGES } from "@/lib/i18n";
 
 function formatStamp(iso: string) {
   const d = new Date(iso);
@@ -21,7 +23,14 @@ function formatStamp(iso: string) {
   });
 }
 
+/** Cached per language+item so reopening an entry costs nothing. */
+const HISTORY_TRANSLATIONS = new Map<
+  string,
+  { translation: string; description: string; category: string; labels: string[] }
+>();
+
 function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: () => void }) {
+  const { language: appLanguage, t } = useLanguage();
   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${item.name} buy price`)}`;
   const infoUrl = `https://www.google.com/search?q=${encodeURIComponent(item.name)}`;
   const showPrice =
@@ -29,6 +38,71 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
     item.category !== "plate" &&
     typeof item.priceMin === "number" &&
     typeof item.priceMax === "number";
+
+  const LABELS = useMemo(
+    () => [t("estimatedPriceRange"), t("shopThisItem"), t("learnMore")],
+    [t],
+  );
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tr, setTr] = useState<{
+    language: string;
+    translation: string;
+    description: string;
+    category: string;
+    labels: string[];
+  } | null>(null);
+
+  const run = useCallback(
+    async (language: string) => {
+      setPickerOpen(false);
+      if (language === "English") {
+        setTr(null);
+        setError(null);
+        return;
+      }
+      const key = `${language}|${item.name}|${item.description ?? ""}`;
+      const cached = HISTORY_TRANSLATIONS.get(key);
+      if (cached) {
+        setTr({ language, ...cached });
+        return;
+      }
+      setTranslating(true);
+      setError(null);
+      try {
+        const result = await translateName({
+          data: {
+            text: item.name,
+            targetLanguage: language,
+            description: item.description ?? "",
+            category: item.category ?? "",
+            labels: LABELS,
+          },
+        });
+        HISTORY_TRANSLATIONS.set(key, result);
+        setTr({ language, ...result });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Translation failed.");
+      } finally {
+        setTranslating(false);
+      }
+    },
+    [item.name, item.description, item.category, LABELS],
+  );
+
+  // Follow the app language automatically.
+  useEffect(() => {
+    if (appLanguage === "English") {
+      setTr((prev) => (prev ? null : prev));
+      return;
+    }
+    if (tr?.language === appLanguage) return;
+    void run(appLanguage);
+  }, [appLanguage, tr?.language, run]);
+
+  const tl = (i: number) => tr?.labels?.[i] || LABELS[i] || "";
 
   return (
     <div
@@ -48,27 +122,67 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
                   {Math.round(item.confidence)}%
                 </span>
               )}
+              <button
+                type="button"
+                onClick={() => setPickerOpen((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
+              >
+                <Languages className="h-3 w-3" />
+                {t("translate")}
+                <span className="text-muted-foreground">· {t("free")}</span>
+              </button>
             </div>
+            {pickerOpen && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => void run(lang)}
+                    disabled={translating}
+                    className="rounded-full border border-border px-2 py-0.5 text-[10px] text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            )}
+            {translating && (
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("translating")}</p>
+            )}
+            {error && <p className="mt-1 text-[11px] text-destructive">{error}</p>}
+            {tr && !translating && (
+              <p className="mt-1 text-sm font-medium text-primary">
+                {tr.translation}
+                <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {tr.language}
+                </span>
+              </p>
+            )}
             {item.category && (
-              <p className="text-xs capitalize text-muted-foreground">{item.category}</p>
+              <p className="text-xs capitalize text-muted-foreground">
+                {tr?.category || item.category}
+              </p>
             )}
           </div>
           <button
             onClick={onClose}
             className="rounded-full p-1 text-muted-foreground hover:bg-accent"
-            aria-label="Close"
+            aria-label={t("close")}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {item.description && (
-          <p className="mt-3 text-sm leading-relaxed text-foreground">{item.description}</p>
+          <p className="mt-3 text-sm leading-relaxed text-foreground">
+            {tr?.description || item.description}
+          </p>
         )}
 
         {showPrice && (
           <div className="mt-4 rounded-lg bg-secondary p-3">
-            <div className="text-xs font-medium text-muted-foreground">Estimated price range</div>
+            <div className="text-xs font-medium text-muted-foreground">{tl(0)}</div>
             <div className="text-xl font-semibold text-foreground">
               ${item.priceMin}
               <span className="text-muted-foreground"> – </span>${item.priceMax}
@@ -83,7 +197,7 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
             rel="noopener noreferrer"
             className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
           >
-            Shop this item
+            {tl(1)}
             <ExternalLink className="h-4 w-4 opacity-60" />
           </a>
           <a
@@ -92,7 +206,7 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
             rel="noopener noreferrer"
             className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
           >
-            Learn more
+            {tl(2)}
             <ExternalLink className="h-4 w-4 opacity-60" />
           </a>
         </div>
@@ -118,11 +232,11 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
     try {
       setEntries(await listScanHistory());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load history.");
+      setError(e instanceof Error ? e.message : t("couldNotLoadHistory"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!open) return;
@@ -131,6 +245,9 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
   }, [open, load]);
 
   if (!open) return null;
+
+  const modeLabel = (mode: string) =>
+    mode === "video" ? t("videoScan") : mode === "document" ? t("documentScan") : t("photoScan");
 
   const commitRename = async (entry: ScanHistoryEntry) => {
     const title = draft.trim();
@@ -161,7 +278,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
             <button
               onClick={() => setSelected(null)}
               className="rounded-full p-1 text-muted-foreground hover:text-foreground"
-              aria-label="Back"
+              aria-label={t("back")}
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -174,7 +291,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
           <button
             onClick={onClose}
             className="rounded-full p-1 text-muted-foreground hover:text-foreground"
-            aria-label="Close"
+            aria-label={t("close")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -190,9 +307,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
         {!loading && !error && !selected && (
           <div className="space-y-2">
             {entries.length === 0 && (
-              <p className="py-8 text-center text-xs text-muted-foreground">
-                No scans yet. Your scans will be saved here automatically.
-              </p>
+              <p className="py-8 text-center text-xs text-muted-foreground">{t("noScansYet")}</p>
             )}
             {entries.map((entry) => (
               <div
@@ -220,8 +335,9 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
                       {entry.title || formatStamp(entry.createdAt)}
                     </span>
                     <span className="block text-[10px] text-muted-foreground">
-                      {entry.items.length} item{entry.items.length === 1 ? "" : "s"} ·{" "}
-                      {entry.mode === "video" ? "Video scan" : "Photo scan"}
+                      {entry.items.length}{" "}
+                      {entry.items.length === 1 ? t("item") : t("items").toLowerCase()} ·{" "}
+                      {modeLabel(entry.mode)}
                       {entry.title ? ` · ${formatStamp(entry.createdAt)}` : ""}
                     </span>
                   </button>
@@ -232,14 +348,14 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
                     setEditingId(entry.id);
                   }}
                   className="rounded-md p-1.5 text-muted-foreground hover:text-primary"
-                  aria-label="Rename scan"
+                  aria-label={t("rename")}
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={() => void remove(entry)}
                   className="rounded-md p-1.5 text-muted-foreground hover:text-destructive"
-                  aria-label="Delete scan"
+                  aria-label={t("deleteAction")}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -251,12 +367,10 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
         {!loading && selected && (
           <div className="space-y-2">
             <p className="text-[11px] text-muted-foreground">
-              {formatStamp(selected.createdAt)} · {selected.mode === "video" ? "Video scan" : "Photo scan"}
+              {formatStamp(selected.createdAt)} · {modeLabel(selected.mode)}
             </p>
             {selected.items.length === 0 && (
-              <p className="py-6 text-center text-xs text-muted-foreground">
-                No items were saved for this scan.
-              </p>
+              <p className="py-6 text-center text-xs text-muted-foreground">{t("noItemsSaved")}</p>
             )}
             {selected.items.map((item, i) => (
               <button
