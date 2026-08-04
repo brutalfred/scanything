@@ -1,6 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export type ScanHistoryDeep = {
+  brand?: string;
+  product?: string;
+  confidence?: number;
+  description?: string;
+  priceMin?: number;
+  priceMax?: number;
+  currency?: string;
+  buyUrl?: string;
+  infoUrl?: string;
+};
+
 export type ScanHistoryItem = {
   name: string;
   category?: string;
@@ -8,7 +20,27 @@ export type ScanHistoryItem = {
   confidence?: number;
   priceMin?: number;
   priceMax?: number;
+  deep?: ScanHistoryDeep;
 };
+
+function sanitizeDeep(d: unknown): ScanHistoryDeep | undefined {
+  if (!d || typeof d !== "object") return undefined;
+  const o = d as Record<string, unknown>;
+  const str = (v: unknown, n: number) => (typeof v === "string" && v ? v.slice(0, n) : undefined);
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  return {
+    brand: str(o.brand, 120),
+    product: str(o.product, 160),
+    confidence: num(o.confidence),
+    description: str(o.description, 1500),
+    priceMin: num(o.priceMin),
+    priceMax: num(o.priceMax),
+    currency: str(o.currency, 8),
+    buyUrl: str(o.buyUrl, 500),
+    infoUrl: str(o.infoUrl, 500),
+  };
+}
+
 
 export type ScanHistoryEntry = {
   id: string;
