@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_visits: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          visit_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          visit_date?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          visit_date?: string
+        }
+        Relationships: []
+      }
       ad_reward_claims: {
         Row: {
           created_at: string
@@ -471,6 +492,19 @@ export type Database = {
           daily_limit: number
         }[]
       }
+      get_admin_usage_stats: {
+        Args: never
+        Returns: {
+          purchases_month: number
+          revenue_month_cents: number
+          scans_month: number
+          scans_today: number
+          scans_week: number
+          visitors_month: number
+          visitors_today: number
+          visitors_week: number
+        }[]
+      }
       get_checkin_state_for: {
         Args: { _user_id: string }
         Returns: {
@@ -521,6 +555,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_account_visit: { Args: { _user_id: string }; Returns: undefined }
       redeem_play_purchase: {
         Args: {
           _credits: number
