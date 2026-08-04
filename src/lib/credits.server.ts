@@ -75,11 +75,9 @@ export async function withCredits<T>(
   const amount = CREDIT_COSTS[reason];
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  if (await hasActiveSubscription(userId, environment)) {
-    return await fn();
-  }
-
   // One free photo/resale scan per day for signed-in users.
+  // Claimed before the subscription check so the daily counter is always
+  // consumed exactly once per 24h, for subscribers too.
   if (reason === "photo_scan") {
     const { data: claimed, error: freeError } = await supabaseAdmin.rpc(
       "claim_free_scan_for",
@@ -95,6 +93,11 @@ export async function withCredits<T>(
       }
     }
   }
+
+  if (await hasActiveSubscription(userId, environment)) {
+    return await fn();
+  }
+
 
   const { error } = await supabaseAdmin.rpc("spend_credits_for", {
     _user_id: userId,
