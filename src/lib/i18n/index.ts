@@ -168,14 +168,37 @@ export const EN = {
   refunds: "Refunds",
   contact: "Contact",
   signInToScan: "Sign in to scan",
+
+  // item info box + scan history
+  resaleValue: "Second-hand resale value",
+  worthSelling: "Worth selling",
+  notWorthIt: "Not worth it",
+  typical: "typical",
+  analyzingDetails: "Analyzing details…",
+  loadingDetails: "Loading details…",
+  translationLabel: "Translation",
+  romanized: "Romanized",
+  openInGoogleTranslate: "Open in Google Translate",
+  couldNotTranslate: "Couldn’t translate confidently.",
+  plateOwnerNotice:
+    "Owner details are not public. Use an official registry below — you must be authorised and sign in with your own credentials.",
+  noScansYet: "No scans yet. Your scans will be saved here automatically.",
+  noItemsSaved: "No items were saved for this scan.",
+  rename: "Rename",
+  deleteAction: "Delete",
+  back: "Back",
+  item: "item",
+  couldNotLoadHistory: "Could not load history.",
 } as const;
 
 export type TranslationKey = keyof typeof EN;
 export type Dictionary = Partial<Record<TranslationKey, string>>;
 
 import { DICTIONARIES } from "./locales";
+import { EXTRA_DICTIONARIES } from "./extra-locales";
 
 export function translateKey(language: Language, key: TranslationKey): string {
   if (language === "English") return EN[key];
-  return DICTIONARIES[language]?.[key] ?? EN[key];
+  return DICTIONARIES[language]?.[key] ?? EXTRA_DICTIONARIES[language]?.[key] ?? EN[key];
 }
+
