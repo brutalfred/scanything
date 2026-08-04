@@ -71,7 +71,11 @@ import {
 
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
-import { saveScanHistory, appendScanHistory } from "@/lib/scan-history.functions";
+import {
+  saveScanHistory,
+  appendScanHistory,
+  saveScanHistoryItemDeep,
+} from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useLanguage } from "@/hooks/useLanguage";
 import { LANGUAGE_TAG } from "@/lib/i18n";
