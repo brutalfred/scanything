@@ -54,6 +54,14 @@ function AdminPage() {
     retry: false,
   });
 
+  const stats = useQuery({
+    queryKey: ["admin-usage-stats"],
+    queryFn: () => fetchStats(),
+    enabled: admin.data === true,
+    retry: false,
+  });
+
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
