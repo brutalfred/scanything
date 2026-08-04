@@ -47,6 +47,9 @@ export const getCreditState = createServerFn({ method: "POST" })
     }
     if (lastError) throw new Error(lastError);
 
+    // Track one visit row per account per day (powers the admin stats panel).
+    await supabaseAdmin.rpc("record_account_visit", { _user_id: userId });
+
 
 
 
