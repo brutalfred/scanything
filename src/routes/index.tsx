@@ -1627,6 +1627,7 @@ function Scanner() {
                               : `Estimated cost: ${base} credits. Balance: ${credits.balance}`;
                           })()}
                         </p>
+                        {!isDocMode && !freeScan && <FreeScanCountdown />}
                       </>
                     );
                   })()}
