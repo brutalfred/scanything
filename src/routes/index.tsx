@@ -2378,15 +2378,19 @@ function DetailPanel({
   item,
   imageBase64,
   live = false,
+  historyId = null,
   onClose,
 }: {
   item: TrackedItem | DetectedItem;
   imageBase64: string | null;
   /** Opened from a live video-mode box: deep analysis is half price. */
   live?: boolean;
+  /** Scan history row this item belongs to, so deep results persist. */
+  historyId?: string | null;
   onClose: () => void;
 }) {
   const deepReason: CreditReason = live ? "analyze_further_live" : "analyze_further";
+
   const isTracked = (i: TrackedItem | DetectedItem): i is TrackedItem =>
     (i as TrackedItem).id !== undefined;
 
