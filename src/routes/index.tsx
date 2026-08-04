@@ -1585,33 +1585,51 @@ function Scanner() {
             ) : (
               !isGuest && (
                 <div className="flex flex-col items-center gap-2">
-                  <Button
-                    size="lg"
-                    data-no-sound
-                    onClick={capture}
-                    disabled={!credits.canAfford(mode === "document" ? "document_scan" : "photo_scan")}
-                    className="w-full max-w-xs"
-                  >
-                    <Camera className="mr-2 h-5 w-5" />
-                    {mode === "document"
-                      ? "Scan document · "
-                      : mode === "resale"
-                        ? "Resale scan · "
-                        : "Scan · "}
-                    {scanEstimate[mode === "document" ? "document" : "photo"].learned ? "~" : ""}
-                    {scanEstimate[mode === "document" ? "document" : "photo"].credits}
-                  </Button>
-                  <p className="text-center text-[11px] text-muted-foreground">
-                    {(() => {
-                      const key: ScanMode = mode === "document" ? "document" : "photo";
-                      const est = scanEstimate[key];
-                      const base = baseScanCost(key);
-                      return est.learned && est.credits > base
-                        ? `Est. ~${est.credits} credits — ${base} to scan plus extra passes you usually run. Balance: ${credits.balance}`
-                        : `Estimated cost: ${base} credits. Balance: ${credits.balance}`;
-                    })()}
-                  </p>
-
+                  {(() => {
+                    const isDocMode = mode === "document";
+                    const freeScan = !isDocMode && credits.freeScanAvailable;
+                    return (
+                      <>
+                        <Button
+                          size="lg"
+                          data-no-sound
+                          onClick={capture}
+                          disabled={
+                            !freeScan &&
+                            !credits.canAfford(isDocMode ? "document_scan" : "photo_scan")
+                          }
+                          className="w-full max-w-xs"
+                        >
+                          <Camera className="mr-2 h-5 w-5" />
+                          {freeScan ? (
+                            "Daily free scan available"
+                          ) : (
+                            <>
+                              {isDocMode
+                                ? "Scan document · "
+                                : mode === "resale"
+                                  ? "Resale scan · "
+                                  : "Scan · "}
+                              {scanEstimate[isDocMode ? "document" : "photo"].learned ? "~" : ""}
+                              {scanEstimate[isDocMode ? "document" : "photo"].credits}
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-center text-[11px] text-muted-foreground">
+                          {(() => {
+                            const key: ScanMode = isDocMode ? "document" : "photo";
+                            const est = scanEstimate[key];
+                            const base = baseScanCost(key);
+                            if (freeScan)
+                              return `Your free daily scan — costs 0 credits. Balance: ${credits.balance}`;
+                            return est.learned && est.credits > base
+                              ? `Est. ~${est.credits} credits — ${base} to scan plus extra passes you usually run. Balance: ${credits.balance}`
+                              : `Estimated cost: ${base} credits. Balance: ${credits.balance}`;
+                          })()}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
 
               )
