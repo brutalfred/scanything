@@ -34,6 +34,8 @@ function AdminPage() {
   const checkAdmin = useServerFn(getIsAdmin);
   const grant = useServerFn(adminGrantCredits);
   const fetchGrants = useServerFn(getAdminGrants);
+  const fetchStats = useServerFn(getAdminUsageStats);
+
 
   const [email, setEmail] = useState("");
   const [amount, setAmount] = useState("100");
