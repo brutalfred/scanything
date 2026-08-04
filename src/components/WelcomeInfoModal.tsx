@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
-import { X, Coins, Video, Sparkles, Aperture } from "lucide-react";
+import { X, Coins, Video, Sparkles, Aperture, Gift } from "lucide-react";
 
 const KEY = "scanything.welcome.seen";
 
 const tips = [
+  {
+    icon: Gift,
+    title: "One free photo scan every day",
+    body: "Signed-in users get one free photo scan per day — it costs no credits and resets every day.",
+  },
   {
     icon: Coins,
     title: "AI analysis costs credits",
