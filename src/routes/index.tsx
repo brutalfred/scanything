@@ -538,15 +538,50 @@ function Scanner() {
     const w = video.videoWidth;
     const h = video.videoHeight;
     if (!w || !h) return null;
+
+    // The preview uses object-cover inside a fixed-aspect frame (plus optional
+    // pinch zoom), so the visible area is a centre crop of the raw frame.
+    // Capture exactly what the user sees — nothing from outside the frame.
+    let sx = 0;
+    let sy = 0;
+    let sw = w;
+    let sh = h;
+
+    const boxW = video.clientWidth;
+    const boxH = video.clientHeight;
+    if (boxW > 0 && boxH > 0) {
+      const boxAspect = boxW / boxH;
+      const srcAspect = w / h;
+      if (srcAspect > boxAspect) {
+        sw = h * boxAspect;
+      } else {
+        sh = w / boxAspect;
+      }
+      // Account for CSS pinch zoom applied to the video wrapper.
+      let zoom = 1;
+      const wrapper = video.parentElement;
+      if (wrapper) {
+        const m = new DOMMatrixReadOnly(getComputedStyle(wrapper).transform);
+        if (m.a > 0.01) zoom = m.a;
+      }
+      if (zoom > 1) {
+        sw /= zoom;
+        sh /= zoom;
+      }
+      sx = (w - sw) / 2;
+      sy = (h - sh) / 2;
+    }
+
     const canvas = document.createElement("canvas");
-    const scale = Math.min(1, maxDim / Math.max(w, h));
-    canvas.width = Math.round(w * scale);
-    canvas.height = Math.round(h * scale);
+    const scale = Math.min(1, maxDim / Math.max(sw, sh));
+    canvas.width = Math.round(sw * scale);
+    canvas.height = Math.round(sh * scale);
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", quality);
   }, []);
+
 
   const capture = useCallback(async () => {
     const isDoc = mode === "document";
