@@ -275,7 +275,7 @@ function FreeScanCountdown() {
         now.getUTCFullYear(),
         now.getUTCMonth(),
         now.getUTCDate() + 1,
-ว        0,
+0,
         0,
         0,
       );
