@@ -189,3 +189,34 @@ export const appendScanHistory = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Stores "Analyze further" results on the matching item inside a scan history entry. */
+export const saveScanHistoryItemDeep = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; name: string; deep: ScanHistoryDeep }) => ({
+    id: String(input?.id ?? ""),
+    name: String(input?.name ?? "").slice(0, 120),
+    deep: sanitizeDeep(input?.deep) ?? {},
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    if (!data.id || !data.name) return { ok: true };
+    const { data: row, error: readError } = await supabase
+      .from("scan_history")
+      .select("items")
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .single();
+    if (readError) throw new Error(readError.message);
+    const existing = (Array.isArray(row?.items) ? row.items : []) as ScanHistoryItem[];
+    const next = existing.map((i) =>
+      i?.name === data.name ? { ...i, deep: data.deep } : i,
+    );
+    const { error } = await supabase
+      .from("scan_history")
+      .update({ items: next })
+      .eq("id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
