@@ -14,6 +14,57 @@ export type AdminGrantEntry = {
   createdAt: string;
 };
 
+export type AdminUsageStats = {
+  visitorsToday: number;
+  visitorsWeek: number;
+  visitorsMonth: number;
+  scansToday: number;
+  scansWeek: number;
+  scansMonth: number;
+  revenueMonthUsd: number;
+  purchasesMonth: number;
+  netPayoutMonthUsd: number;
+};
+
+/** Admin-only: visitors, scans and estimated net payout. */
+export const getAdminUsageStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminUsageStats> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (isAdmin !== true) throw new Error("Not authorized");
+
+    const { data, error } = await supabaseAdmin.rpc("get_admin_usage_stats");
+    if (error) throw new Error(error.message);
+    const row = (Array.isArray(data) ? data[0] : data) ?? {};
+
+    const revenueCents = Number(row.revenue_month_cents ?? 0);
+    const purchases = Number(row.purchases_month ?? 0);
+    const revenueMonthUsd = revenueCents / 100;
+    // Payment provider fee: 5% + $0.50, or a flat 10% on sales under $10.
+    const avg = purchases > 0 ? revenueMonthUsd / purchases : 0;
+    const fees =
+      purchases === 0
+        ? 0
+        : avg < 10
+          ? revenueMonthUsd * 0.1
+          : revenueMonthUsd * 0.05 + purchases * 0.5;
+
+    return {
+      visitorsToday: Number(row.visitors_today ?? 0),
+      visitorsWeek: Number(row.visitors_week ?? 0),
+      visitorsMonth: Number(row.visitors_month ?? 0),
+      scansToday: Number(row.scans_today ?? 0),
+      scansWeek: Number(row.scans_week ?? 0),
+      scansMonth: Number(row.scans_month ?? 0),
+      revenueMonthUsd,
+      purchasesMonth: purchases,
+      netPayoutMonthUsd: Math.max(0, revenueMonthUsd - fees),
+    };
+  });
 
 
 
