@@ -2644,7 +2644,7 @@ function DetailPanel({
                 {nameTranslation?.category || enrichment.category}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground">Analyzing details…</p>
+              <p className="text-xs text-muted-foreground">{t("analyzingDetails")}</p>
             )}
           </div>
           <button
