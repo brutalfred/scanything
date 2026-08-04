@@ -248,8 +248,11 @@ export const quickScan = createServerFn({ method: "POST" })
     const { withCredits } = await import("./credits.server");
     const content = await withCredits("quick_scan", context.userId, () =>
       callGateway("quick_scan", {
-        model: "google/gemini-3-flash-preview",
+        // Sweep mode: smallest/fastest model, capped output — speed over accuracy.
+        model: "google/gemini-2.5-flash-lite",
         response_format: { type: "json_object" },
+        temperature: 0,
+        max_tokens: 900,
         messages: [
           { role: "system", content: QUICK_SYSTEM },
           {
@@ -381,6 +384,8 @@ function clamp01(n: number) {
 const DeepInput = z.object({
   name: z.string().min(1),
   imageBase64: z.string().min(100),
+  /** Started from a live video-mode box: half credit cost. */
+  live: z.boolean().optional(),
 }).merge(EnvironmentSchema);
 
 
@@ -401,8 +406,9 @@ export const analyzeFurther = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => DeepInput.parse(data))
   .handler(async ({ data, context }): Promise<DeepAnalysis> => {
     const { withCredits } = await import("./credits.server");
-    const content = await withCredits("analyze_further", context.userId, () =>
-      callGateway("analyze_further", {
+    const reason = data.live ? "analyze_further_live" : "analyze_further";
+    const content = await withCredits(reason, context.userId, () =>
+      callGateway(reason, {
         model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
