@@ -2687,7 +2687,7 @@ function DetailPanel({
               <div className="mt-4 rounded-lg border border-primary/40 bg-primary/5 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-xs font-medium text-muted-foreground">
-                    Second-hand resale value
+                    {t("resaleValue")}
                   </div>
                   <span
                     className={`rounded-full border px-2 py-[2px] text-[10px] font-bold uppercase leading-none ${
@@ -2696,15 +2696,16 @@ function DetailPanel({
                         : "border-border bg-secondary text-muted-foreground"
                     }`}
                   >
-                    {item.resale.verdict === "sell" ? "Worth selling" : "Not worth it"}
+                    {item.resale.verdict === "sell" ? t("worthSelling") : t("notWorthIt")}
                   </span>
                 </div>
                 <div className="mt-1 text-xl font-semibold text-foreground tabular-nums">
                   ${item.resale.typical}
                   <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    typical (${item.resale.low}–${item.resale.high} {item.resale.currency})
+                    {t("typical")} (${item.resale.low}–${item.resale.high} {item.resale.currency})
                   </span>
                 </div>
+
                 {item.resale.reason && (
                   <p className="mt-1.5 text-xs text-muted-foreground">{item.resale.reason}</p>
                 )}
