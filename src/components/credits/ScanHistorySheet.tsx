@@ -180,6 +180,57 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
           </p>
         )}
 
+        {item.deep && (
+          <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+              {t("deepAnalysis")}
+              {typeof item.deep.confidence === "number" && ` · ${Math.round(item.deep.confidence)}%`}
+            </div>
+            {(item.deep.brand || item.deep.product) && (
+              <div className="mt-1 text-sm font-medium text-foreground">
+                {[item.deep.brand, item.deep.product].filter(Boolean).join(" — ")}
+              </div>
+            )}
+            {item.deep.description && (
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {item.deep.description}
+              </p>
+            )}
+            {item.category !== "person" &&
+              item.category !== "plate" &&
+              (Number(item.deep.priceMin) > 0 || Number(item.deep.priceMax) > 0) && (
+                <p className="mt-2 text-sm font-semibold text-primary">
+                  ${item.deep.priceMin}–${item.deep.priceMax} {item.deep.currency ?? ""}
+                </p>
+              )}
+            <div className="mt-2 flex flex-col gap-2">
+              {item.deep.buyUrl && (
+                <a
+                  href={item.deep.buyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                >
+                  {tl(1)}
+                  <ExternalLink className="h-4 w-4 opacity-60" />
+                </a>
+              )}
+              {item.deep.infoUrl && (
+                <a
+                  href={item.deep.infoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                >
+                  {tl(2)}
+                  <ExternalLink className="h-4 w-4 opacity-60" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+
         {showPrice && (
           <div className="mt-4 rounded-lg bg-secondary p-3">
             <div className="text-xs font-medium text-muted-foreground">{tl(0)}</div>
