@@ -3,7 +3,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { adminGrantCredits, getAdminGrants, getIsAdmin } from "@/lib/admin.functions";
+import {
+  adminGrantCredits,
+  getAdminGrants,
+  getAdminUsageStats,
+  getIsAdmin,
+} from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
