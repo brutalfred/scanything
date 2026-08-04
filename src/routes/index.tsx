@@ -71,7 +71,11 @@ import {
 
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
-import { saveScanHistory, appendScanHistory } from "@/lib/scan-history.functions";
+import {
+  saveScanHistory,
+  appendScanHistory,
+  saveScanHistoryItemDeep,
+} from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useLanguage } from "@/hooks/useLanguage";
 import { LANGUAGE_TAG } from "@/lib/i18n";
@@ -1940,7 +1944,9 @@ function Scanner() {
         <DetailPanel
           item={selected}
           live={mode === "video"}
+          historyId={historyIdRef.current}
           imageBase64={selectedImage}
+
           onClose={() => {
             setSelected(null);
             setSelectedImage(null);
@@ -2376,15 +2382,19 @@ function DetailPanel({
   item,
   imageBase64,
   live = false,
+  historyId = null,
   onClose,
 }: {
   item: TrackedItem | DetectedItem;
   imageBase64: string | null;
   /** Opened from a live video-mode box: deep analysis is half price. */
   live?: boolean;
+  /** Scan history row this item belongs to, so deep results persist. */
+  historyId?: string | null;
   onClose: () => void;
 }) {
   const deepReason: CreditReason = live ? "analyze_further_live" : "analyze_further";
+
   const isTracked = (i: TrackedItem | DetectedItem): i is TrackedItem =>
     (i as TrackedItem).id !== undefined;
 
@@ -2432,12 +2442,18 @@ function DetailPanel({
       });
 
       setDeep(result);
+      if (historyId) {
+        void saveScanHistoryItemDeep({ data: { id: historyId, name, deep: result } }).catch(
+          () => {},
+        );
+      }
     } catch (e) {
       setDeepError(e instanceof Error ? e.message : "Analysis failed.");
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits, live, deepReason]);
+  }, [imageBase64, name, panelCredits, live, deepReason, historyId]);
+
 
   const runTranslate = useCallback(async () => {
     if (!panelCredits.spend("translate")) return;

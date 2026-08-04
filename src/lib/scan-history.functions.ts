@@ -1,6 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export type ScanHistoryDeep = {
+  brand?: string;
+  product?: string;
+  confidence?: number;
+  description?: string;
+  priceMin?: number;
+  priceMax?: number;
+  currency?: string;
+  buyUrl?: string;
+  infoUrl?: string;
+};
+
 export type ScanHistoryItem = {
   name: string;
   category?: string;
@@ -8,7 +20,27 @@ export type ScanHistoryItem = {
   confidence?: number;
   priceMin?: number;
   priceMax?: number;
+  deep?: ScanHistoryDeep;
 };
+
+function sanitizeDeep(d: unknown): ScanHistoryDeep | undefined {
+  if (!d || typeof d !== "object") return undefined;
+  const o = d as Record<string, unknown>;
+  const str = (v: unknown, n: number) => (typeof v === "string" && v ? v.slice(0, n) : undefined);
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  return {
+    brand: str(o.brand, 120),
+    product: str(o.product, 160),
+    confidence: num(o.confidence),
+    description: str(o.description, 1500),
+    priceMin: num(o.priceMin),
+    priceMax: num(o.priceMax),
+    currency: str(o.currency, 8),
+    buyUrl: str(o.buyUrl, 500),
+    infoUrl: str(o.infoUrl, 500),
+  };
+}
+
 
 export type ScanHistoryEntry = {
   id: string;
@@ -52,6 +84,8 @@ export const saveScanHistory = createServerFn({ method: "POST" })
         confidence: typeof i?.confidence === "number" ? i.confidence : undefined,
         priceMin: typeof i?.priceMin === "number" ? i.priceMin : undefined,
         priceMax: typeof i?.priceMax === "number" ? i.priceMax : undefined,
+        deep: sanitizeDeep(i?.deep),
+
       })),
     };
   })
@@ -133,6 +167,8 @@ export const appendScanHistory = createServerFn({ method: "POST" })
       confidence: typeof i?.confidence === "number" ? i.confidence : undefined,
       priceMin: typeof i?.priceMin === "number" ? i.priceMin : undefined,
       priceMax: typeof i?.priceMax === "number" ? i.priceMax : undefined,
+      deep: sanitizeDeep(i?.deep),
+
     })),
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
@@ -148,6 +184,37 @@ export const appendScanHistory = createServerFn({ method: "POST" })
     const { error } = await supabase
       .from("scan_history")
       .update({ items: [...existing, ...data.items].slice(0, 400) })
+      .eq("id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Stores "Analyze further" results on the matching item inside a scan history entry. */
+export const saveScanHistoryItemDeep = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; name: string; deep: ScanHistoryDeep }) => ({
+    id: String(input?.id ?? ""),
+    name: String(input?.name ?? "").slice(0, 120),
+    deep: sanitizeDeep(input?.deep) ?? {},
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    if (!data.id || !data.name) return { ok: true };
+    const { data: row, error: readError } = await supabase
+      .from("scan_history")
+      .select("items")
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .single();
+    if (readError) throw new Error(readError.message);
+    const existing = (Array.isArray(row?.items) ? row.items : []) as ScanHistoryItem[];
+    const next = existing.map((i) =>
+      i?.name === data.name ? { ...i, deep: data.deep } : i,
+    );
+    const { error } = await supabase
+      .from("scan_history")
+      .update({ items: next })
       .eq("id", data.id)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
