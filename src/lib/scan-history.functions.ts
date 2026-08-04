@@ -84,6 +84,8 @@ export const saveScanHistory = createServerFn({ method: "POST" })
         confidence: typeof i?.confidence === "number" ? i.confidence : undefined,
         priceMin: typeof i?.priceMin === "number" ? i.priceMin : undefined,
         priceMax: typeof i?.priceMax === "number" ? i.priceMax : undefined,
+        deep: sanitizeDeep(i?.deep),
+
       })),
     };
   })
