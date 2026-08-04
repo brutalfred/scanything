@@ -213,3 +213,33 @@ function AdminPage() {
     </main>
   );
 }
+
+function StatRow({
+  label,
+  today,
+  week,
+  month,
+}: {
+  label: string;
+  today: number;
+  week: number;
+  month: number;
+}) {
+  return (
+    <div>
+      <p className="mb-1 text-[11px] uppercase tracking-wide opacity-70">{label}</p>
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          ["Today", today],
+          ["This week", week],
+          ["This month", month],
+        ].map(([l, v]) => (
+          <div key={String(l)} className="rounded-xl border border-current/20 p-2 text-center">
+            <p className="text-lg font-bold text-primary">{v}</p>
+            <p className="text-[10px] opacity-70">{l}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
