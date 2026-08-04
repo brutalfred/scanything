@@ -1940,7 +1940,9 @@ function Scanner() {
         <DetailPanel
           item={selected}
           live={mode === "video"}
+          historyId={historyIdRef.current}
           imageBase64={selectedImage}
+
           onClose={() => {
             setSelected(null);
             setSelectedImage(null);
