@@ -2512,11 +2512,17 @@ function DetailPanel({
    * user browses the app in something other than English.
    */
   useEffect(() => {
-    if (appLanguage === "English") return;
+    if (appLanguage === "English") {
+      // Back to English: drop any AI translation so the original text shows again.
+      setNameTranslation((prev) => (prev ? null : prev));
+      setNameTranslateError(null);
+      return;
+    }
     if (nameTranslation?.language === appLanguage) return;
     void runNameTranslate(appLanguage);
     // Re-run when the item, its details or the app language change.
   }, [appLanguage, nameTranslation?.language, runNameTranslate]);
+
 
   /** Localized UI label helper: AI translation first, then the built-in dictionary. */
   const tl = useCallback(
