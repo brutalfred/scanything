@@ -265,6 +265,37 @@ function usePinchZoom(min = 1, max = 5) {
   return { scale, pinching, reset, handlers, transformStyle };
 }
 
+/** Small countdown to the next free daily scan (resets at midnight UTC). */
+function FreeScanCountdown() {
+  const [left, setLeft] = useState("");
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const next = Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() + 1,
+ว        0,
+        0,
+        0,
+      );
+      const ms = Math.max(0, next - now.getTime());
+      const h = Math.floor(ms / 3_600_000);
+      const m = Math.floor((ms % 3_600_000) / 60_000);
+      const s = Math.floor((ms % 60_000) / 1000);
+      setLeft(`${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <p className="text-center text-[11px] text-muted-foreground">
+      Next free daily scan in {left}
+    </p>
+  );
+}
+
 function Index() {
   return (
     <CreditsProvider>
