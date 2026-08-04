@@ -2734,9 +2734,9 @@ function DetailPanel({
                   {tl(3)}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Owner details are not public. Use an official registry below — you must be
-                  authorised and sign in with your own credentials.
+                  {t("plateOwnerNotice")}
                 </p>
+
                 <div className="mt-2 flex flex-col gap-2">
                   {plateLookupLinks(name, enrichment.description).map((l) => (
                     <a
