@@ -101,11 +101,55 @@ function AdminPage() {
     <main className="min-h-screen bg-background p-5 text-foreground">
       <div className="mx-auto max-w-md">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h1 className="text-xl font-bold text-primary">Grant credits</h1>
+          <h1 className="text-xl font-bold text-primary">Admin</h1>
           <Link to="/" className="text-xs font-semibold text-primary underline">
             Back
           </Link>
         </div>
+
+        <section className="theme-panel gold-glow mb-6 rounded-2xl p-4">
+          <h2 className="mb-3 text-sm font-semibold text-primary">App stats</h2>
+          {stats.isLoading ? (
+            <p className="text-xs opacity-70">Loading…</p>
+          ) : stats.data ? (
+            <div className="space-y-4">
+              <StatRow
+                label="Signed-in visitors"
+                today={stats.data.visitorsToday}
+                week={stats.data.visitorsWeek}
+                month={stats.data.visitorsMonth}
+              />
+              <StatRow
+                label="Scans"
+                today={stats.data.scansToday}
+                week={stats.data.scansWeek}
+                month={stats.data.scansMonth}
+              />
+              <div className="rounded-xl border border-current/20 p-3">
+                <p className="text-[11px] uppercase tracking-wide opacity-70">
+                  Net payout estimate (this month)
+                </p>
+                <p className="text-xl font-bold text-primary">
+                  ${stats.data.netPayoutMonthUsd.toFixed(2)}
+                </p>
+                <p className="text-[11px] opacity-70">
+                  From ${stats.data.revenueMonthUsd.toFixed(2)} across{" "}
+                  {stats.data.purchasesMonth} purchase
+                  {stats.data.purchasesMonth === 1 ? "" : "s"}, after processing fees.
+                </p>
+              </div>
+              <p className="text-[11px] opacity-60">
+                Visitors count unique accounts active per period (UTC). Weeks and months
+                start on the 1st / Monday.
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs opacity-70">Stats unavailable.</p>
+          )}
+        </section>
+
+        <h2 className="mb-2 text-sm font-semibold text-primary">Grant credits</h2>
+
 
         <form
           onSubmit={onSubmit}
