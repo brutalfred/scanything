@@ -6,6 +6,8 @@ export const CREDIT_COSTS = {
   document_scan: 1,
   enrich: 1,
   analyze_further: 5,
+  /** Deep analysis started from a live video-mode box — half price. */
+  analyze_further_live: 2,
   translate: 1,
   person_info: 3,
 } as const;
@@ -18,6 +20,7 @@ export const CREDIT_LABELS: Record<CreditReason, string> = {
   document_scan: "Document scan",
   enrich: "Item details",
   analyze_further: "Analyze further",
+  analyze_further_live: "Analyze further (live scan)",
   translate: "Translate",
   person_info: "Person lookup",
 };
