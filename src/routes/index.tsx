@@ -685,7 +685,7 @@ function Scanner() {
       if (detected.length) {
         void saveScanHistory({
           data: {
-            mode: isDoc ? "document" : "photo",
+            mode: isDoc ? "document" : isResale ? "resale" : "photo",
             items: detected.map((d) => ({
               name: d.name,
               category: d.category,
@@ -778,7 +778,9 @@ function Scanner() {
           // Same scan — append to the existing history entry instead of creating a new one.
           void appendScanHistory({ data: { id: existingId, items: payload } }).catch(() => {});
         } else {
-          void saveScanHistory({ data: { mode: "photo", items: payload } })
+          void saveScanHistory({
+            data: { mode: mode === "resale" ? "resale" : "photo", items: payload },
+          })
             .then((row) => {
               historyIdRef.current = row.id;
             })
