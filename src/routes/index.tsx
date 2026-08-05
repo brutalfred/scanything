@@ -2423,6 +2423,17 @@ function DetailPanel({
   const [translateError, setTranslateError] = useState<string | null>(null);
   const showTranslate = hasNonLatin(name);
 
+  const [extraShots, setExtraShots] = useState<string[]>([]);
+  const extraInputRef = useRef<HTMLInputElement | null>(null);
+
+  const addExtraShots = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const room = Math.max(0, 4 - extraShots.length);
+    const picked = Array.from(files).slice(0, room);
+    const shots = await Promise.all(picked.map((f) => fileToCompressedDataUrl(f)));
+    setExtraShots((prev) => [...prev, ...shots.filter(Boolean).map((s) => s as string)].slice(0, 4));
+  }, [extraShots.length]);
+
   const runDeep = useCallback(async () => {
     if (!panelCredits.spend(deepReason)) return;
     if (!imageBase64) {
@@ -2436,6 +2447,7 @@ function DetailPanel({
         data: {
           name,
           imageBase64: imageBase64.replace(/^data:[^,]+,/, ""),
+          extraImages: extraShots.map((s) => s.replace(/^data:[^,]+,/, "")),
           live,
           environment: getPaddleEnvironment(),
         },
@@ -2452,7 +2464,7 @@ function DetailPanel({
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits, live, deepReason, historyId]);
+  }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots]);
 
 
   const runTranslate = useCallback(async () => {
