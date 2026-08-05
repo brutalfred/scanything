@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "cap:sync": "cap sync android",
-    "cap:open": "cap open android"
+    "cap:open": "cap open android",
+    "build:android": "npm run build && npm run cap:sync && npm run cap:open"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
