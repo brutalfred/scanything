@@ -2444,6 +2444,8 @@ function DetailPanel({
 
   const [extraShots, setExtraShots] = useState<string[]>([]);
   const extraInputRef = useRef<HTMLInputElement | null>(null);
+  const replaceInputRef = useRef<HTMLInputElement | null>(null);
+  const replaceIndexRef = useRef<number | null>(null);
 
   const addExtraShots = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -2454,6 +2456,15 @@ function DetailPanel({
       [...prev, ...shots.filter((s): s is string => typeof s === "string")].slice(0, 4),
     );
   }, [extraShots.length]);
+
+  const replaceExtraShot = useCallback(async (files: FileList | null) => {
+    const idx = replaceIndexRef.current;
+    replaceIndexRef.current = null;
+    if (idx === null || !files || files.length === 0) return;
+    const shot = await fileToCompressedDataUrl(files[0]);
+    if (!shot) return;
+    setExtraShots((prev) => prev.map((s, j) => (j === idx ? shot : s)));
+  }, []);
 
   const runDeep = useCallback(async () => {
     if (!panelCredits.spend(deepReason)) return;
