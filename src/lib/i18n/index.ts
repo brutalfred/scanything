@@ -133,6 +133,14 @@ export const EN = {
   photoScans: "Photo scans",
   creditsSpent: "Credits spent",
   soundEffects: "Sound effects",
+  cameraAccess: "Camera access",
+  cameraGranted: "Granted — you won't be asked again",
+  cameraGrantButton: "Grant camera access",
+  cameraRequesting: "Requesting…",
+  cameraDeniedHelp:
+    "Blocked by your browser. Open the site settings (padlock icon in the address bar) and allow the camera.",
+  cameraPromptHelp:
+    "Allow once here and choose \"Allow while visiting this site\" so you aren't asked again.",
   muted: "Muted",
   on: "On",
   theme: "Theme",
