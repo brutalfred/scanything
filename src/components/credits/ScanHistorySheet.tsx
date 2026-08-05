@@ -276,6 +276,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
   const [selectedItem, setSelectedItem] = useState<ScanHistoryItem | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [folder, setFolder] = useState<FolderKey | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
