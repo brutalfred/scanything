@@ -2880,26 +2880,69 @@ function DetailPanel({
                     e.target.value = "";
                   }}
                 />
+                <input
+                  ref={replaceInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    void replaceExtraShot(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
                 {extraShots.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {extraShots.map((src, i) => (
-                      <div key={i} className="relative">
-                        <img
-                          src={src}
-                          alt={`${name} ${i + 2}`}
-                          className="h-14 w-14 rounded-md border border-border object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setExtraShots((prev) => prev.filter((_, j) => j !== i))}
-                          className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
-                          aria-label={t("close")}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {extraShots.map((src, i) => (
+                        <div key={i} className="relative">
+                          <button
+                            type="button"
+                            disabled={deepLoading}
+                            onClick={() => {
+                              replaceIndexRef.current = i;
+                              replaceInputRef.current?.click();
+                            }}
+                            className="group block h-14 w-14 overflow-hidden rounded-md border border-border"
+                            title={t("replacePhoto")}
+                            aria-label={t("replacePhoto")}
+                          >
+                            <img
+                              src={src}
+                              alt={`${name} ${i + 2}`}
+                              className="h-full w-full object-cover transition group-hover:opacity-60"
+                            />
+                            <span className="pointer-events-none absolute inset-0 hidden items-center justify-center group-hover:flex">
+                              <RefreshCw className="h-4 w-4 text-foreground" />
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deepLoading}
+                            onClick={() => setExtraShots((prev) => prev.filter((_, j) => j !== i))}
+                            className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
+                            title={t("removePhoto")}
+                            aria-label={t("removePhoto")}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <p className="text-[11px] text-muted-foreground">{t("tapPhotoToReplace")}</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={deepLoading}
+                        onClick={() => setExtraShots([])}
+                        className="h-7 px-2 text-[11px]"
+                      >
+                        {t("removeAllPhotos")}
+                      </Button>
+                    </div>
+                  </>
                 )}
               </div>
 
