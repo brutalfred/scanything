@@ -4,7 +4,7 @@ import { gatewayFetch } from "@/lib/paddle.server";
 
 const PriceSchema = z.object({
   priceId: z.string().min(1).max(120),
-  environment: z.enum(["sandbox", "production"]),
+  environment: z.enum(["sandbox", "live"]),
 });
 
 export const resolvePaddlePrice = createServerFn({ method: "GET" })
