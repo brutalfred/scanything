@@ -2445,9 +2445,34 @@ function DetailPanel({
   const showTranslate = hasNonLatin(name);
 
   const [extraShots, setExtraShots] = useState<string[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const extraInputRef = useRef<HTMLInputElement | null>(null);
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
   const replaceIndexRef = useRef<number | null>(null);
+
+  // Optional preview: how much extra photos are expected to sharpen the result.
+  const resultPreview = useMemo(() => {
+    const n = extraShots.length;
+    const base = typeof enrichment?.confidence === "number" ? enrichment.confidence : 0.55;
+    // diminishing returns: +12%, +7%, +4%, +2% of the remaining headroom gap
+    const gains = [0, 0.12, 0.19, 0.23, 0.25];
+    const gain = gains[Math.min(n, 4)] ?? 0.25;
+    const expected = Math.min(0.97, base + (1 - base) * gain);
+
+    const lo = enrichment?.priceMin;
+    const hi = enrichment?.priceMax;
+    let priceLo: number | undefined;
+    let priceHi: number | undefined;
+    if (typeof lo === "number" && typeof hi === "number" && hi >= lo) {
+      // range narrows toward the midpoint as photos are added
+      const narrow = [0, 0.18, 0.3, 0.38, 0.44][Math.min(n, 4)] ?? 0.44;
+      const mid = (lo + hi) / 2;
+      priceLo = Math.round(mid - (mid - lo) * (1 - narrow));
+      priceHi = Math.round(mid + (hi - mid) * (1 - narrow));
+    }
+    return { count: n + 1, expected, base, priceLo, priceHi };
+  }, [extraShots.length, enrichment?.confidence, enrichment?.priceMin, enrichment?.priceMax]);
+
 
   const addExtraShots = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -2995,7 +3020,57 @@ function DetailPanel({
                     </div>
                   </>
                 )}
+                <div className="mt-3 border-t border-border pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview((v) => !v)}
+                    className="flex w-full items-center justify-between text-[11px] font-medium text-foreground"
+                  >
+                    <span>{t("expectedResultPreview")}</span>
+                    <span className="text-muted-foreground">
+                      {showPreview ? t("hidePreview") : t("showPreview")}
+                    </span>
+                  </button>
+
+                  {showPreview && (
+                    <div className="mt-2 space-y-2">
+                      <div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">
+                            {t("expectedConfidence")} · {resultPreview.count} {t("photosLabel")}
+                          </span>
+                          <span className="font-semibold text-foreground">
+                            {Math.round(resultPreview.expected * 100)}%
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-300"
+                            style={{ width: `${Math.round(resultPreview.expected * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {resultPreview.priceLo !== undefined && resultPreview.priceHi !== undefined && (
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">{t("expectedPriceRange")}</span>
+                          <span className="font-semibold text-foreground">
+                            {enrichment?.currency ?? "$"}
+                            {resultPreview.priceLo} – {enrichment?.currency ?? "$"}
+                            {resultPreview.priceHi}
+                          </span>
+                        </div>
+                      )}
+
+                      <p className="text-[10px] leading-relaxed text-muted-foreground">
+                        {extraShots.length < 4 ? `${t("previewAddMore")} ` : ""}
+                        {t("previewPhotoQualityTip")} {t("previewEstimateNote")}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
+
 
               <Button
                 variant="secondary"
