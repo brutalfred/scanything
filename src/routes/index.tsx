@@ -195,6 +195,24 @@ const NAME_LANGUAGES = [
 
 // Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
 // Any code point >= U+0370 excluding common punctuation counts as non-Latin.
+/** Downscale a user-picked photo to a compact JPEG data URL for AI analysis. */
+async function fileToCompressedDataUrl(file: File, maxDim = 1024, quality = 0.8): Promise<string | null> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    return canvas.toDataURL("image/jpeg", quality);
+  } catch {
+    return null;
+  }
+}
+
 function hasNonLatin(text: string) {
   for (const ch of text) {
     const cp = ch.codePointAt(0)!;
