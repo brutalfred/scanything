@@ -6,12 +6,19 @@ AAB upload is only needed for wrapper, permission, icon or billing changes.
 
 ## 1. One-time local setup
 
-Requires Node 20+, Java 17 and Android Studio. The native `android/` project is
-already generated and committed, with camera, flashlight and billing
-permissions set in `android/app/src/main/AndroidManifest.xml`.
+Requires **Node 20 or later** (Node 22 LTS is fine), Java 17 and Android Studio. The native `android/` project is already generated and committed, with camera, flashlight and billing permissions set in `android/app/src/main/AndroidManifest.xml`.
 
 ```bash
 npm install
+npm run build:android
+```
+
+This single command builds the web app, copies it into the Android project, and opens Android Studio for you.
+
+If you prefer the manual steps:
+
+```bash
+npm run build
 npm run cap:sync
 npm run cap:open
 ```
