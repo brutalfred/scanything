@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { isNative } from "@/lib/platform";
 
 export type CameraPermissionState = "granted" | "prompt" | "denied" | "unknown";
 
@@ -64,5 +63,5 @@ export function useCameraPermission() {
     }
   }, []);
 
-  return { state, requesting, request, supported: !isNative() || true };
+  return { state, requesting, request };
 }
