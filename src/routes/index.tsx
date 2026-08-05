@@ -28,6 +28,7 @@ import {
   Check,
   Pencil,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 
 import { toast } from "sonner";
