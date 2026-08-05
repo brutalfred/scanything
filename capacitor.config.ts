@@ -8,7 +8,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * require a new AAB.
  */
 const config: CapacitorConfig = {
-  appId: "app.scanything",
+  appId: "app.scanything.scanything",
   appName: "Scanything",
   webDir: "dist/client",
   android: {

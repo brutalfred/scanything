@@ -1,4 +1,4 @@
-package app.scanything;
+package app.scanything.scanything;
 
 import com.getcapacitor.BridgeActivity;
 
