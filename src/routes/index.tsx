@@ -510,22 +510,63 @@ function Scanner() {
   }, [phase, items]);
 
 
+  const startingRef = useRef(false);
+
+  const attachStream = useCallback(async (stream: MediaStream) => {
+    // The <video> element may not be mounted yet on the first attempt.
+    for (let i = 0; i < 20; i++) {
+      if (videoRef.current) break;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    if (!videoRef.current) return;
+    videoRef.current.srcObject = stream;
+    try {
+      await videoRef.current.play();
+    } catch {
+      /* autoplay can reject if the element is re-mounted; the stream is still live */
+    }
+  }, []);
+
   const startCamera = useCallback(async () => {
+    if (startingRef.current) return false;
+    startingRef.current = true;
     setError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 1280 },
-        },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        setError(
+          typeof window !== "undefined" && !window.isSecureContext
+            ? "Camera needs a secure (https) connection."
+            : "This browser does not support camera access.",
+        );
+        return false;
       }
+
+      // Never hold two streams at once — some devices refuse the second request.
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 1280 },
+          },
+          audio: false,
+        });
+      } catch (e) {
+        const name = e instanceof Error ? e.name : "";
+        if (name === "OverconstrainedError" || name === "NotFoundError") {
+          // Fall back to any available camera.
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } else {
+          throw e;
+        }
+      }
+
+      streamRef.current = stream;
+      await attachStream(stream);
       const track = stream.getVideoTracks()[0];
       const caps = (track?.getCapabilities?.() ?? {}) as MediaTrackCapabilities & {
         torch?: boolean;
@@ -534,14 +575,24 @@ function Scanner() {
       setTorchOn(false);
       return true;
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? `Camera access denied: ${e.message}. Retrying in 5s…`
-          : "Could not access camera. Retrying in 5s…",
-      );
+      const name = e instanceof Error ? e.name : "";
+      const msg =
+        name === "NotAllowedError" || name === "SecurityError"
+          ? "Camera access was blocked. Allow the camera in your browser settings, then reload."
+          : name === "NotReadableError" || name === "AbortError"
+            ? "Camera is in use by another app or tab. Close it and we'll retry."
+            : name === "NotFoundError"
+              ? "No camera found on this device."
+              : e instanceof Error
+                ? `Could not access camera: ${e.message}`
+                : "Could not access camera.";
+      setError(`${msg} Retrying in 5s…`);
       return false;
+    } finally {
+      startingRef.current = false;
     }
-  }, []);
+  }, [attachStream]);
+
 
 
   const stopCamera = useCallback(() => {
