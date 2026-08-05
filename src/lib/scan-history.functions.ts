@@ -75,7 +75,9 @@ export const saveScanHistory = createServerFn({ method: "POST" })
   .inputValidator((input: { mode?: string; items: ScanHistoryItem[]; title?: string | null }) => {
     const items = Array.isArray(input?.items) ? input.items.slice(0, 200) : [];
     return {
-      mode: input?.mode === "video" ? "video" : "photo",
+      mode: ["video", "document", "resale"].includes(String(input?.mode))
+        ? String(input?.mode)
+        : "photo",
       title: typeof input?.title === "string" ? input.title.slice(0, 120) : null,
       items: items.map((i) => ({
         name: String(i?.name ?? "").slice(0, 120),
