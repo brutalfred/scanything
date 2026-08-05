@@ -13,6 +13,8 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
+    // Lets the remote-loaded web app detect that it runs inside the Play shell.
+    appendUserAgent: "ScanythingAndroid",
   },
   server: {
     url: "https://scanything.app",
