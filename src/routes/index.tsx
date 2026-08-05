@@ -2571,7 +2571,9 @@ function DetailPanel({
           name,
           imageBase64: imageBase64.replace(/^data:[^,]+,/, ""),
           extraImages: extraShots.map((s) => s.replace(/^data:[^,]+,/, "")),
+          userNote: extraNote.trim() || undefined,
           live,
+
           environment: getPaddleEnvironment(),
         },
       });
