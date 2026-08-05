@@ -28,6 +28,7 @@ import {
   Check,
   Pencil,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -195,6 +196,24 @@ const NAME_LANGUAGES = [
 
 // Detect non-Latin script characters (Chinese, Arabic, Japanese, Korean, etc.)
 // Any code point >= U+0370 excluding common punctuation counts as non-Latin.
+/** Downscale a user-picked photo to a compact JPEG data URL for AI analysis. */
+async function fileToCompressedDataUrl(file: File, maxDim = 1024, quality = 0.8): Promise<string | null> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    return canvas.toDataURL("image/jpeg", quality);
+  } catch {
+    return null;
+  }
+}
+
 function hasNonLatin(text: string) {
   for (const ch of text) {
     const cp = ch.codePointAt(0)!;
@@ -2423,6 +2442,19 @@ function DetailPanel({
   const [translateError, setTranslateError] = useState<string | null>(null);
   const showTranslate = hasNonLatin(name);
 
+  const [extraShots, setExtraShots] = useState<string[]>([]);
+  const extraInputRef = useRef<HTMLInputElement | null>(null);
+
+  const addExtraShots = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const room = Math.max(0, 4 - extraShots.length);
+    const picked = Array.from(files).slice(0, room);
+    const shots = await Promise.all(picked.map((f) => fileToCompressedDataUrl(f)));
+    setExtraShots((prev) =>
+      [...prev, ...shots.filter((s): s is string => typeof s === "string")].slice(0, 4),
+    );
+  }, [extraShots.length]);
+
   const runDeep = useCallback(async () => {
     if (!panelCredits.spend(deepReason)) return;
     if (!imageBase64) {
@@ -2436,6 +2468,7 @@ function DetailPanel({
         data: {
           name,
           imageBase64: imageBase64.replace(/^data:[^,]+,/, ""),
+          extraImages: extraShots.map((s) => s.replace(/^data:[^,]+,/, "")),
           live,
           environment: getPaddleEnvironment(),
         },
@@ -2452,7 +2485,7 @@ function DetailPanel({
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits, live, deepReason, historyId]);
+  }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots]);
 
 
   const runTranslate = useCallback(async () => {
@@ -2800,6 +2833,65 @@ function DetailPanel({
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
 
+              <div className="rounded-lg border border-border bg-background/60 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-foreground">
+                    {t("addPhotoOfItem")}
+                    {extraShots.length > 0 && (
+                      <span className="ml-1 text-muted-foreground">
+                        · {extraShots.length + 1} {t("photosLabel")}
+                      </span>
+                    )}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={extraShots.length >= 4 || deepLoading}
+                    onClick={() => extraInputRef.current?.click()}
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    {t("addPhotoOfItem")}
+                  </Button>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                  {t("extraPhotosHint")}
+                </p>
+                <input
+                  ref={extraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void addExtraShots(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                {extraShots.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {extraShots.map((src, i) => (
+                      <div key={i} className="relative">
+                        <img
+                          src={src}
+                          alt={`${name} ${i + 2}`}
+                          className="h-14 w-14 rounded-md border border-border object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setExtraShots((prev) => prev.filter((_, j) => j !== i))}
+                          className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
+                          aria-label={t("close")}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Button
                 variant="secondary"
                 onClick={runDeep}
@@ -2814,7 +2906,11 @@ function DetailPanel({
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    {t("analyzeFurther")} · {CREDIT_COSTS[deepReason]}
+                    {extraShots.length > 0
+                      ? `${t("reanalyzeWithPhotos")} (${extraShots.length + 1})`
+                      : t("analyzeFurther")}{" "}
+                    · {CREDIT_COSTS[deepReason]}
+
                   </>
                 )}
               </Button>

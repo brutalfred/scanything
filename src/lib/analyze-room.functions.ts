@@ -384,6 +384,8 @@ function clamp01(n: number) {
 const DeepInput = z.object({
   name: z.string().min(1),
   imageBase64: z.string().min(100),
+  /** Additional user-supplied photos of the same object (other angles/close-ups). */
+  extraImages: z.array(z.string().min(100)).max(4).optional(),
   /** Started from a live video-mode box: half credit cost. */
   live: z.boolean().optional(),
 }).merge(EnvironmentSchema);
@@ -407,6 +409,8 @@ export const analyzeFurther = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<DeepAnalysis> => {
     const { withCredits } = await import("./credits.server");
     const reason = data.live ? "analyze_further_live" : "analyze_further";
+    const extras = (data.extraImages ?? []).slice(0, 4);
+    const total = 1 + extras.length;
     const content = await withCredits(reason, context.userId, () =>
       callGateway(reason, {
         model: "google/gemini-2.5-pro",
@@ -418,9 +422,16 @@ export const analyzeFurther = createServerFn({ method: "POST" })
             content: [
               {
                 type: "text",
-                text: `Identify the EXACT product for: ${data.name}. Give best-guess brand, model, refined price. JSON only.`,
+                text:
+                  total > 1
+                    ? `Identify the EXACT product for: ${data.name}. All ${total} images show the SAME single object from different angles/close-ups — combine every detail you can read across them (labels, logos, model numbers, wear, materials) into one identification, and raise confidence only if the images agree. JSON only.`
+                    : `Identify the EXACT product for: ${data.name}. Give best-guess brand, model, refined price. JSON only.`,
               },
               { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
+              ...extras.map((img) => ({
+                type: "image_url" as const,
+                image_url: { url: toDataUrl(img) },
+              })),
             ],
           },
         ],
