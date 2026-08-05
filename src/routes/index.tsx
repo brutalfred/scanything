@@ -3020,7 +3020,57 @@ function DetailPanel({
                     </div>
                   </>
                 )}
+                <div className="mt-3 border-t border-border pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview((v) => !v)}
+                    className="flex w-full items-center justify-between text-[11px] font-medium text-foreground"
+                  >
+                    <span>{t("expectedResultPreview")}</span>
+                    <span className="text-muted-foreground">
+                      {showPreview ? t("hidePreview") : t("showPreview")}
+                    </span>
+                  </button>
+
+                  {showPreview && (
+                    <div className="mt-2 space-y-2">
+                      <div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">
+                            {t("expectedConfidence")} · {resultPreview.count} {t("photosLabel")}
+                          </span>
+                          <span className="font-semibold text-foreground">
+                            {Math.round(resultPreview.expected * 100)}%
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-300"
+                            style={{ width: `${Math.round(resultPreview.expected * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {resultPreview.priceLo !== undefined && resultPreview.priceHi !== undefined && (
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">{t("expectedPriceRange")}</span>
+                          <span className="font-semibold text-foreground">
+                            {enrichment?.currency ?? "$"}
+                            {resultPreview.priceLo} – {enrichment?.currency ?? "$"}
+                            {resultPreview.priceHi}
+                          </span>
+                        </div>
+                      )}
+
+                      <p className="text-[10px] leading-relaxed text-muted-foreground">
+                        {extraShots.length < 4 ? `${t("previewAddMore")} ` : ""}
+                        {t("previewPhotoQualityTip")} {t("previewEstimateNote")}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
+
 
               <Button
                 variant="secondary"
