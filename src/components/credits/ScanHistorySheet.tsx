@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { X, Pencil, Trash2, Loader2, ChevronLeft, History, ExternalLink, Languages } from "lucide-react";
+import { X, Pencil, Trash2, Loader2, ChevronLeft, ChevronRight, History, ExternalLink, Languages, Camera, Video, FileText, Tag } from "lucide-react";
 import {
   listScanHistory,
   renameScanHistory,
@@ -264,6 +264,19 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
       </div>
     </div>
   );
+}
+
+type FolderKey = "photo" | "resale" | "video" | "document";
+
+const FOLDERS: { key: FolderKey; icon: typeof Camera; labelKey: "photoScan" | "resaleScan" | "videoScan" | "documentScan" }[] = [
+  { key: "photo", icon: Camera, labelKey: "photoScan" },
+  { key: "resale", icon: Tag, labelKey: "resaleScan" },
+  { key: "video", icon: Video, labelKey: "videoScan" },
+  { key: "document", icon: FileText, labelKey: "documentScan" },
+];
+
+function folderOf(mode: string): FolderKey {
+  return mode === "video" || mode === "document" || mode === "resale" ? mode : "photo";
 }
 
 
