@@ -118,6 +118,10 @@ export const EN = {
   movePhotoLeft: "Move earlier",
   movePhotoRight: "Move later",
   extraPhotosHint: "Extra photos of the same object are analyzed together for a more accurate result.",
+  extraNoteLabel: "Add details (optional)",
+  extraNotePlaceholder: "e.g. brand on the label, model number, size, where it's from…",
+  extraNoteHint: "Anything you know is used together with the photos for a more exact match.",
+
   reanalyzeWithPhotos: "Re-analyze with all photos",
   photosLabel: "photos",
   expectedResultPreview: "Expected result preview",
