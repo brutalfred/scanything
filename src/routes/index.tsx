@@ -2496,6 +2496,8 @@ function DetailPanel({
   const showTranslate = hasNonLatin(name);
 
   const [extraShots, setExtraShots] = useState<string[]>([]);
+  const [extraNote, setExtraNote] = useState("");
+
   const [showPreview, setShowPreview] = useState(false);
   const extraInputRef = useRef<HTMLInputElement | null>(null);
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
