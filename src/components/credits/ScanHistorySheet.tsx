@@ -382,12 +382,37 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
         )}
         {error && !loading && <p className="py-6 text-center text-xs text-destructive">{error}</p>}
 
-        {!loading && !error && !selected && (
+        {!loading && !error && !selected && !folder && (
           <div className="space-y-2">
             {entries.length === 0 && (
               <p className="py-8 text-center text-xs text-muted-foreground">{t("noScansYet")}</p>
             )}
-            {entries.map((entry) => (
+            {entries.length > 0 &&
+              FOLDERS.map(({ key, icon: Icon, labelKey }) => {
+                const count = entries.filter((e) => folderOf(e.mode) === key).length;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setFolder(key)}
+                    disabled={count === 0}
+                    className="flex w-full items-center gap-3 rounded-xl border border-border bg-secondary/40 px-3 py-3 text-left transition-colors hover:border-primary disabled:opacity-40"
+                  >
+                    <Icon className="h-4 w-4 text-primary" />
+                    <span className="flex-1 text-xs font-medium text-foreground">{t(labelKey)}</span>
+                    <span className="text-[10px] text-muted-foreground">{count}</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                );
+              })}
+          </div>
+        )}
+
+        {!loading && !error && !selected && folder && (
+          <div className="space-y-2">
+            {visible.length === 0 && (
+              <p className="py-8 text-center text-xs text-muted-foreground">{t("noScansYet")}</p>
+            )}
+            {visible.map((entry) => (
               <div
                 key={entry.id}
                 className="flex items-center gap-2 rounded-xl border border-border bg-secondary/40 px-3 py-2"
