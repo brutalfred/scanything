@@ -18,11 +18,56 @@ function getStore(): AnyStore | undefined {
 }
 
 export function playBillingAvailable(): boolean {
-  return isNativeAndroid() && Boolean(getStore());
+  return isNativeAndroid();
+}
+
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-cdv="${src}"]`);
+    if (existing) return resolve();
+    const el = document.createElement("script");
+    el.src = src;
+    el.dataset["cdv"] = src;
+    el.onload = () => resolve();
+    el.onerror = () => reject(new Error("Could not load the in-app purchase bridge"));
+    document.head.appendChild(el);
+  });
+}
+
+/**
+ * The Android shell loads the live site, so Cordova plugin scripts are not
+ * part of the served HTML. Capacitor's local server still answers
+ * `/cordova.js`, so we pull the bridge in on demand.
+ */
+async function ensureCordovaPurchase(): Promise<any> {
+  const win = window as unknown as { CdvPurchase?: any };
+  if (win.CdvPurchase) return win.CdvPurchase;
+
+  await loadScript("/cordova.js");
+  await new Promise<void>((resolve, reject) => {
+    if (win.CdvPurchase) return resolve();
+    const started = Date.now();
+    const timer = window.setInterval(() => {
+      if (win.CdvPurchase) {
+        window.clearInterval(timer);
+        resolve();
+      } else if (Date.now() - started > 8000) {
+        window.clearInterval(timer);
+        reject(new Error("In-app purchases are unavailable on this device"));
+      }
+    }, 100);
+    document.addEventListener("deviceready", () => {
+      if (win.CdvPurchase) {
+        window.clearInterval(timer);
+        resolve();
+      }
+    });
+  });
+  return win.CdvPurchase;
 }
 
 async function ensureStore(): Promise<AnyStore> {
-  const CdvPurchase = (window as unknown as { CdvPurchase?: any }).CdvPurchase;
+  const CdvPurchase = await ensureCordovaPurchase();
   const store = CdvPurchase?.store;
   if (!store) throw new Error("In-app purchases are unavailable on this device");
 
@@ -59,8 +104,8 @@ export async function getPlayPrices(): Promise<Record<string, string>> {
  * returns the new credit balance.
  */
 export async function buyWithPlay(productId: string): Promise<number> {
-  const CdvPurchase = (window as unknown as { CdvPurchase?: any }).CdvPurchase;
   const store = await ensureStore();
+  const CdvPurchase = (window as unknown as { CdvPurchase?: any }).CdvPurchase;
   const product = store.get(productId, CdvPurchase.Platform.GOOGLE_PLAY);
   const offer = product?.getOffer?.() ?? product?.offers?.[0];
   if (!offer) throw new Error("This credit pack is not available right now");
