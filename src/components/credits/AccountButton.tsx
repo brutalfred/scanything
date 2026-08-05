@@ -175,6 +175,38 @@ export function AccountButton({
               </div>
             </div>
 
+            <div className="mt-3 rounded-xl border border-current/30 bg-current/5 px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 font-semibold">
+                  <Camera className="h-4 w-4" />
+                  {t("cameraAccess")}
+                </span>
+                {camera.state === "granted" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                    <Check className="h-3.5 w-3.5" />
+                    {t("on")}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void camera.request()}
+                    disabled={camera.requesting || camera.state === "denied"}
+                    className="rounded-lg border border-current/30 px-2 py-1 text-xs font-semibold transition-colors hover:bg-current/10 disabled:opacity-50"
+                  >
+                    {camera.requesting ? t("cameraRequesting") : t("cameraGrantButton")}
+                  </button>
+                )}
+              </div>
+              <p className="mt-1.5 text-[11px] leading-snug opacity-70">
+                {camera.state === "granted"
+                  ? t("cameraGranted")
+                  : camera.state === "denied"
+                    ? t("cameraDeniedHelp")
+                    : t("cameraPromptHelp")}
+              </p>
+            </div>
+
+
 
             <DailyCheckin enabled={signedIn && open} />
 
