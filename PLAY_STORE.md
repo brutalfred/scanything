@@ -6,13 +6,12 @@ AAB upload is only needed for wrapper, permission, icon or billing changes.
 
 ## 1. One-time local setup
 
-Requires Node 20+, Java 17 and Android Studio.
+Requires Node 20+, Java 17 and Android Studio. The native `android/` project is
+already generated and committed, with camera, flashlight and billing
+permissions set in `android/app/src/main/AndroidManifest.xml`.
 
 ```bash
-npm i -D @capacitor/cli
-npm i @capacitor/core @capacitor/app @capacitor/status-bar @capacitor/splash-screen
-npm i cordova-plugin-purchase
-npx cap add android
+npm install
 npm run cap:sync
 npm run cap:open
 ```
@@ -21,19 +20,9 @@ npm run cap:open
 - `appId: app.scanything` (must match the Play Console package name)
 - `server.url: https://scanything.app`
 
-## 2. Android manifest
-
-In `android/app/src/main/AndroidManifest.xml` add:
-
-```xml
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="com.android.vending.BILLING" />
-<uses-feature android:name="android.hardware.camera" android:required="false" />
-```
-
 Camera and flashlight use the standard web APIs through the WebView, so no
 extra Capacitor camera plugin is needed.
+
 
 ## 3. Google sign-in
 
