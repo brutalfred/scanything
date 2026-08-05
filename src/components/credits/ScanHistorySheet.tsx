@@ -348,9 +348,9 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
       <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 shadow-[0_0_40px_-6px_hsl(var(--primary)/0.45)] gold-glow sm:rounded-2xl">
         <div className="mb-3 flex items-center gap-2">
-          {selected ? (
+          {selected || folder ? (
             <button
-              onClick={() => setSelected(null)}
+              onClick={() => (selected ? setSelected(null) : setFolder(null))}
               className="rounded-full p-1 text-muted-foreground hover:text-foreground"
               aria-label={t("back")}
             >
@@ -360,7 +360,11 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
             <History className="h-4 w-4 text-primary" />
           )}
           <h2 className="flex-1 text-sm font-semibold text-foreground">
-            {selected ? selected.title || formatStamp(selected.createdAt) : t("scanHistory")}
+            {selected
+              ? selected.title || formatStamp(selected.createdAt)
+              : folder
+                ? modeLabel(folder)
+                : t("scanHistory")}
           </h2>
           <button
             onClick={onClose}
