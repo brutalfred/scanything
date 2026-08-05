@@ -2589,7 +2589,7 @@ function DetailPanel({
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots]);
+  }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots, extraNote]);
 
 
   const runTranslate = useCallback(async () => {
