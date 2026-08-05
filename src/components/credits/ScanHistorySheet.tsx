@@ -306,13 +306,22 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
   useEffect(() => {
     if (!open) return;
     setSelected(null);
+    setFolder(null);
     void load();
   }, [open, load]);
 
   if (!open) return null;
 
   const modeLabel = (mode: string) =>
-    mode === "video" ? t("videoScan") : mode === "document" ? t("documentScan") : t("photoScan");
+    mode === "video"
+      ? t("videoScan")
+      : mode === "document"
+        ? t("documentScan")
+        : mode === "resale"
+          ? t("resaleScan")
+          : t("photoScan");
+
+  const visible = folder ? entries.filter((e) => folderOf(e.mode) === folder) : [];
 
   const commitRename = async (entry: ScanHistoryEntry) => {
     const title = draft.trim();
