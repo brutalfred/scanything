@@ -2832,6 +2832,65 @@ function DetailPanel({
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
 
+              <div className="rounded-lg border border-border bg-background/60 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-foreground">
+                    {t("addPhotoOfItem")}
+                    {extraShots.length > 0 && (
+                      <span className="ml-1 text-muted-foreground">
+                        · {extraShots.length + 1} {t("photosLabel")}
+                      </span>
+                    )}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={extraShots.length >= 4 || deepLoading}
+                    onClick={() => extraInputRef.current?.click()}
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    {t("addPhotoOfItem")}
+                  </Button>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                  {t("extraPhotosHint")}
+                </p>
+                <input
+                  ref={extraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void addExtraShots(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                {extraShots.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {extraShots.map((src, i) => (
+                      <div key={i} className="relative">
+                        <img
+                          src={src}
+                          alt={`${name} ${i + 2}`}
+                          className="h-14 w-14 rounded-md border border-border object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setExtraShots((prev) => prev.filter((_, j) => j !== i))}
+                          className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
+                          aria-label={t("close")}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Button
                 variant="secondary"
                 onClick={runDeep}
@@ -2846,7 +2905,11 @@ function DetailPanel({
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    {t("analyzeFurther")} · {CREDIT_COSTS[deepReason]}
+                    {extraShots.length > 0
+                      ? `${t("reanalyzeWithPhotos")} (${extraShots.length + 1})`
+                      : t("analyzeFurther")}{" "}
+                    · {CREDIT_COSTS[deepReason]}
+
                   </>
                 )}
               </Button>
