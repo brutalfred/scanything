@@ -2449,7 +2449,9 @@ function DetailPanel({
     const room = Math.max(0, 4 - extraShots.length);
     const picked = Array.from(files).slice(0, room);
     const shots = await Promise.all(picked.map((f) => fileToCompressedDataUrl(f)));
-    setExtraShots((prev) => [...prev, ...shots.filter(Boolean).map((s) => s as string)].slice(0, 4));
+    setExtraShots((prev) =>
+      [...prev, ...shots.filter((s): s is string => typeof s === "string")].slice(0, 4),
+    );
   }, [extraShots.length]);
 
   const runDeep = useCallback(async () => {
