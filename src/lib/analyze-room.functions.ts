@@ -384,6 +384,8 @@ function clamp01(n: number) {
 const DeepInput = z.object({
   name: z.string().min(1),
   imageBase64: z.string().min(100),
+  /** Additional user-supplied photos of the same object (other angles/close-ups). */
+  extraImages: z.array(z.string().min(100)).max(4).optional(),
   /** Started from a live video-mode box: half credit cost. */
   live: z.boolean().optional(),
 }).merge(EnvironmentSchema);
