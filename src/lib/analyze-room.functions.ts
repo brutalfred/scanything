@@ -386,7 +386,9 @@ const DeepInput = z.object({
   imageBase64: z.string().min(100),
   /** Additional user-supplied photos of the same object (other angles/close-ups). */
   extraImages: z.array(z.string().min(100)).max(4).optional(),
-  /** Started from a live video-mode box: half credit cost. */
+  /** Optional free-text hint the user typed to help identification. */
+  userNote: z.string().trim().max(300).optional(),
+
   live: z.boolean().optional(),
 }).merge(EnvironmentSchema);
 
