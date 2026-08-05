@@ -2466,6 +2466,17 @@ function DetailPanel({
     setExtraShots((prev) => prev.map((s, j) => (j === idx ? shot : s)));
   }, []);
 
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const moveExtraShot = useCallback((from: number, to: number) => {
+    setExtraShots((prev) => {
+      if (to < 0 || to >= prev.length || from === to) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }, []);
+
   const runDeep = useCallback(async () => {
     if (!panelCredits.spend(deepReason)) return;
     if (!imageBase64) {
