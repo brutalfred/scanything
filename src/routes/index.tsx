@@ -2496,6 +2496,8 @@ function DetailPanel({
   const showTranslate = hasNonLatin(name);
 
   const [extraShots, setExtraShots] = useState<string[]>([]);
+  const [extraNote, setExtraNote] = useState("");
+
   const [showPreview, setShowPreview] = useState(false);
   const extraInputRef = useRef<HTMLInputElement | null>(null);
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
@@ -2569,7 +2571,9 @@ function DetailPanel({
           name,
           imageBase64: imageBase64.replace(/^data:[^,]+,/, ""),
           extraImages: extraShots.map((s) => s.replace(/^data:[^,]+,/, "")),
+          userNote: extraNote.trim() || undefined,
           live,
+
           environment: getPaddleEnvironment(),
         },
       });
@@ -2585,7 +2589,7 @@ function DetailPanel({
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots]);
+  }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots, extraNote]);
 
 
   const runTranslate = useCallback(async () => {
@@ -2957,6 +2961,30 @@ function DetailPanel({
                 <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
                   {t("extraPhotosHint")}
                 </p>
+                <div className="mt-3 border-t border-border pt-2">
+                  <label
+                    htmlFor="item-extra-note"
+                    className="text-[11px] font-medium text-foreground"
+                  >
+                    {t("extraNoteLabel")}
+                  </label>
+                  <textarea
+                    id="item-extra-note"
+                    value={extraNote}
+                    onChange={(e) => setExtraNote(e.target.value.slice(0, 300))}
+                    disabled={deepLoading}
+                    rows={2}
+                    placeholder={t("extraNotePlaceholder")}
+                    className="mt-1 w-full resize-none rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] leading-relaxed text-muted-foreground">
+                      {t("extraNoteHint")}
+                    </p>
+                    <span className="text-[10px] text-muted-foreground">{extraNote.length}/300</span>
+                  </div>
+                </div>
+
                 <input
                   ref={extraInputRef}
                   type="file"
