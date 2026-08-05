@@ -2466,6 +2466,17 @@ function DetailPanel({
     setExtraShots((prev) => prev.map((s, j) => (j === idx ? shot : s)));
   }, []);
 
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const moveExtraShot = useCallback((from: number, to: number) => {
+    setExtraShots((prev) => {
+      if (to < 0 || to >= prev.length || from === to) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }, []);
+
   const runDeep = useCallback(async () => {
     if (!panelCredits.spend(deepReason)) return;
     if (!imageBase64) {
@@ -2895,7 +2906,19 @@ function DetailPanel({
                   <>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {extraShots.map((src, i) => (
-                        <div key={i} className="relative">
+                        <div
+                          key={i}
+                          className={`relative ${dragIndex === i ? "opacity-50" : ""}`}
+                          draggable={!deepLoading}
+                          onDragStart={() => setDragIndex(i)}
+                          onDragEnd={() => setDragIndex(null)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (dragIndex !== null) moveExtraShot(dragIndex, i);
+                            setDragIndex(null);
+                          }}
+                        >
                           <button
                             type="button"
                             disabled={deepLoading}
@@ -2903,7 +2926,7 @@ function DetailPanel({
                               replaceIndexRef.current = i;
                               replaceInputRef.current?.click();
                             }}
-                            className="group block h-14 w-14 overflow-hidden rounded-md border border-border"
+                            className="group block h-14 w-14 cursor-grab overflow-hidden rounded-md border border-border active:cursor-grabbing"
                             title={t("replacePhoto")}
                             aria-label={t("replacePhoto")}
                           >
@@ -2916,6 +2939,9 @@ function DetailPanel({
                               <RefreshCw className="h-4 w-4 text-foreground" />
                             </span>
                           </button>
+                          <span className="pointer-events-none absolute bottom-0 left-0 rounded-tr-md bg-background/80 px-1 text-[10px] leading-tight text-muted-foreground">
+                            {i + 1}
+                          </span>
                           <button
                             type="button"
                             disabled={deepLoading}
@@ -2926,9 +2952,32 @@ function DetailPanel({
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
+                          <div className="mt-1 flex justify-center gap-1">
+                            <button
+                              type="button"
+                              disabled={deepLoading || i === 0}
+                              onClick={() => moveExtraShot(i, i - 1)}
+                              className="rounded px-1 text-[11px] leading-none text-muted-foreground hover:text-foreground disabled:opacity-30"
+                              title={t("movePhotoLeft")}
+                              aria-label={t("movePhotoLeft")}
+                            >
+                              ◀
+                            </button>
+                            <button
+                              type="button"
+                              disabled={deepLoading || i === extraShots.length - 1}
+                              onClick={() => moveExtraShot(i, i + 1)}
+                              className="rounded px-1 text-[11px] leading-none text-muted-foreground hover:text-foreground disabled:opacity-30"
+                              title={t("movePhotoRight")}
+                              aria-label={t("movePhotoRight")}
+                            >
+                              ▶
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
+
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <p className="text-[11px] text-muted-foreground">{t("tapPhotoToReplace")}</p>
                       <Button
