@@ -16,19 +16,33 @@ function cap(): CapacitorGlobal | undefined {
   return (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
 }
 
+/**
+ * The Android shell loads the live site, so the Capacitor global can be
+ * missing or late on a remote page. The shell also appends this marker to
+ * the WebView user agent, which is the reliable signal.
+ */
+const ANDROID_UA_MARKER = "ScanythingAndroid";
+
+function hasAndroidShellUA(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return navigator.userAgent.includes(ANDROID_UA_MARKER);
+}
+
 /** True when running inside the Capacitor native shell (Android/iOS). */
 export function isNative(): boolean {
   const c = cap();
-  return Boolean(c?.isNativePlatform?.());
+  return Boolean(c?.isNativePlatform?.()) || hasAndroidShellUA();
 }
 
 /** True only inside the Android app published to Google Play. */
 export function isNativeAndroid(): boolean {
   const c = cap();
-  return Boolean(c?.isNativePlatform?.() && c?.getPlatform?.() === "android");
+  if (c?.isNativePlatform?.() && c?.getPlatform?.() === "android") return true;
+  return hasAndroidShellUA();
 }
 
 /** True in a normal browser tab or installed PWA. */
 export function isWeb(): boolean {
   return !isNative();
 }
+
