@@ -2445,9 +2445,34 @@ function DetailPanel({
   const showTranslate = hasNonLatin(name);
 
   const [extraShots, setExtraShots] = useState<string[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const extraInputRef = useRef<HTMLInputElement | null>(null);
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
   const replaceIndexRef = useRef<number | null>(null);
+
+  // Optional preview: how much extra photos are expected to sharpen the result.
+  const resultPreview = useMemo(() => {
+    const n = extraShots.length;
+    const base = typeof enrichment?.confidence === "number" ? enrichment.confidence : 0.55;
+    // diminishing returns: +12%, +7%, +4%, +2% of the remaining headroom gap
+    const gains = [0, 0.12, 0.19, 0.23, 0.25];
+    const gain = gains[Math.min(n, 4)] ?? 0.25;
+    const expected = Math.min(0.97, base + (1 - base) * gain);
+
+    const lo = enrichment?.priceMin;
+    const hi = enrichment?.priceMax;
+    let priceLo: number | undefined;
+    let priceHi: number | undefined;
+    if (typeof lo === "number" && typeof hi === "number" && hi >= lo) {
+      // range narrows toward the midpoint as photos are added
+      const narrow = [0, 0.18, 0.3, 0.38, 0.44][Math.min(n, 4)] ?? 0.44;
+      const mid = (lo + hi) / 2;
+      priceLo = Math.round(mid - (mid - lo) * (1 - narrow));
+      priceHi = Math.round(mid + (hi - mid) * (1 - narrow));
+    }
+    return { count: n + 1, expected, base, priceLo, priceHi };
+  }, [extraShots.length, enrichment?.confidence, enrichment?.priceMin, enrichment?.priceMax]);
+
 
   const addExtraShots = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
