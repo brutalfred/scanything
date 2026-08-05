@@ -1,8 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
-import { gatewayFetch, type PaddleEnv } from "@/lib/paddle.server";
+import { z } from "zod";
+import { gatewayFetch } from "@/lib/paddle.server";
+
+const PriceSchema = z.object({
+  priceId: z.string().min(1).max(120),
+  environment: z.enum(["sandbox", "production"]),
+});
 
 export const resolvePaddlePrice = createServerFn({ method: "GET" })
-  .inputValidator((data: { priceId: string; environment: PaddleEnv }) => data)
+  .inputValidator((data) => PriceSchema.parse(data))
   .handler(async ({ data }) => {
     const response = await gatewayFetch(
       data.environment,
