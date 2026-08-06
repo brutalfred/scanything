@@ -508,6 +508,7 @@ function Scanner() {
 
 
   const aiConsent = useAiConsent();
+  const [consentPromptOpen, setConsentPromptOpen] = useState(false);
 
   const startingRef = useRef(false);
 
@@ -1212,10 +1213,30 @@ function Scanner() {
   return (
     <div className="min-h-screen text-foreground">
       <AiConsentModal
-        open={aiConsent.needsConsent}
-        onAccept={aiConsent.accept}
-        onDecline={aiConsent.decline}
+        open={aiConsent.needsConsent || consentPromptOpen}
+        onAccept={() => {
+          aiConsent.accept();
+          setConsentPromptOpen(false);
+        }}
+        onDecline={() => {
+          aiConsent.decline();
+          setConsentPromptOpen(false);
+        }}
       />
+      {aiConsent.mounted && aiConsent.answered && !aiConsent.granted && (
+        <div className="mx-auto flex max-w-4xl flex-col gap-2 px-4 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs opacity-80">
+            Camera and AI analysis are off — you haven&apos;t given consent to send pictures to the AI provider.
+          </p>
+          <button
+            type="button"
+            onClick={() => setConsentPromptOpen(true)}
+            className="shrink-0 rounded-lg border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+          >
+            Review camera &amp; AI consent
+          </button>
+        </div>
+      )}
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-3">
           <div className="flex flex-shrink-0 items-center justify-start">
