@@ -21,6 +21,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogResaleGuideRouteImport } from './routes/blog.resale-guide'
 import { Route as AccountDeleteRouteImport } from './routes/account.delete'
+import { Route as AccountDataRouteImport } from './routes/account.data'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const TermsRoute = TermsRouteImport.update({
@@ -83,6 +84,11 @@ const AccountDeleteRoute = AccountDeleteRouteImport.update({
   path: '/account/delete',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountDataRoute = AccountDataRouteImport.update({
+  id: '/account/data',
+  path: '/account/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/account/data': typeof AccountDataRoute
   '/account/delete': typeof AccountDeleteRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/account/data': typeof AccountDataRoute
   '/account/delete': typeof AccountDeleteRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/account/data': typeof AccountDataRoute
   '/account/delete': typeof AccountDeleteRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/account/data'
     | '/account/delete'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/account/data'
     | '/account/delete'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/account/data'
     | '/account/delete'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
@@ -195,6 +207,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  AccountDataRoute: typeof AccountDataRoute
   AccountDeleteRoute: typeof AccountDeleteRoute
   BlogResaleGuideRoute: typeof BlogResaleGuideRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -286,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountDeleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/data': {
+      id: '/account/data'
+      path: '/account/data'
+      fullPath: '/account/data'
+      preLoaderRoute: typeof AccountDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -307,6 +327,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  AccountDataRoute: AccountDataRoute,
   AccountDeleteRoute: AccountDeleteRoute,
   BlogResaleGuideRoute: BlogResaleGuideRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
