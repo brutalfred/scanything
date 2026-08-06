@@ -42,14 +42,10 @@ import {
   analyzeFurther,
   translateText,
   translateName,
-  personInfo,
-  personSearch,
   type DetectedItem,
   type QuickItem,
   type DeepAnalysis,
   type Translation,
-  type PersonInfo,
-  type PersonMatch,
 
 } from "@/lib/analyze-room.functions";
 import { Button } from "@/components/ui/button";
@@ -139,7 +135,6 @@ const CATEGORY_FILTERS: { key: string; label: string }[] = [
   { key: "vehicle", label: "Vehicles" },
   { key: "plate", label: "Plates" },
   { key: "text", label: "Text / Signs" },
-  { key: "person", label: "People" },
   { key: "document", label: "Documents" },
   { key: "other", label: "Other" },
 ];
@@ -725,7 +720,7 @@ function Scanner() {
         });
         setRawItemCount(result.items.length);
         detected = result.items.filter(
-          (it) => it.category === "person" || !isBodyPart(it.name),
+          (it) => !isBodyPart(it.name),
         );
 
       }
@@ -791,7 +786,7 @@ function Scanner() {
         },
       });
       const fresh = result.items.filter(
-        (it) => it.category === "person" || !isBodyPart(it.name),
+        (it) => !isBodyPart(it.name),
       );
       let added: DetectedItem[] = [];
       setItems((prev) => {
@@ -1055,20 +1050,6 @@ function Scanner() {
   const [doorPrompt, setDoorPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(null);
   const [addressInput, setAddressInput] = useState("");
 
-  // Person handling (photo mode only, when person is the main subject)
-  const [personPrompt, setPersonPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(
-    null,
-  );
-  const [personName, setPersonName] = useState("");
-  const [personLocation, setPersonLocation] = useState("");
-  const [personLoading, setPersonLoading] = useState(false);
-  const [personMatches, setPersonMatches] = useState<PersonMatch[] | null>(null);
-  const [personResult, setPersonResult] = useState<{ name: string; info: PersonInfo } | null>(
-    null,
-  );
-  const [personError, setPersonError] = useState<string | null>(null);
-
-
   // List tab (Items / Categories)
   const [listTab, setListTab] = useState<"items" | "categories">("items");
 
@@ -1076,11 +1057,6 @@ function Scanner() {
     const url = `https://www.google.com/search?q=${encodeURIComponent(address)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }, []);
-
-  const isPersonItem = (item: TrackedItem | DetectedItem) => {
-    const cat = "category" in item ? item.category : item.enrichment?.category;
-    return cat === "person";
-  };
 
   const openItem = useCallback(
     (item: TrackedItem | DetectedItem) => {
@@ -1096,15 +1072,6 @@ function Scanner() {
         }
         return;
       }
-      if (isPersonItem(item)) {
-        setPersonName("");
-        setPersonLocation("");
-        setPersonMatches(null);
-        setPersonResult(null);
-        setPersonError(null);
-        setPersonPrompt({ item });
-        return;
-      }
       // Tapping a live box is what starts the deeper (paid) analysis.
       if ("id" in item && item.id) enrichWantedRef.current.add(item.id as string);
       // Capture image at open time (snapshot for photo mode, live frame for video)
@@ -1115,53 +1082,6 @@ function Scanner() {
     },
     [openAddressSearch, snapshot],
   );
-
-  const closePerson = useCallback(() => {
-    setPersonPrompt(null);
-    setPersonMatches(null);
-    setPersonResult(null);
-    setPersonError(null);
-  }, []);
-
-  const submitPerson = useCallback(async () => {
-    const name = personName.trim();
-    if (!name) return;
-    if (!credits.spend("person_info")) return;
-    setPersonLoading(true);
-    setPersonError(null);
-    try {
-      const { matches } = await personSearch({
-        data: { name, location: personLocation.trim() },
-      });
-      if (matches.length === 0) {
-        setPersonError("No public information found for that name.");
-      } else if (matches.length === 1) {
-        const m = matches[0];
-        setPersonResult({
-          name: m.name,
-          info: {
-            known: true,
-            summary: m.summary,
-            bullets: m.bullets,
-            occupation: m.occupation,
-            nationality: [m.nationality, m.location].filter(Boolean).join(" · "),
-            wikipediaUrl: m.wikipediaUrl,
-            sources: m.sources,
-
-          },
-        });
-        setPersonPrompt(null);
-      } else {
-        setPersonMatches(matches);
-      }
-    } catch (e) {
-      setPersonError(e instanceof Error ? e.message : "Lookup failed.");
-    } finally {
-      setPersonLoading(false);
-    }
-  }, [personName, personLocation, credits]);
-
-
 
   const submitAddress = useCallback(
     (remember: boolean) => {
@@ -1534,7 +1454,7 @@ function Scanner() {
                           {typeof it.confidence === "number" && (
                             <span className="ml-1 opacity-80">{Math.round(it.confidence)}%</span>
                           )}
-                          {it.enrichment && !["person", "plate"].includes(it.enrichment.category) && (
+                          {it.enrichment && it.enrichment.category !== "plate" && (
                             <span className="ml-1 opacity-90">
                               ${it.enrichment.priceMin}–${it.enrichment.priceMax}
                             </span>
@@ -2089,237 +2009,6 @@ function Scanner() {
         </div>
       )}
 
-      {personPrompt && !personResult && !personMatches && (
-        <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
-          onClick={() => !personLoading && closePerson()}
-        >
-          <div
-            className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold gold-text">Who is this person?</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Add a name and location — we’ll gather public info from the web.
-                </p>
-              </div>
-              <button
-                onClick={() => !personLoading && closePerson()}
-                className="rounded-full p-1 text-muted-foreground hover:bg-accent"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                submitPerson();
-              }}
-              className="mt-4 space-y-3"
-            >
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Name</label>
-                <input
-                  autoFocus
-                  type="text"
-                  value={personName}
-                  onChange={(e) => setPersonName(e.target.value)}
-                  placeholder="e.g. Marie Curie"
-                  maxLength={120}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Location</label>
-                <input
-                  type="text"
-                  value={personLocation}
-                  onChange={(e) => setPersonLocation(e.target.value)}
-                  placeholder="e.g. Paris, France (optional)"
-                  maxLength={160}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              {personError && (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                  {personError}
-                </div>
-              )}
-              <Button type="submit" className="w-full" disabled={personLoading || !personName.trim()}>
-                {personLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Looking up…
-                  </>
-                ) : (
-                  <>
-                    <User className="mr-2 h-4 w-4" />
-                    Submit
-                  </>
-                )}
-              </Button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {personMatches && !personResult && (
-        <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
-          onClick={closePerson}
-        >
-          <div
-            className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold gold-text">
-                  {personMatches.length} matches found
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Pick the right person to see their public info.
-                </p>
-              </div>
-              <button
-                onClick={closePerson}
-                className="rounded-full p-1 text-muted-foreground hover:bg-accent"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="mt-4 space-y-2">
-              {personMatches.map((m, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() =>
-                    setPersonResult({
-                      name: m.name,
-                      info: {
-                        known: true,
-                        summary: m.summary,
-                        bullets: m.bullets,
-                        occupation: m.occupation,
-                        nationality: [m.nationality, m.location].filter(Boolean).join(" · "),
-                        wikipediaUrl: m.wikipediaUrl,
-                        sources: m.sources,
-
-                      },
-                    })
-                  }
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-left hover:bg-accent"
-                >
-                  <div className="text-sm font-semibold text-primary">{m.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {[m.occupation, m.location || m.nationality].filter(Boolean).join(" · ")}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {personResult && (
-        <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
-          onClick={closePerson}
-        >
-          <div
-            className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold gold-text">{personResult.name}</h2>
-                {personResult.info.occupation && (
-                  <p className="text-xs text-muted-foreground">
-                    {personResult.info.occupation}
-                    {personResult.info.nationality ? ` · ${personResult.info.nationality}` : ""}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={closePerson}
-                className="rounded-full p-1 text-muted-foreground hover:bg-accent"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            {personResult.info.known ? (
-              <>
-                {personResult.info.summary && (
-                  <p className="mt-3 text-sm leading-relaxed">{personResult.info.summary}</p>
-                )}
-                {personResult.info.bullets.length > 0 && (
-                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
-                    {personResult.info.bullets.map((b, i) => (
-                      <li key={i}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-                {personResult.info.sources && personResult.info.sources.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Sources from web search
-                    </p>
-                    <div className="mt-2 flex flex-col gap-1">
-                      {personResult.info.sources.map((s, i) => (
-                        <a
-                          key={i}
-                          href={s.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-between gap-2 text-sm text-primary hover:underline"
-                        >
-                          <span className="truncate">{s.title || s.url}</span>
-                          <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-
-            ) : (
-              <p className="mt-3 text-sm text-muted-foreground">
-                No widely-known public info for that name. Try a more complete spelling.
-              </p>
-            )}
-            <div className="mt-4 flex flex-col gap-2">
-              <a
-                href={
-                  personResult.info.wikipediaUrl ||
-                  `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(personResult.name)}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
-              >
-                Wikipedia
-                <ExternalLink className="h-4 w-4 opacity-60" />
-              </a>
-              <a
-                href={`https://www.google.com/search?q=${encodeURIComponent(personResult.name)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
-              >
-                Google search
-                <ExternalLink className="h-4 w-4 opacity-60" />
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Video scan warning for signed-in users */}
       <ScanHistorySheet open={historyOpen} onClose={() => setHistoryOpen(false)} />
 
@@ -2363,51 +2052,6 @@ function Scanner() {
 
   );
 }
-type PlateLink = { label: string; url: string };
-
-const PLATE_REGISTRIES: { match: RegExp; label: string; url: string }[] = [
-  {
-    match: /\b(uk|united kingdom|british|england|scotland|wales|northern ireland)\b/i,
-    label: "DVLA vehicle enquiry (UK)",
-    url: "https://www.gov.uk/get-vehicle-information-from-dvla",
-  },
-  {
-    match: /\b(sweden|swedish|sverige)\b/i,
-    label: "Transportstyrelsen vehicle lookup (Sweden)",
-    url: "https://fordonsfraga.transportstyrelsen.se/",
-  },
-  {
-    match: /\b(norway|norwegian)\b/i,
-    label: "Statens vegvesen vehicle lookup (Norway)",
-    url: "https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/",
-  },
-  {
-    match: /\b(netherlands|dutch)\b/i,
-    label: "RDW vehicle lookup (Netherlands)",
-    url: "https://ovi.rdw.nl/",
-  },
-  {
-    match: /\b(germany|german|deutschland)\b/i,
-    label: "Kraftfahrt-Bundesamt (Germany)",
-    url: "https://www.kba.de/",
-  },
-  {
-    match: /\b(usa|united states|american|u\.s\.|california|texas|florida|new york)\b/i,
-    label: "Find your state DMV (USA)",
-    url: "https://www.usa.gov/motor-vehicle-services",
-  },
-  {
-    match: /\b(canada|canadian|ontario|quebec)\b/i,
-    label: "Provincial vehicle registry (Canada)",
-    url: "https://www.canada.ca/en/services/transport.html",
-  },
-  {
-    match: /\b(australia|australian)\b/i,
-    label: "PPSR vehicle check (Australia)",
-    url: "https://www.ppsr.gov.au/",
-  },
-];
-
 /** Marketplace research links for a resale-scanned item. */
 function resaleMarketLinks(name: string): { label: string; url: string }[] {
   const q = encodeURIComponent(name);
@@ -2421,20 +2065,6 @@ function resaleMarketLinks(name: string): { label: string; url: string }[] {
   ];
 }
 
-function plateLookupLinks(plate: string, description: string): PlateLink[] {
-  const hay = `${plate} ${description}`;
-  const links: PlateLink[] = PLATE_REGISTRIES.filter((r) => r.match.test(hay)).map((r) => ({
-    label: r.label,
-    url: r.url,
-  }));
-  links.push({
-    label: "Search official registry for this plate format",
-    url: `https://www.google.com/search?q=${encodeURIComponent(
-      `official vehicle registration check ${plate} ${description.slice(0, 60)}`,
-    )}`,
-  });
-  return links;
-}
 
 
 /** Session cache of AI translations, keyed by language + item, so reopening a box is instant. */
@@ -2829,7 +2459,7 @@ function DetailPanel({
               </p>
             )}
 
-            {!["person", "plate", "document"].includes(enrichment.category) && (
+            {!["plate", "document"].includes(enrichment.category) && (
               <div className="mt-4 rounded-lg bg-secondary p-3">
                 <div className="text-xs font-medium text-muted-foreground">
                   {tl(0)}
@@ -2881,34 +2511,6 @@ function DetailPanel({
                     >
                       {l.label}
                       <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-
-
-            {enrichment.category === "plate" && (
-              <div className="mt-4 rounded-lg border border-border bg-secondary p-3">
-                <div className="text-xs font-medium text-muted-foreground">
-                  {tl(3)}
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t("plateOwnerNotice")}
-                </p>
-
-                <div className="mt-2 flex flex-col gap-2">
-                  {plateLookupLinks(name, enrichment.description).map((l) => (
-                    <a
-                      key={l.url}
-                      href={l.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
-                    >
-                      {l.label}
-                      <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   ))}
                 </div>
@@ -3214,7 +2816,7 @@ function DetailPanel({
                     {deepTranslation?.description || deep.description}
                   </p>
                 )}
-                {enrichment && !["person", "plate"].includes(enrichment.category) && (deep.priceMin > 0 || deep.priceMax > 0) && (
+                {enrichment && enrichment.category !== "plate" && (deep.priceMin > 0 || deep.priceMax > 0) && (
                   <div className="mt-2 text-sm font-medium text-primary">
                     ${deep.priceMin}–${deep.priceMax} {deep.currency}
                   </div>
@@ -3326,13 +2928,11 @@ function TrackedRow({
             <div className="text-[11px] text-muted-foreground">analyzing…</div>
           )}
         </div>
-        {item.enrichment && !["person", "plate"].includes(item.enrichment.category) ? (
+        {item.enrichment && item.enrichment.category !== "plate" ? (
           <div className="shrink-0 text-xs font-semibold text-primary">
             ${item.enrichment.priceMin}–${item.enrichment.priceMax}
           </div>
-        ) : item.enrichment ? (
-          <div className="shrink-0 text-xs font-semibold text-muted-foreground">Person</div>
-        ) : (
+        ) : item.enrichment ? null : (
           <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
         )}
       </button>
@@ -3368,7 +2968,7 @@ function PhotoItemCard({
           <ConfidenceBadge value={item.confidence} />
         </div>
         <div className="text-xs text-muted-foreground capitalize">{item.category}</div>
-        {!["person", "plate"].includes(item.category) && (
+        {item.category !== "plate" && (
           <div className="mt-1 text-xs font-medium text-primary">
             ${item.priceMin}–${item.priceMax}
           </div>
