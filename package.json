@@ -1,6 +1,6 @@
 {
   "name": "tanstack_start_ts",
-  "version": "1.6",
+  "version": "1.7",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -23,6 +23,7 @@
     "@capacitor/core": "^8.4.2",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
+    "@capgo/native-purchases": "^8.6.5",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@paddle/paddle-node-sdk": "^3.8.0",
@@ -61,7 +62,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "cordova-plugin-purchase": "^13.18.0",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
