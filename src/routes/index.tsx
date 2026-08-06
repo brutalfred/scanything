@@ -66,6 +66,8 @@ import {
   type ScanMode,
 } from "@/lib/scan-estimate";
 
+import { AiConsentModal } from "@/components/AiConsentModal";
+import { useAiConsent } from "@/hooks/useAiConsent";
 import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import {
@@ -505,6 +507,9 @@ function Scanner() {
   }, [phase, items]);
 
 
+  const aiConsent = useAiConsent();
+  const [consentPromptOpen, setConsentPromptOpen] = useState(false);
+
   const startingRef = useRef(false);
 
   const attachStream = useCallback(async (stream: MediaStream) => {
@@ -612,7 +617,7 @@ function Scanner() {
   }, [torchOn]);
 
   useEffect(() => {
-    if (phase !== "camera" || snapshot) return;
+    if (phase !== "camera" || snapshot || !aiConsent.granted) return;
     let cancelled = false;
     let timer: number | null = null;
 
@@ -631,7 +636,7 @@ function Scanner() {
       stopCamera();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, snapshot]);
+  }, [phase, snapshot, aiConsent.granted]);
 
 
   const grabFrame = useCallback((maxDim = 1024, quality = 0.8): string | null => {
@@ -1207,6 +1212,31 @@ function Scanner() {
 
   return (
     <div className="min-h-screen text-foreground">
+      <AiConsentModal
+        open={aiConsent.needsConsent || consentPromptOpen}
+        onAccept={() => {
+          aiConsent.accept();
+          setConsentPromptOpen(false);
+        }}
+        onDecline={() => {
+          aiConsent.decline();
+          setConsentPromptOpen(false);
+        }}
+      />
+      {aiConsent.mounted && aiConsent.answered && !aiConsent.granted && (
+        <div className="mx-auto flex max-w-4xl flex-col gap-2 px-4 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs opacity-80">
+            Camera and AI analysis are off — you haven&apos;t given consent to send pictures to the AI provider.
+          </p>
+          <button
+            type="button"
+            onClick={() => setConsentPromptOpen(true)}
+            className="shrink-0 rounded-lg border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+          >
+            Review camera &amp; AI consent
+          </button>
+        </div>
+      )}
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-3">
           <div className="flex flex-shrink-0 items-center justify-start">
