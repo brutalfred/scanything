@@ -7,6 +7,8 @@ import type { Dictionary, Language } from "./index";
 export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   Spanish: {
     resaleValue: "Valor de reventa de segunda mano",
+    priceDisclaimer:
+      "Los rangos de precios son estimaciones de IA solo a título orientativo y no constituyen asesoramiento financiero ni una tasación.",
     worthSelling: "Vale la pena vender",
     notWorthIt: "No vale la pena",
     typical: "típico",
@@ -29,6 +31,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   French: {
     resaleValue: "Valeur de revente d'occasion",
+    priceDisclaimer:
+      "Les fourchettes de prix sont des estimations IA fournies à titre indicatif et ne constituent ni un conseil financier ni une expertise.",
     worthSelling: "Vaut la peine d'être vendu",
     notWorthIt: "Pas rentable",
     typical: "typique",
@@ -51,6 +55,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   German: {
     resaleValue: "Gebraucht-Wiederverkaufswert",
+    priceDisclaimer:
+      "Preisspannen sind KI-Schätzungen und dienen nur zur Orientierung – sie sind keine Finanzberatung und keine Wertermittlung.",
     worthSelling: "Verkauf lohnt sich",
     notWorthIt: "Lohnt sich nicht",
     typical: "typisch",
@@ -73,6 +79,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Swedish: {
     resaleValue: "Andrahandsvärde",
+    priceDisclaimer:
+      "Prisintervall är AI-uppskattningar endast som vägledning och utgör inte finansiell rådgivning eller en värdering.",
     worthSelling: "Värt att sälja",
     notWorthIt: "Inte värt det",
     typical: "typiskt",
@@ -95,6 +103,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Italian: {
     resaleValue: "Valore di rivendita usato",
+    priceDisclaimer:
+      "Le fasce di prezzo sono stime IA a solo scopo indicativo e non costituiscono consulenza finanziaria né una perizia.",
     worthSelling: "Vale la pena venderlo",
     notWorthIt: "Non ne vale la pena",
     typical: "tipico",
@@ -117,6 +127,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Portuguese: {
     resaleValue: "Valor de revenda em segunda mão",
+    priceDisclaimer:
+      "As faixas de preço são estimativas de IA apenas para orientação e não são aconselhamento financeiro nem uma avaliação.",
     worthSelling: "Vale a pena vender",
     notWorthIt: "Não vale a pena",
     typical: "típico",
@@ -139,6 +151,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Polish: {
     resaleValue: "Wartość na rynku wtórnym",
+    priceDisclaimer:
+      "Zakresy cen to szacunki AI wyłącznie orientacyjne i nie stanowią porady finansowej ani wyceny.",
     worthSelling: "Warto sprzedać",
     notWorthIt: "Nie warto",
     typical: "typowo",
@@ -161,6 +175,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Arabic: {
     resaleValue: "قيمة إعادة البيع المستعملة",
+    priceDisclaimer:
+      "نطاقات الأسعار تقديرات من الذكاء الاصطناعي للإرشاد فقط وليست نصيحة مالية أو تقييمًا رسميًا.",
     worthSelling: "يستحق البيع",
     notWorthIt: "لا يستحق",
     typical: "نموذجي",
@@ -183,6 +199,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Chinese: {
     resaleValue: "二手转售价值",
+    priceDisclaimer:
+      "价格区间为 AI 估算，仅供参考，不构成财务建议或正式估值。",
     worthSelling: "值得出售",
     notWorthIt: "不值得",
     typical: "常见价",
@@ -205,6 +223,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Japanese: {
     resaleValue: "中古リセール価格",
+    priceDisclaimer:
+      "価格帯はAIによる目安の推定であり、金融アドバイスや正式な査定ではありません。",
     worthSelling: "売る価値あり",
     notWorthIt: "売る価値なし",
     typical: "標準",
@@ -227,6 +247,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Korean: {
     resaleValue: "중고 재판매 가치",
+    priceDisclaimer:
+      "가격 범위는 참고용 AI 추정치이며 금융 조언이나 공식 감정가가 아닙니다.",
     worthSelling: "판매할 가치 있음",
     notWorthIt: "판매 가치 낮음",
     typical: "일반가",
@@ -249,6 +271,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Hindi: {
     resaleValue: "सेकेंड-हैंड पुनर्विक्रय मूल्य",
+    priceDisclaimer:
+      "कीमत की सीमा केवल मार्गदर्शन के लिए AI अनुमान है; यह वित्तीय सलाह या मूल्यांकन नहीं है।",
     worthSelling: "बेचना फायदेमंद",
     notWorthIt: "बेचना फायदेमंद नहीं",
     typical: "सामान्य",
@@ -271,6 +295,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   Russian: {
     resaleValue: "Цена перепродажи (б/у)",
+    priceDisclaimer:
+      "Диапазоны цен — это оценки ИИ только для ориентира, а не финансовый совет или официальная оценка.",
     worthSelling: "Стоит продать",
     notWorthIt: "Не стоит",
     typical: "обычно",
@@ -293,6 +319,8 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
   },
   "Thai (ไทย)": {
     resaleValue: "มูลค่าขายต่อมือสอง",
+    priceDisclaimer:
+      "ช่วงราคาเป็นการประเมินโดย AI เพื่อเป็นแนวทางเท่านั้น ไม่ใช่คำแนะนำทางการเงินหรือการประเมินมูลค่า",
     worthSelling: "คุ้มที่จะขาย",
     notWorthIt: "ไม่คุ้มที่จะขาย",
     typical: "ทั่วไป",
