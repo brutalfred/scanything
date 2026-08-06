@@ -1921,6 +1921,9 @@ function Scanner() {
             <Link to="/privacy" className="hover:text-foreground hover:underline">
               {t("privacy")}
             </Link>
+            <Link to="/account/delete" className="hover:text-foreground hover:underline">
+              {t("deleteMyAccount")}
+            </Link>
           </div>
           <p>© {new Date().getFullYear()} Scanything. All rights reserved.</p>
           <div className="mt-3 flex items-center justify-center gap-4">
