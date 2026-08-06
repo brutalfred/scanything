@@ -134,7 +134,13 @@ function PrivacyPage() {
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>Access your personal data.</li>
               <li>Correct inaccurate data.</li>
-              <li>Request deletion of your data.</li>
+              <li>
+                Request deletion of your data — you can do this at any time through the{" "}
+                <Link to="/account/delete" className="text-primary underline">
+                  account deletion page
+                </Link>
+                .
+              </li>
               <li>Restrict or object to processing.</li>
               <li>Receive your data in a portable format.</li>
               <li>Withdraw consent where processing is based on consent.</li>
