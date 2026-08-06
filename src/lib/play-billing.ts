@@ -66,8 +66,11 @@ export async function buyWithPlay(productId: string): Promise<number> {
     throw new Error(`Google Play could not start the purchase: ${detail}`);
   }
 
-  const token = transaction?.purchaseToken ?? transaction?.transactionId;
-  if (!token) throw new Error("Could not verify the purchase");
+  // Only a real Play purchaseToken can be verified; transactionId is not valid
+  // for the Play Developer API and would fail with "Invalid Value" (400).
+  const token = transaction?.purchaseToken;
+  if (!token) throw new Error("Google Play did not return a purchase token");
+
 
   const result = await redeemPlayPurchase({
     data: { productId, purchaseToken: String(token) },
