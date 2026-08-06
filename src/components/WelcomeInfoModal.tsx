@@ -23,7 +23,12 @@ const tips = [
   {
     icon: Sparkles,
     title: "Built for discovery",
-    body: "Identify items, animals, plants and more with prices, links, translations and a bit of fun.",
+    body: "Identify objects, animals, plants and text with prices, links, translations and a bit of fun.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Your camera and your data",
+    body: "Photos are sent to an AI provider for analysis and are not stored on our servers. Scanything does not identify people — please don't scan others without their consent.",
   },
   {
     icon: Aperture,
