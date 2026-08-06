@@ -31,11 +31,17 @@ const tips = [
     body: "Photos are sent to an AI provider for analysis and are not stored on our servers. Scanything does not identify people — please don't scan others without their consent.",
   },
   {
+    icon: Tag,
+    title: "Price estimates are guidance only",
+    body: "Price and resale ranges are AI estimates for guidance only — they are not financial advice or a formal valuation.",
+  },
+  {
     icon: Aperture,
     title: "Clear photos work best",
     body: "Close-up shots with a clean, well-lit lens make scans much more accurate.",
   },
 ];
+
 
 export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; userId: string | null }) {
   const [open, setOpen] = useState(false);
