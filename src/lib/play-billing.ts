@@ -17,6 +17,7 @@ export function playBillingAvailable(): boolean {
 }
 
 let supported: Promise<boolean> | null = null;
+let lastError: string | null = null;
 
 async function ensureBilling(): Promise<void> {
   if (!supported) {
