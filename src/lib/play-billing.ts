@@ -24,14 +24,21 @@ async function ensureBilling(): Promise<void> {
       try {
         const res = await NativePurchases.isBillingSupported();
         return Boolean(res?.isBillingSupported);
-      } catch {
+      } catch (e) {
+        // Surfaces the real cause (plugin missing from the build, Play Store
+        // signed out, unsupported device) instead of a generic message.
+        lastError = e instanceof Error ? e.message : String(e);
         return false;
       }
     })();
   }
   if (!(await supported)) {
     supported = null;
-    throw new Error("In-app purchases are unavailable on this device");
+    throw new Error(
+      lastError
+        ? `In-app purchases are unavailable: ${lastError}`
+        : "In-app purchases are unavailable on this device. Make sure the Play Store app is signed in and updated.",
+    );
   }
 }
 
