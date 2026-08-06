@@ -1,2 +1,4 @@
-/** Mirrors the Android versionName / app version shown in the UI. */
-export const APP_VERSION = "1.1";
+import packageJson from "../../package.json";
+
+/** Fallback version used in browsers and during SSR. */
+export const WEB_APP_VERSION = packageJson.version ?? "1.1";

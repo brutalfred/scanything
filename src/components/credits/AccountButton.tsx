@@ -14,7 +14,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useSounds } from "@/hooks/useSounds";
 import { useCameraPermission } from "@/hooks/useCameraPermission";
-import { APP_VERSION } from "@/lib/version";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import { DailyCheckin } from "./DailyCheckin";
 import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
@@ -40,6 +40,7 @@ export function AccountButton({
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const { muted, volume, toggleMute, setVolume } = useSounds();
   const camera = useCameraPermission();
+  const appVersion = useAppVersion();
 
 
   async function handleInstall() {
@@ -316,7 +317,7 @@ export function AccountButton({
             </Link>
 
             <p className="mt-3 text-center text-[10px] text-muted-foreground opacity-60">
-              {t("version")} {APP_VERSION}
+              {t("version")} {appVersion}
             </p>
 
             <div className="mt-3 flex justify-center">
