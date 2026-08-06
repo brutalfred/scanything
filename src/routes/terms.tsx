@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAndroidApp } from "@/hooks/useAndroidApp";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
