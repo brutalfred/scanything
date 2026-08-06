@@ -141,6 +141,15 @@ function PrivacyPage() {
                 </Link>
                 .
               </li>
+              <li>
+                Delete only parts of your data (scan history, AI usage history, game scores,
+                activity records) while keeping your account, through the{" "}
+                <Link to="/account/data" className="text-primary underline">
+                  delete my data page
+                </Link>
+                .
+              </li>
+
               <li>Restrict or object to processing.</li>
               <li>Receive your data in a portable format.</li>
               <li>Withdraw consent where processing is based on consent.</li>

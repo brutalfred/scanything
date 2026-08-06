@@ -342,12 +342,21 @@ export function AccountButton({
             </button>
 
             <Link
-              to="/account/delete"
+              to="/account/data"
               onClick={() => setOpen(false)}
               className="mt-3 block text-center text-xs text-muted-foreground underline"
             >
+              Delete my data
+            </Link>
+
+            <Link
+              to="/account/delete"
+              onClick={() => setOpen(false)}
+              className="mt-2 block text-center text-xs text-muted-foreground underline"
+            >
               {t("deleteMyAccount")}
             </Link>
+
 
             <p className="mt-3 text-center text-[10px] text-muted-foreground opacity-60">
               {t("version")} {appVersion}
