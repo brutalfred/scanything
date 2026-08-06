@@ -52,21 +52,7 @@ function RefundPolicyPage() {
           <section>
             <h2 className="mb-2 text-lg font-semibold text-foreground">How to request a refund</h2>
             <p>
-              Refunds are processed by our payment provider, Paddle. You can request a refund by visiting{" "}
-              <a
-                href="https://paddle.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
-                paddle.net
-              </a>{" "}
-              and following Paddle's refund process, or by contacting us directly at{" "}
-              <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary underline">
-                {CONTACT_EMAIL}
-              </a>
-              .
-            </p>
+              <RefundChannel />
           </section>
 
           <section>
@@ -96,5 +82,42 @@ function RefundPolicyPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function RefundChannel() {
+  const android = useAndroidApp();
+
+  if (android) {
+    return (
+      <>
+        Purchases made inside the Android app are billed by Google Play. Request those
+        refunds through your Google Play order history, or contact us at{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary underline">
+          {CONTACT_EMAIL}
+        </a>
+        .
+      </>
+    );
+  }
+
+  return (
+    <>
+      Refunds for purchases made on the website are processed by our payment provider,
+      Paddle. You can request a refund by visiting{" "}
+      <a
+        href="https://paddle.net"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary underline"
+      >
+        paddle.net
+      </a>{" "}
+      and following Paddle&apos;s refund process, or by contacting us directly at{" "}
+      <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary underline">
+        {CONTACT_EMAIL}
+      </a>
+      .
+    </>
   );
 }
