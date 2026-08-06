@@ -1,9 +1,10 @@
 /**
  * Server-only verification of Google Play purchases.
  *
- * Requires the GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret: the JSON key of a
- * Google Cloud service account that has been granted access to the Play
- * Developer API for this app.
+ * Auth uses whichever is configured:
+ *  1. GOOGLE_PLAY_SERVICE_ACCOUNT_JSON — service account key (preferred).
+ *  2. GOOGLE_PLAY_OAUTH_CLIENT_ID / _CLIENT_SECRET / _REFRESH_TOKEN —
+ *     user OAuth refresh token, for orgs that block service account keys.
  */
 
 type ServiceAccount = {
@@ -30,9 +31,9 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
   return buf.buffer;
 }
 
-function readServiceAccount(): ServiceAccount {
+function readServiceAccount(): ServiceAccount | null {
   const raw = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
-  if (!raw) throw new Error("Google Play verification is not configured");
+  if (!raw) return null;
   const parsed = JSON.parse(raw) as ServiceAccount;
   if (!parsed.client_email || !parsed.private_key) {
     throw new Error("Invalid Google Play service account key");
@@ -40,8 +41,43 @@ function readServiceAccount(): ServiceAccount {
   return parsed;
 }
 
+let cachedToken: { value: string; expiresAt: number } | null = null;
+
+async function getRefreshTokenAccessToken(): Promise<string> {
+  const clientId = process.env.GOOGLE_PLAY_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_PLAY_OAUTH_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_PLAY_OAUTH_REFRESH_TOKEN;
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error("Google Play verification is not configured");
+  }
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Google refresh-token auth failed (${res.status}): ${(await res.text()).slice(0, 200)}`,
+    );
+  }
+  const json = (await res.json()) as { access_token?: string; expires_in?: number };
+  if (!json.access_token) throw new Error("Google auth returned no access token");
+  cachedToken = {
+    value: json.access_token,
+    expiresAt: Date.now() + ((json.expires_in ?? 3600) - 60) * 1000,
+  };
+  return json.access_token;
+}
+
 async function getAccessToken(): Promise<string> {
+  if (cachedToken && cachedToken.expiresAt > Date.now()) return cachedToken.value;
   const sa = readServiceAccount();
+  if (!sa) return getRefreshTokenAccessToken();
   const now = Math.floor(Date.now() / 1000);
   const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = base64url(
@@ -80,8 +116,12 @@ async function getAccessToken(): Promise<string> {
   if (!res.ok) {
     throw new Error(`Google auth failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
   }
-  const json = (await res.json()) as { access_token?: string };
+  const json = (await res.json()) as { access_token?: string; expires_in?: number };
   if (!json.access_token) throw new Error("Google auth returned no access token");
+  cachedToken = {
+    value: json.access_token,
+    expiresAt: Date.now() + ((json.expires_in ?? 3600) - 60) * 1000,
+  };
   return json.access_token;
 }
 
