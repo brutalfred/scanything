@@ -53,7 +53,9 @@ function RefundPolicyPage() {
             <h2 className="mb-2 text-lg font-semibold text-foreground">How to request a refund</h2>
             <p>
               <RefundChannel />
+            </p>
           </section>
+
 
           <section>
             <h2 className="mb-2 text-lg font-semibold text-foreground">What can be refunded</h2>
