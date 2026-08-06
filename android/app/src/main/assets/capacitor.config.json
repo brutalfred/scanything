@@ -1,9 +1,10 @@
 {
-  "appId": "app.scanything",
+  "appId": "app.scanything.scanything",
   "appName": "Scanything",
   "webDir": "dist/client",
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "appendUserAgent": "ScanythingAndroid"
   },
   "server": {
     "url": "https://scanything.app",
