@@ -25,6 +25,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "Atrás",
     item: "objeto",
     couldNotLoadHistory: "No se pudo cargar el historial.",
+    version: "Versión",
   },
   French: {
     resaleValue: "Valeur de revente d'occasion",
@@ -46,6 +47,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "Retour",
     item: "objet",
     couldNotLoadHistory: "Impossible de charger l'historique.",
+    version: "Version",
   },
   German: {
     resaleValue: "Gebraucht-Wiederverkaufswert",
@@ -67,6 +69,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "Zurück",
     item: "Objekt",
     couldNotLoadHistory: "Verlauf konnte nicht geladen werden.",
+    version: "Version",
   },
   Swedish: {
     resaleValue: "Andrahandsvärde",
@@ -88,6 +91,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "Tillbaka",
     item: "objekt",
     couldNotLoadHistory: "Kunde inte ladda historiken.",
+    version: "Version",
   },
   Italian: {
     resaleValue: "Valore di rivendita usato",
@@ -109,6 +113,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "Indietro",
     item: "oggetto",
     couldNotLoadHistory: "Impossibile caricare la cronologia.",
+    version: "Versione",
   },
   Portuguese: {
     resaleValue: "Valor de revenda em segunda mão",
@@ -130,6 +135,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "Voltar",
     item: "item",
     couldNotLoadHistory: "Não foi possível carregar o histórico.",
+    version: "Versão",
   },
   Polish: {
     resaleValue: "Wartość na rynku wtórnym",
@@ -151,6 +157,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "Wstecz",
     item: "obiekt",
     couldNotLoadHistory: "Nie udało się wczytać historii.",
+    version: "Wersja",
   },
   Arabic: {
     resaleValue: "قيمة إعادة البيع المستعملة",
@@ -172,6 +179,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "رجوع",
     item: "عنصر",
     couldNotLoadHistory: "تعذّر تحميل السجل.",
+    version: "الإصدار",
   },
   Chinese: {
     resaleValue: "二手转售价值",
@@ -193,6 +201,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "返回",
     item: "项",
     couldNotLoadHistory: "无法加载历史记录。",
+    version: "版本",
   },
   Japanese: {
     resaleValue: "中古リセール価格",
@@ -214,6 +223,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "戻る",
     item: "件",
     couldNotLoadHistory: "履歴を読み込めませんでした。",
+    version: "バージョン",
   },
   Korean: {
     resaleValue: "중고 재판매 가치",
@@ -235,6 +245,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "뒤로",
     item: "개",
     couldNotLoadHistory: "기록을 불러올 수 없습니다.",
+    version: "버전",
   },
   Hindi: {
     resaleValue: "सेकेंड-हैंड पुनर्विक्रय मूल्य",
@@ -256,6 +267,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "वापस",
     item: "आइटम",
     couldNotLoadHistory: "इतिहास लोड नहीं हो सका।",
+    version: "संस्करण",
   },
   Russian: {
     resaleValue: "Цена перепродажи (б/у)",
@@ -277,6 +289,7 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "Назад",
     item: "объект",
     couldNotLoadHistory: "Не удалось загрузить историю.",
+    version: "Версия",
   },
   "Thai (ไทย)": {
     resaleValue: "มูลค่าขายต่อมือสอง",
@@ -298,5 +311,6 @@ export const EXTRA_DICTIONARIES: Partial<Record<Language, Dictionary>> = {
     back: "ย้อนกลับ",
     item: "รายการ",
     couldNotLoadHistory: "ไม่สามารถโหลดประวัติได้",
+    version: "เวอร์ชัน",
   },
 };

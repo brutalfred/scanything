@@ -14,6 +14,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useSounds } from "@/hooks/useSounds";
 import { useCameraPermission } from "@/hooks/useCameraPermission";
+import { APP_VERSION } from "@/lib/version";
 import { DailyCheckin } from "./DailyCheckin";
 import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
@@ -313,6 +314,10 @@ export function AccountButton({
             >
               {t("deleteMyAccount")}
             </Link>
+
+            <p className="mt-3 text-center text-[10px] text-muted-foreground opacity-60">
+              {t("version")} {APP_VERSION}
+            </p>
 
             <div className="mt-3 flex justify-center">
               <button
