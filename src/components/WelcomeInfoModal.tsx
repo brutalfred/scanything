@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Coins, Video, Sparkles, Aperture, Gift } from "lucide-react";
+import { X, Coins, Video, Sparkles, Aperture, Gift, ShieldCheck } from "lucide-react";
 
 const KEY = "scanything.welcome.seen";
 
