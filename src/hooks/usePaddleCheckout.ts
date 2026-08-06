@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { initializePaddle, getPaddlePriceId } from "@/lib/paddle";
+import { isNativeAndroid } from "@/lib/platform";
 
 export function usePaddleCheckout() {
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,9 @@ export function usePaddleCheckout() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onComplete?: (event: any) => void;
   }) => {
+    if (isNativeAndroid()) {
+      throw new Error("Purchases in the app go through Google Play billing");
+    }
     setLoading(true);
     try {
       await initializePaddle();
