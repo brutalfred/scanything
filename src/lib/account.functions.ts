@@ -8,13 +8,14 @@ export type DataCategory =
   | "activity"
   | "checkins";
 
-const CATEGORY_TABLES: Record<DataCategory, readonly string[]> = {
+const CATEGORY_TABLES = {
   scan_history: ["scan_history"],
   ai_usage: ["ai_usage"],
   game_scores: ["game_scores"],
   activity: ["account_visits", "daily_free_scans"],
   checkins: ["checkin_streaks"],
-};
+} as const;
+
 
 /**
  * Deletes selected categories of the signed-in user's data without
