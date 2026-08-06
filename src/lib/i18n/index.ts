@@ -81,7 +81,7 @@ export const EN = {
   videoScan: "Video Scan",
   resaleScan: "Resale Scan",
   documentScan: "Document Scan",
-  photoScanDescription: "Identify objects, people, and text in one still photo.",
+  photoScanDescription: "Identify objects and text in one still photo.",
   resaleScanDescription: "Values everything for second-hand sale and tells you what's worth listing.",
   documentScanDescription: "Reads text, forms, and documents clearly for easy copying.",
   version: "Version",

@@ -34,7 +34,6 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${item.name} buy price`)}`;
   const infoUrl = `https://www.google.com/search?q=${encodeURIComponent(item.name)}`;
   const showPrice =
-    item.category !== "person" &&
     item.category !== "plate" &&
     typeof item.priceMin === "number" &&
     typeof item.priceMax === "number";
@@ -196,8 +195,7 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
                 {item.deep.description}
               </p>
             )}
-            {item.category !== "person" &&
-              item.category !== "plate" &&
+            {item.category !== "plate" &&
               (Number(item.deep.priceMin) > 0 || Number(item.deep.priceMax) > 0) && (
                 <p className="mt-2 text-sm font-semibold text-primary">
                   ${item.deep.priceMin}–${item.deep.priceMax} {item.deep.currency ?? ""}
@@ -499,7 +497,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
                     {item.description}
                   </p>
                 )}
-                {item.category !== "person" &&
+                {item.category !== "plate" &&
                   typeof item.priceMin === "number" &&
                   typeof item.priceMax === "number" && (
                     <p className="mt-1 text-[11px] font-medium text-primary">

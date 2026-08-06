@@ -63,9 +63,9 @@ TEXT / SIGNS: If you see any writing, logo, sign, sticker, tattoo or label that 
 
 VEHICLES: If a car, motorcycle, van, truck, bus or bicycle is visible, include it with category="vehicle". Guess make, model and generation/year range in the description, and give a realistic used-market price range.
 
-LICENSE PLATES: If a vehicle registration plate is readable, include a SEPARATE item with category="plate", name = the plate characters exactly as shown (uppercase), box tight around the plate. In the description state the issuing country/region and the plate format/series, plus what the plate style indicates (private, commercial, diplomatic, temporary, EV, etc). Set priceMin and priceMax to 0. NEVER guess, state or imply the owner's identity, name or address — that information is not public.
+LICENSE PLATES: If a vehicle registration plate is readable, include a SEPARATE item with category="plate", name = the plate characters exactly as shown (uppercase), box tight around the plate. In the description ONLY state the issuing country/region and the plate format/series. Set priceMin and priceMax to 0. NEVER guess, state or imply the owner's identity, name, address or any other personal detail, and never suggest how to look the plate up.
 
-PERSON: Include ONE item with category="person" and name="Person" ONLY IF a human is clearly the MAIN SUBJECT of the photo (portrait or half-portrait, face/upper body large and centered, occupying >=25% of the image). Do NOT include people who are merely on the side, in the background, or partially visible.
+PEOPLE: NEVER include people, faces or human body parts as items, and NEVER describe, identify, name or guess anything about a person visible in the photo. Skip humans entirely and only list objects.
 
 NEVER include isolated human body parts (hand, arm, leg, foot, torso, face without a portrait context, head, hair, skin, finger). Skip them entirely.
 
@@ -79,10 +79,10 @@ For each object, respond with a compact JSON object matching:
   "items": [
     {
       "name": "short common name",
-      "category": "furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|door|text|person|vehicle|plate|other",
+      "category": "furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|door|text|vehicle|plate|other",
       "description": "1-2 sentence plain description of what it likely is (brand/style guess if obvious)",
-      "priceMin": number in USD (typical low retail, 0 for text/person),
-      "priceMax": number in USD (typical high retail, 0 for text/person),
+      "priceMin": number in USD (typical low retail, 0 for text/plate),
+      "priceMax": number in USD (typical high retail, 0 for text/plate),
       "currency": "USD",
       "searchUrl": "https://www.google.com/search?q=<url-encoded query to buy the item>",
       "infoUrl": "https://en.wikipedia.org/wiki/<topic>  OR a relevant homepage/wikipedia URL",
@@ -99,7 +99,7 @@ There is NO maximum number of items — list everything you can identify. Prefer
 /** Appended to FULL_SYSTEM when the user runs a Resale Scan. */
 const RESALE_ADDENDUM = `
 
-RESALE MODE — this scan is for someone deciding what is worth selling. For EVERY item (except category "person", "plate" and "text") ALSO include a "resale" object:
+RESALE MODE — this scan is for someone deciding what is worth selling. For EVERY item (except category "plate" and "text") ALSO include a "resale" object:
 "resale": {
   "low": <realistic USED second-hand sale price, low end, USD number>,
   "typical": <most likely actual selling price used, USD number>,
@@ -128,7 +128,7 @@ confidence is an integer 0-100 for how sure you are about the name.
 
 box is normalized image coords (top-left origin). Be tight around the object. No item limit. NO markdown, NO extra text. Be fast.`;
 
-const ENRICH_SYSTEM = `You are giving quick shopping info for a single item. If the item is a vehicle registration plate, use category="plate", set prices to 0, and describe the issuing country/region and plate format only — NEVER the owner's identity. If it is a vehicle, use category="vehicle" and guess make/model with a used-market price range. Respond ONLY with compact JSON:
+const ENRICH_SYSTEM = `You are giving quick shopping info for a single item. If the item is a vehicle registration plate, use category="plate", set prices to 0, and describe the issuing country/region and plate format only — NEVER the owner or any personal detail. If it is a vehicle, use category="vehicle" and guess make/model with a used-market price range. Respond ONLY with compact JSON:
 {"category":"furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|vehicle|plate|other","description":"1-2 sentence plain description","priceMin":<usd number>,"priceMax":<usd number>,"currency":"USD","searchUrl":"https://www.google.com/search?q=<url-encoded>","infoUrl":"https://en.wikipedia.org/wiki/<topic> or relevant homepage","confidence":<integer 0-100 certainty of the identification>}`;
 
 const DEEP_SYSTEM = `You are a product identification expert. Given a photo (or crop) of a single item and a rough name, do your best to identify the EXACT product: guess brand, model, materials, generation/year if possible. Give a refined price range in USD based on that specific guess. Respond ONLY with compact JSON:
@@ -136,9 +136,6 @@ const DEEP_SYSTEM = `You are a product identification expert. Given a photo (or 
 
 const TRANSLATE_SYSTEM = `You translate short pieces of text (signs, logos, labels) into English. Respond ONLY with compact JSON:
 {"language":"detected language name in English (e.g. 'Japanese', 'Arabic') or 'Unknown'","languageCode":"ISO 639-1 code if known, else empty","script":"script name (e.g. 'Han', 'Arabic', 'Cyrillic') or empty","translation":"best English translation, or empty if you truly cannot translate","transliteration":"Latin-alphabet phonetic reading if applicable, else empty","note":"short note on ambiguity if any, else empty"}`;
-
-const PERSON_SYSTEM = `You compile a short, neutral, publicly-known summary about a named person for a UI info card. Do NOT invent facts; if you don't know, say so plainly. Use only widely-known public information. Respond ONLY with compact JSON:
-{"known":true|false,"summary":"2-4 sentence neutral overview, or a note that this person is not publicly known","bullets":["short fact 1","short fact 2","..."],"occupation":"if known, else empty","nationality":"if known, else empty","wikipediaUrl":"https://en.wikipedia.org/wiki/<topic> if plausible, else empty"}`;
 
 async function callGateway(action: string, body: unknown, userId: string): Promise<string> {
   const apiKey = process.env.LOVABLE_API_KEY;
@@ -500,124 +497,6 @@ export const translateText = createServerFn({ method: "POST" })
       transliteration: String(parsed.transliteration ?? ""),
       note: String(parsed.note ?? ""),
     };
-  });
-
-const PersonInput = z.object({ name: z.string().min(1).max(120) }).merge(EnvironmentSchema);
-
-export type WebSource = { title: string; url: string };
-
-export type PersonInfo = {
-  known: boolean;
-  summary: string;
-  bullets: string[];
-  occupation: string;
-  nationality: string;
-  wikipediaUrl: string;
-  sources?: WebSource[];
-};
-
-
-export const personInfo = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => PersonInput.parse(data))
-  .handler(async ({ data, context }): Promise<PersonInfo> => {
-    const { withCredits } = await import("./credits.server");
-    const content = await withCredits("person_info", context.userId, () =>
-      callGateway("person_info", {
-        model: "google/gemini-2.5-pro",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: PERSON_SYSTEM },
-          {
-            role: "user",
-            content: `Give a public info summary for: ${data.name}. Use only widely-known public information. If not publicly known, say so.`,
-          },
-        ],
-      }, context.userId),
-      data.environment as "sandbox" | "live",
-    );
-    const parsed = safeParse<Partial<PersonInfo>>(content, {});
-    return {
-      known: Boolean(parsed.known),
-      summary: String(parsed.summary ?? ""),
-      bullets: Array.isArray(parsed.bullets) ? parsed.bullets.map(String).slice(0, 10) : [],
-      occupation: String(parsed.occupation ?? ""),
-      nationality: String(parsed.nationality ?? ""),
-      wikipediaUrl: String(parsed.wikipediaUrl ?? ""),
-    };
-  });
-
-const PersonSearchInput = z.object({
-  name: z.string().min(1).max(120),
-  location: z.string().max(160).optional().default(""),
-}).merge(EnvironmentSchema);
-
-export type PersonMatch = {
-  name: string;
-  occupation: string;
-  location: string;
-  nationality: string;
-  summary: string;
-  bullets: string[];
-  wikipediaUrl: string;
-  sources: WebSource[];
-};
-
-export type PersonSearchResult = { matches: PersonMatch[] };
-
-const PERSON_SEARCH_SYSTEM = `You summarize web search results about a person. You are given the raw results of a normal web (Google-style) search.
-Base EVERY fact strictly on the provided search results — never add knowledge that is not supported by them, and never include private/sensitive data (home address, phone, email, ID numbers).
-If the results clearly describe several different people with the same name, list each as a separate match (max 6), most likely first. If a location was given, prioritize matches connected to that place. If the results contain nothing meaningful about a person, return an empty list.
-For each match, "sources" must contain 1-4 of the given result URLs that support the summary (copy the url and title exactly).
-Respond ONLY with compact JSON:
-{"matches":[{"name":"full name","occupation":"","location":"city/country most associated with, else empty","nationality":"","summary":"2-4 neutral sentences","bullets":["short public fact","..."],"wikipediaUrl":"wikipedia url if present in results else empty","sources":[{"title":"","url":""}]}]}`;
-
-export const personSearch = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => PersonSearchInput.parse(data))
-  .handler(async ({ data, context }): Promise<PersonSearchResult> => {
-    const { withCredits } = await import("./credits.server");
-    const { webSearch } = await import("./websearch.server");
-
-    const query = [data.name, data.location].filter(Boolean).join(" ");
-    const results = await webSearch(query, 8);
-
-    if (results.length === 0) return { matches: [] };
-
-    const resultsText = results
-      .map((r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.snippet}`)
-      .join("\n\n");
-
-    const content = await withCredits("person_info", context.userId, () =>
-      callGateway("person_search", {
-        model: "google/gemini-2.5-flash",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: PERSON_SEARCH_SYSTEM },
-          {
-            role: "user",
-            content: `Searched for: "${query}"\nName: ${data.name}\nLocation: ${data.location || "(not provided)"}\n\nSearch results:\n${resultsText}\n\nJSON only.`,
-          },
-        ],
-      }, context.userId),
-      data.environment as "sandbox" | "live",
-    );
-    const parsed = safeParse<{ matches?: Partial<PersonMatch>[] }>(content, {});
-    const allowed = new Set(results.map((r) => r.url));
-    const matches = (parsed.matches ?? []).slice(0, 6).map((m) => ({
-      name: String(m.name ?? data.name),
-      occupation: String(m.occupation ?? ""),
-      location: String(m.location ?? ""),
-      nationality: String(m.nationality ?? ""),
-      summary: String(m.summary ?? ""),
-      bullets: Array.isArray(m.bullets) ? m.bullets.map(String).slice(0, 10) : [],
-      wikipediaUrl: String(m.wikipediaUrl ?? ""),
-      sources: (Array.isArray(m.sources) ? m.sources : [])
-        .map((s) => ({ title: String(s?.title ?? ""), url: String(s?.url ?? "") }))
-        .filter((s) => allowed.has(s.url))
-        .slice(0, 4),
-    }));
-    return { matches };
   });
 
 const DOC_SYSTEM = `You are a high-accuracy OCR engine. Transcribe ALL text visible in the image verbatim.

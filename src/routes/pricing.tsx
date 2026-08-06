@@ -50,7 +50,7 @@ export const Route = createFileRoute("/pricing")({
 });
 
 const FEATURES = [
-  "AI object, text, and person recognition",
+  "AI object and text recognition",
   "Price estimates and quick links",
   "Photo and live video scanning",
   "Real-time detected-item list",
