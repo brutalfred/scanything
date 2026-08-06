@@ -204,6 +204,9 @@ export const EN = {
 
   // item info box + scan history
   resaleValue: "Second-hand resale value",
+  priceDisclaimer:
+    "Price ranges are AI estimates for guidance only and are not financial advice or a valuation.",
+
   worthSelling: "Worth selling",
   notWorthIt: "Not worth it",
   typical: "typical",

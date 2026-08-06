@@ -63,16 +63,26 @@ account exactly once per purchase token. Web visitors keep using web checkout.
 ## 5. Store listing requirements
 
 - Title: Scanything — AI analysis
-- Short description: Scan anything and get identification, information, price
-  estimates and links.
+- Short description: AI camera scanner that identifies objects, text and
+  documents and gives you information and links.
+- Long description: lead with AI object/text identification. Mention resale as
+  "estimated second-hand price range, for information only" — never as
+  valuation, appraisal, investment or financial advice.
+- Category: **Tools** (Photography/Productivity/Shopping are fine too).
+  Never Finance, Medical or Health & Fitness — Finance triggers the
+  organization-account requirement for personal developer accounts.
+- App content declarations: "no financial features", "not a health app",
+  no government app. Selling credit packs is an in-app purchase, not a
+  financial feature.
 - Privacy policy URL: `https://scanything.app/privacy`
 - Account deletion URL: `https://scanything.app/account/delete`
 - Terms URL: `https://scanything.app/terms`
 - Refund policy: `https://scanything.app/refund-policy`
 - Assets: 512×512 icon, 1024×500 feature graphic, at least 2 phone screenshots.
 - Data safety form: declare camera images (processed, not stored), email
-  address, and purchase history.
+  address, and purchase history. Do not declare financial or health info.
 - Content rating questionnaire and target audience: 13+.
+
 
 ## 6. Build and upload
 

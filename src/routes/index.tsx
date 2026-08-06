@@ -2547,6 +2547,15 @@ function DetailPanel({
               </div>
             )}
 
+            {(!["plate", "document"].includes(enrichment.category) ||
+              ("resale" in item && item.resale)) && (
+              <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                {t("priceDisclaimer")}
+              </p>
+            )}
+
+
+
 
 
             <div className="mt-4 flex flex-col gap-2">
