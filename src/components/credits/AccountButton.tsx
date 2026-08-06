@@ -14,6 +14,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useSounds } from "@/hooks/useSounds";
 import { useCameraPermission } from "@/hooks/useCameraPermission";
+import { APP_VERSION } from "@/lib/version";
 import { DailyCheckin } from "./DailyCheckin";
 import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
