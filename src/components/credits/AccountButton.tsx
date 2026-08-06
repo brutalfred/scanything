@@ -315,6 +315,10 @@ export function AccountButton({
               {t("deleteMyAccount")}
             </Link>
 
+            <p className="mt-3 text-center text-[10px] text-muted-foreground opacity-60">
+              {t("version")} {APP_VERSION}
+            </p>
+
             <div className="mt-3 flex justify-center">
               <button
                 type="button"
