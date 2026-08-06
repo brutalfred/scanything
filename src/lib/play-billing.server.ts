@@ -133,12 +133,36 @@ export type PlayPurchaseState = {
   acknowledged: boolean;
 };
 
+function extractDisabledApiError(body: string): string | null {
+  try {
+    const parsed = JSON.parse(body) as { error?: { details?: Array<{ metadata?: { activationUrl?: string; serviceTitle?: string }; reason?: string }>; message?: string } };
+    const detail = parsed.error?.details?.find((d) => d.reason === "SERVICE_DISABLED" || d.metadata?.activationUrl);
+    if (detail?.metadata?.activationUrl) {
+      return `Google Play Android Developer API is disabled in this Google Cloud project. Enable it first: ${detail.metadata.activationUrl}`;
+    }
+  } catch {
+    /* ignore parse errors */
+  }
+  if (body.includes("has not been used in project") || body.includes("SERVICE_DISABLED")) {
+    return "Google Play Android Developer API is disabled in this Google Cloud project. Enable it at https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com";
+  }
+  return null;
+}
+
+function handlePlayApiError(res: Response, body: string): never {
+  const disabled = extractDisabledApiError(body);
+  if (disabled) {
+    throw new Error(disabled);
+  }
+  throw new Error(`Play verification failed (${res.status}): ${body.slice(0, 200)}`);
+}
+
 /** Verifies a one-time product purchase token with the Play Developer API. */
 export async function verifyPlayProductPurchase(
   productId: string,
   purchaseToken: string,
 ): Promise<PlayPurchaseState> {
-  const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME || "app.scanything";
+  const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME || "app.scanything.scanything";
   const token = await getAccessToken();
   const url =
     `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
@@ -147,7 +171,7 @@ export async function verifyPlayProductPurchase(
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Play verification failed (${res.status}): ${body.slice(0, 200)}`);
+    handlePlayApiError(res, body);
   }
   const data = (await res.json()) as {
     orderId?: string;
@@ -164,7 +188,7 @@ export async function verifyPlayProductPurchase(
 
 /** Acknowledges a verified purchase so Google does not auto-refund it. */
 export async function acknowledgePlayPurchase(productId: string, purchaseToken: string) {
-  const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME || "app.scanything";
+  const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME || "app.scanything.scanything";
   const token = await getAccessToken();
   const url =
     `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
@@ -175,6 +199,7 @@ export async function acknowledgePlayPurchase(productId: string, purchaseToken: 
     body: "{}",
   });
   if (!res.ok && res.status !== 400) {
-    throw new Error(`Play acknowledge failed (${res.status})`);
+    const body = await res.text();
+    handlePlayApiError(res, body);
   }
 }
