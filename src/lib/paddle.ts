@@ -1,4 +1,5 @@
 import { resolvePaddlePrice } from "@/lib/payments.functions";
+import { isNativeAndroid } from "@/lib/platform";
 
 const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
 
@@ -16,6 +17,11 @@ export function getPaddleEnvironment(): "sandbox" | "live" {
 let paddleInitialized = false;
 
 export async function initializePaddle() {
+  // Google Play requires all digital purchases inside the Android app to go
+  // through Play Billing. Never load or open web checkout in the native shell.
+  if (isNativeAndroid()) {
+    throw new Error("Purchases in the app go through Google Play billing");
+  }
   if (paddleInitialized) return;
 
   if (!clientToken) {

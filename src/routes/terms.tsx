@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAndroidApp } from "@/hooks/useAndroidApp";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -87,21 +88,7 @@ function TermsPage() {
 
           <section>
             <h2 className="mb-2 text-lg font-semibold text-foreground">6. Payments and credits</h2>
-            <p>
-              {APP_NAME} uses Paddle.com as the Merchant of Record for all payments. This means Paddle processes payments, taxes, billing, subscriptions, cancellations, and refunds on behalf of {SELLER_NAME}. All payment terms are governed by{" "}
-              <a
-                href="https://www.paddle.com/legal/checkout-buyer-terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
-                Paddle's Buyer Terms
-              </a>
-              . Credits purchased are non-refundable except as described in our Refund Policy.
-            </p>
-            <p className="mt-2">
-              Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders. Paddle provides all customer service inquiries and handles returns.
-            </p>
+            <PaymentsTermsBody />
           </section>
 
           <section>
@@ -173,5 +160,45 @@ function TermsPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function PaymentsTermsBody() {
+  const android = useAndroidApp();
+
+  if (android) {
+    return (
+      <p>
+        Credits bought inside the Android app are sold through Google Play billing.
+        Google Play handles payment, taxes and refunds for those purchases under the
+        Google Play Terms of Service. Credits purchased are non-refundable except as
+        described in our Refund Policy.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <p>
+        {APP_NAME} uses Paddle.com as the Merchant of Record for payments made on the
+        website. This means Paddle processes payments, taxes, billing, subscriptions,
+        cancellations, and refunds on behalf of {SELLER_NAME}. All payment terms are
+        governed by{" "}
+        <a
+          href="https://www.paddle.com/legal/checkout-buyer-terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline"
+        >
+          Paddle&apos;s Buyer Terms
+        </a>
+        . Credits purchased are non-refundable except as described in our Refund Policy.
+      </p>
+      <p className="mt-2">
+        Our web order process is conducted by our online reseller Paddle.com. Paddle.com
+        is the Merchant of Record for those orders. Paddle provides all customer service
+        inquiries and handles returns.
+      </p>
+    </>
   );
 }

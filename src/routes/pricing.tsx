@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAndroidApp } from "@/hooks/useAndroidApp";
 import { Coins, Check, Sparkles } from "lucide-react";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { CREDIT_COSTS, CREDIT_LABELS } from "@/lib/credits";
@@ -168,11 +169,20 @@ function PricingPage() {
         </div>
 
         <div className="mt-12 text-center">
-          <p className="text-xs text-muted-foreground">
-            Payments processed by Paddle.com, the Merchant of Record for Scanything.
-          </p>
+          <PaymentProcessorNote />
         </div>
       </main>
     </div>
+  );
+}
+
+function PaymentProcessorNote() {
+  const android = useAndroidApp();
+  return (
+    <p className="text-xs text-muted-foreground">
+      {android
+        ? "Purchases in the app are handled by Google Play billing."
+        : "Payments processed by Paddle.com, the Merchant of Record for Scanything."}
+    </p>
   );
 }
