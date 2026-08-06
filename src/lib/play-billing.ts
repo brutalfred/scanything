@@ -8,6 +8,7 @@
  * bridge that Capacitor injects into the WebView on any origin.
  */
 import { NativePurchases, PURCHASE_TYPE } from "@capgo/native-purchases";
+import { Capacitor } from "@capacitor/core";
 import { isNativeAndroid } from "@/lib/platform";
 import { PLAY_PRODUCTS } from "@/lib/play-products";
 import { redeemPlayPurchase } from "@/lib/play-billing.functions";
@@ -16,30 +17,12 @@ export function playBillingAvailable(): boolean {
   return isNativeAndroid();
 }
 
-let supported: Promise<boolean> | null = null;
-let lastError: string | null = null;
-
 async function ensureBilling(): Promise<void> {
-  if (!supported) {
-    supported = (async () => {
-      try {
-        const res = await NativePurchases.isBillingSupported();
-        return Boolean(res?.isBillingSupported);
-      } catch (e) {
-        // Surfaces the real cause (plugin missing from the build, Play Store
-        // signed out, unsupported device) instead of a generic message.
-        lastError = e instanceof Error ? e.message : String(e);
-        return false;
-      }
-    })();
+  if (!isNativeAndroid()) {
+    throw new Error("Google Play purchases are only available in the Android app");
   }
-  if (!(await supported)) {
-    supported = null;
-    throw new Error(
-      lastError
-        ? `In-app purchases are unavailable: ${lastError}`
-        : "In-app purchases are unavailable on this device. Make sure the Play Store app is signed in and updated.",
-    );
+  if (!Capacitor.isPluginAvailable("NativePurchases")) {
+    throw new Error("The Google Play billing component is missing. Update the app from Google Play.");
   }
 }
 
@@ -70,12 +53,18 @@ export async function getPlayPrices(): Promise<Record<string, string>> {
 export async function buyWithPlay(productId: string): Promise<number> {
   await ensureBilling();
 
-  const transaction = await NativePurchases.purchaseProduct({
-    productIdentifier: productId,
-    productType: PURCHASE_TYPE.INAPP,
-    isConsumable: true,
-    quantity: 1,
-  });
+  let transaction;
+  try {
+    transaction = await NativePurchases.purchaseProduct({
+      productIdentifier: productId,
+      productType: PURCHASE_TYPE.INAPP,
+      isConsumable: true,
+      quantity: 1,
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Google Play could not start the purchase: ${detail}`);
+  }
 
   const token = transaction?.purchaseToken ?? transaction?.transactionId;
   if (!token) throw new Error("Could not verify the purchase");
