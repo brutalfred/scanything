@@ -28,17 +28,38 @@ function hasAndroidShellUA(): boolean {
   return navigator.userAgent.includes(ANDROID_UA_MARKER);
 }
 
+/**
+ * Extra signals for the native shell. An older shell build can be missing the
+ * user-agent marker, so also look for the Capacitor/Cordova bridges that only
+ * exist inside the app WebView.
+ */
+function hasNativeBridge(): boolean {
+  if (typeof window === "undefined") return false;
+  const w = window as unknown as {
+    Capacitor?: unknown;
+    cordova?: unknown;
+    CdvPurchase?: unknown;
+  };
+  return Boolean(w.Capacitor || w.cordova || w.CdvPurchase);
+}
+
+function isAndroidDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
 /** True when running inside the Capacitor native shell (Android/iOS). */
 export function isNative(): boolean {
   const c = cap();
-  return Boolean(c?.isNativePlatform?.()) || hasAndroidShellUA();
+  return Boolean(c?.isNativePlatform?.()) || hasAndroidShellUA() || hasNativeBridge();
 }
 
 /** True only inside the Android app published to Google Play. */
 export function isNativeAndroid(): boolean {
   const c = cap();
   if (c?.isNativePlatform?.() && c?.getPlatform?.() === "android") return true;
-  return hasAndroidShellUA();
+  if (hasAndroidShellUA()) return true;
+  return hasNativeBridge() && isAndroidDevice();
 }
 
 /** True in a normal browser tab or installed PWA. */
