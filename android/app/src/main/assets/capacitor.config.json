@@ -2,14 +2,23 @@
   "appId": "app.scanything.scanything",
   "appName": "Scanything",
   "webDir": "dist/client",
-  "appendUserAgent": "ScanythingAndroid",
+  "appendUserAgent": "ScanythingAndroid LovableApp/1.0",
   "android": {
     "allowMixedContent": false
   },
   "server": {
     "url": "https://scanything.app",
     "androidScheme": "https",
-    "cleartext": false
+    "cleartext": false,
+    "allowNavigation": [
+      "scanything.app",
+      "www.scanything.app",
+      "*.google.com",
+      "*.google.se",
+      "accounts.google.com",
+      "oauth.lovable.app",
+      "*.lovable.app"
+    ]
   },
   "plugins": {
     "SplashScreen": {

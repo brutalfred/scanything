@@ -16,6 +16,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useLanguage } from "@/hooks/useLanguage";
 import { installGlobalClickSound } from "@/lib/sounds";
 import { useNativeShell } from "@/hooks/useNativeShell";
+import { useOAuthCallback } from "@/hooks/useOAuthCallback";
 
 
 import appCss from "../styles.css?url";
@@ -185,6 +186,7 @@ function RootComponent() {
   useLanguage();
 
   useNativeShell();
+  useOAuthCallback();
 
   useEffect(() => installGlobalClickSound(), []);
 
