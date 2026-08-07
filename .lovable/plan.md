@@ -13,7 +13,7 @@ Both leave the user in a normal browser, which is why the app behaves as Web and
 
 ### 1. Android App Links (email confirmation + reset links reopen the app)
 - Add an App Links intent filter to `MainActivity` for `https://scanything.app` and `https://www.scanything.app` (`android:autoVerify="true"`).
-- Serve `public/.well-known/assetlinks.json` with the app's package name and the release signing-key SHA-256 fingerprint, so Android verifies the link ownership. You supply the fingerprint from Play Console (App signing → SHA-256 certificate fingerprint); the file is published with the site.
+- Serve `public/.well-known/assetlinks.json` with the app's package name and the release signing-key SHA-256 fingerprint, so Android verifies the link ownership.
 - Keep `launchMode="singleTask"` and handle `appUrlOpen` in `useNativeShell` so a link tap routes to the in-app path instead of a cold start on `/`.
 
 ### 2. Google sign-in stays in the app
@@ -30,7 +30,10 @@ Both leave the user in a normal browser, which is why the app behaves as Web and
 ## Ship steps
 Requires a new AAB: version bump to 1.9.7 / versionCode 17, `npm run build`, `npx cap sync android`, rebuild and upload. The `assetlinks.json` must be live on the published site before Android can verify the links.
 
-## Needed from you
-The release SHA-256 signing fingerprint from Play Console (App integrity → App signing). Without it the App Links cannot verify and email links will keep opening Chrome.
+## Signing fingerprint (already provided)
 
-Key type question: choose **Klassisk nyckel** (Classic key) unless you have intentionally migrated to a post-quantum signing key. The App Links file must contain the SHA-256 fingerprint of the key that Google Play actually uses to sign your AAB. If you just see the choice, pick the classic key and paste the `SHA-256:` value here.
+```
+3D:FA:08:9C:9B:81:65:1D:23:EC:B6:90:E6:05:31:3C:08:3E:ED:FA:4F:3B:5D:AC:65:DF:3B:E0:FE:F7:F8:5E
+```
+
+Package: `app.scanything.scanything`. I will use this classic-key SHA-256 value for the `assetlinks.json` file.
