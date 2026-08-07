@@ -1017,6 +1017,7 @@ function Scanner() {
       /* ignore */
     }
     setSnapshot(null);
+    setUploaded(null);
     setItems([]);
     setRawItemCount(0);
     setLoadMoreNote(null);
