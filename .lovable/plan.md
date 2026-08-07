@@ -1,23 +1,34 @@
-# Investigate Android app treated as Web after sign-in
+# Keep sign-in inside the Android app
 
-## Current understanding
-- User is testing the closed-alpha Android app (versionCode 16) and sees the Account tab show **“Web”** instead of **“Android app.”**
-- This happens during the **email sign-in** flow.
-- Email/password sign-in in `src/routes/auth.tsx` does not redirect to a browser; it calls `supabase.auth.signInWithPassword()` and then `navigate({ to: "/" })` inside the same WebView.
-- Therefore, the login method itself does **not** force the app into web mode. The problem is that the WebView is not being recognized as the native Android shell, so the app is already treated as web before/during login.
+## What is actually happening
 
-## Possible causes to investigate
-1. The build installed on the test device is still the old version, despite the user thinking it is version 16.
-2. `appendUserAgent: "ScanythingAndroid"` is not being applied by the Capacitor runtime on that device.
-3. The WebView user-agent is being overwritten or stripped by the server/site after login.
-4. The user is actually clicking an email confirmation / password reset link from the email app, which opens in the system browser, not the native app.
+Two confirmed gaps in the Android shell:
 
-## Plan
-1. Add diagnostic logging to the Account tab and auth page so we can read the actual user agent and `Capacitor` bridge state at runtime.
-2. Verify the `isNativeAndroid()` detection logic is robust and add a fallback that also checks `Capacitor.isNativePlatform()` and `Capacitor.getPlatform()` even when the UA marker is missing.
-3. Add a small in-app diagnostics toast/alert on the auth page that shows whether the app is running as native Android or web.
-4. Implement a deep-link/intent-filter path (`/auth/callback`) and update the Supabase auth emails so confirmation and reset links can return the user to the native app when clicked from an email client.
-5. Update the reset-password and auth pages to surface an “Open in Scanything app” prompt when the page is loaded in a browser but the UA indicates the Android app is available.
+1. `android/app/src/main/AndroidManifest.xml` has only a LAUNCHER intent filter. There is no App Links filter for `https://scanything.app`, and there is no `.well-known/assetlinks.json` in `public/`. So any `scanything.app` link opened from Gmail (email confirmation, password reset) opens Chrome instead of the app — and the session is created in the browser, not in the WebView.
+2. Google sign-in leaves the WebView. The OAuth flow navigates to Google, which Capacitor hands to an external browser; the redirect back to `https://scanything.app` also lands in that browser, so the user finishes signed in on the web page while the app still shows the logged-out/"Web" state.
 
-## Outcome
-After this plan, the user will be able to tell whether the installed AAB is actually the native build and, if not, get a clear path back into the app from email links.
+Both leave the user in a normal browser, which is why the app behaves as Web and offers Paddle.
+
+## Fix
+
+### 1. Android App Links (email confirmation + reset links reopen the app)
+- Add an App Links intent filter to `MainActivity` for `https://scanything.app` and `https://www.scanything.app` (`android:autoVerify="true"`).
+- Serve `public/.well-known/assetlinks.json` with the app's package name and the release signing-key SHA-256 fingerprint, so Android verifies the link ownership. You supply the fingerprint from Play Console (App signing → SHA-256 certificate fingerprint); the file is published with the site.
+- Keep `launchMode="singleTask"` and handle `appUrlOpen` in `useNativeShell` so a link tap routes to the in-app path instead of a cold start on `/`.
+
+### 2. Google sign-in stays in the app
+- On native Android, run the OAuth flow through the Capacitor in-app browser and close it on return, instead of letting the WebView navigate away to the system browser.
+- Set the OAuth return target to a public same-origin callback, then let the existing session listener take over inside the app.
+- On the web build nothing changes: the existing `lovable.auth.signInWithOAuth` path stays as is.
+
+### 3. Email links point back at the app path
+- Confirmation and reset links already target `scanything.app` URLs, so once App Links verification is in place they open the app. No auth-provider change needed beyond keeping `redirectTo` on the site origin.
+
+### 4. Safeguard
+- Once detection is reliable, the Account tab shows "Android app" and the credits sheet keeps failing closed on Paddle inside the native app (already in place from v1.9.6).
+
+## Ship steps
+Requires a new AAB: version bump to 1.9.7 / versionCode 17, `npm run build`, `npx cap sync android`, rebuild and upload. The `assetlinks.json` must be live on the published site before Android can verify the links.
+
+## Needed from you
+The release SHA-256 signing fingerprint from Play Console (App integrity → App signing). Without it the App Links cannot verify and email links will keep opening Chrome.
