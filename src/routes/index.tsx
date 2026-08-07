@@ -701,8 +701,9 @@ function Scanner() {
 
     void playSound("shutter");
     // Documents need every glyph, so capture at a much higher resolution.
-    const dataUrl = grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
+    const dataUrl = uploaded ?? grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
     if (!dataUrl) return;
+    setUploaded(null);
     setSnapshot(dataUrl);
 
     try {
