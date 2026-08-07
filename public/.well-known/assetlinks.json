@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.scanything.scanything",
+      "sha256_cert_fingerprints": [
+        "3DFA089C9B81651D23ECB690E605313C083EEDFA4F3B5DAC65DF3BE0FEF7F85E"
+      ]
+    }
+  }
+]
