@@ -13,8 +13,8 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   // App-only marker used by the remotely loaded site to select Play Billing.
   // Capacitor defines this at the root level, not inside `android`.
-  // LovableApp/ is required so the Lovable OAuth helper treats the WebView as a
-  // mobile shell and uses full-page navigation instead of a browser popup.
+  // Do NOT add a "LovableApp/" token here: it switches the Lovable OAuth helper
+  // to a full-page redirect that Google rejects with a 400 malformed request.
   appendUserAgent: "ScanythingAndroid",
   android: {
     allowMixedContent: false,
