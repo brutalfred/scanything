@@ -21,6 +21,15 @@ const config: CapacitorConfig = {
     url: "https://scanything.app",
     androidScheme: "https",
     cleartext: false,
+    allowNavigation: [
+      "scanything.app",
+      "www.scanything.app",
+      "*.google.com",
+      "*.google.se",
+      "accounts.google.com",
+      "oauth.lovable.app",
+      "*.lovable.app",
+    ],
   },
   plugins: {
     SplashScreen: {

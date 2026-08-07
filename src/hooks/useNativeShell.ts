@@ -1,14 +1,33 @@
 import { useEffect } from "react";
 import { isNative } from "@/lib/platform";
 
+function isSameOriginDeepLink(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && (u.host === "scanything.app" || u.host === "www.scanything.app");
+  } catch {
+    return false;
+  }
+}
+
+function handleDeepLink(url: string) {
+  if (!isSameOriginDeepLink(url)) return;
+  // Route the in-app WebView to the linked path instead of landing on /.
+  const target = new URL(url);
+  if (target.pathname + target.search + target.hash !== window.location.pathname + window.location.search + window.location.hash) {
+    window.location.href = url;
+  }
+}
+
 /**
- * Native shell behaviour: hardware back button, status bar and splash screen.
+ * Native shell behaviour: hardware back button, status bar, splash screen and deep-link routing.
  * Does nothing in the browser.
  */
 export function useNativeShell() {
   useEffect(() => {
     if (!isNative()) return;
     let removeBack: (() => void) | undefined;
+    let removeUrl: (() => void) | undefined;
     let cancelled = false;
 
     (async () => {
@@ -22,6 +41,18 @@ export function useNativeShell() {
 
         await StatusBar.setStyle({ style: Style.Dark }).catch(() => undefined);
         await SplashScreen.hide().catch(() => undefined);
+
+        // Handle deep links that launched the app cold.
+        const launchUrl = await App.getLaunchUrl().catch(() => undefined);
+        if (launchUrl?.url) handleDeepLink(launchUrl.url);
+
+        // Handle deep links while the app is already running.
+        const urlHandle = await App.addListener("appUrlOpen", ({ url }) => {
+          handleDeepLink(url);
+        });
+        removeUrl = () => {
+          urlHandle.remove();
+        };
 
         const handle = await App.addListener("backButton", ({ canGoBack }) => {
           // Let open overlays close first.
@@ -52,6 +83,8 @@ export function useNativeShell() {
     return () => {
       cancelled = true;
       removeBack?.();
+      removeUrl?.();
     };
   }, []);
 }
+
