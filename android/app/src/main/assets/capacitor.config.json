@@ -2,7 +2,7 @@
   "appId": "app.scanything.scanything",
   "appName": "Scanything",
   "webDir": "dist/client",
-  "appendUserAgent": "ScanythingAndroid",
+  "appendUserAgent": "ScanythingAndroid LovableApp/1.0",
   "android": {
     "allowMixedContent": false
   },
