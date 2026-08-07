@@ -774,7 +774,7 @@ function Scanner() {
         /* ignore */
       }
     }
-  }, [grabFrame, stopCamera, credits, mode, environment, startScanSpend]);
+  }, [grabFrame, stopCamera, credits, mode, environment, startScanSpend, uploaded]);
 
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
