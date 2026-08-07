@@ -32,3 +32,5 @@ Requires a new AAB: version bump to 1.9.7 / versionCode 17, `npm run build`, `np
 
 ## Needed from you
 The release SHA-256 signing fingerprint from Play Console (App integrity → App signing). Without it the App Links cannot verify and email links will keep opening Chrome.
+
+Key type question: choose **Klassisk nyckel** (Classic key) unless you have intentionally migrated to a post-quantum signing key. The App Links file must contain the SHA-256 fingerprint of the key that Google Play actually uses to sign your AAB. If you just see the choice, pick the classic key and paste the `SHA-256:` value here.
