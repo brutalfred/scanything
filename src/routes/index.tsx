@@ -1522,6 +1522,29 @@ function Scanner() {
                 </div>
               )}
 
+              {uploaded && (
+                <div className="absolute inset-0 z-20 bg-black">
+                  <img
+                    src={uploaded}
+                    alt="Uploaded image ready to scan"
+                    className="h-full w-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setUploaded(null)}
+                    aria-label="Remove uploaded image"
+                    title="Remove uploaded image"
+                    className="absolute right-2 top-2 rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <div className="pointer-events-none absolute inset-x-2 bottom-2 rounded-md bg-black/70 p-2 text-center text-[11px] text-white">
+                    {mode === "document" ? "Uploaded document" : "Uploaded picture"}
+                  </div>
+                </div>
+              )}
+
+
               {cameraZoom.scale > 1.01 && (
                 <button
                   onClick={cameraZoom.reset}
