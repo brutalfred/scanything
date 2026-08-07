@@ -2,9 +2,9 @@
   "appId": "app.scanything.scanything",
   "appName": "Scanything",
   "webDir": "dist/client",
+  "appendUserAgent": "ScanythingAndroid",
   "android": {
-    "allowMixedContent": false,
-    "appendUserAgent": "ScanythingAndroid"
+    "allowMixedContent": false
   },
   "server": {
     "url": "https://scanything.app",
