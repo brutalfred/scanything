@@ -1690,7 +1690,13 @@ function Scanner() {
                           className="w-full max-w-xs"
                         >
                           <Camera className="mr-2 h-5 w-5" />
-                          {freeScan ? (
+                          {uploaded ? (
+                            isDocMode ? (
+                              "Scan the uploaded document"
+                            ) : (
+                              "Scan the uploaded picture"
+                            )
+                          ) : freeScan ? (
                             "Daily free scan available"
                           ) : (
                             <>
@@ -1704,6 +1710,45 @@ function Scanner() {
                             </>
                           )}
                         </Button>
+                        {(isDocMode || mode === "photo" || mode === "resale") && (
+                          <>
+                            <input
+                              ref={uploadInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = "";
+                                if (!file) return;
+                                const url = await fileToCompressedDataUrl(
+                                  file,
+                                  isDocMode ? 2200 : 1024,
+                                  isDocMode ? 0.95 : 0.8,
+                                );
+                                if (!url) {
+                                  setError("Could not read that image.");
+                                  return;
+                                }
+                                setError(null);
+                                setUploaded(url);
+                              }}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => uploadInputRef.current?.click()}
+                              className="w-full max-w-xs"
+                            >
+                              <Upload className="mr-2 h-4 w-4" />
+                              {uploaded
+                                ? "Choose a different image"
+                                : isDocMode
+                                  ? "Upload a document image"
+                                  : "Upload a picture"}
+                            </Button>
+                          </>
+                        )}
                         <p className="text-center text-[11px] text-muted-foreground">
                           {(() => {
                             const key: ScanMode = isDocMode ? "document" : "photo";
