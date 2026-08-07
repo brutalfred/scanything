@@ -29,6 +29,7 @@ import {
   Pencil,
   ChevronDown,
   Plus,
+  Upload,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -339,6 +340,9 @@ function Scanner() {
   const [phase, setPhase] = useState<Phase>("camera");
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
+  /** Image picked from the device — scanned instead of the live camera frame. */
+  const [uploaded, setUploaded] = useState<string | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
   /** How many items the AI actually returned before any local filtering. */
   const [rawItemCount, setRawItemCount] = useState(0);
@@ -698,8 +702,9 @@ function Scanner() {
 
     void playSound("shutter");
     // Documents need every glyph, so capture at a much higher resolution.
-    const dataUrl = grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
+    const dataUrl = uploaded ?? grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
     if (!dataUrl) return;
+    setUploaded(null);
     setSnapshot(dataUrl);
 
     try {
@@ -770,7 +775,7 @@ function Scanner() {
         /* ignore */
       }
     }
-  }, [grabFrame, stopCamera, credits, mode, environment, startScanSpend]);
+  }, [grabFrame, stopCamera, credits, mode, environment, startScanSpend, uploaded]);
 
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
@@ -1013,6 +1018,7 @@ function Scanner() {
       /* ignore */
     }
     setSnapshot(null);
+    setUploaded(null);
     setItems([]);
     setRawItemCount(0);
     setLoadMoreNote(null);
@@ -1047,6 +1053,7 @@ function Scanner() {
       return [];
     });
     setMode(m);
+    setUploaded(null);
     setVideoPaused(false);
     setError(null);
   }, []);
@@ -1516,6 +1523,29 @@ function Scanner() {
                 </div>
               )}
 
+              {uploaded && (
+                <div className="absolute inset-0 z-20 bg-black">
+                  <img
+                    src={uploaded}
+                    alt="Uploaded image ready to scan"
+                    className="h-full w-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setUploaded(null)}
+                    aria-label="Remove uploaded image"
+                    title="Remove uploaded image"
+                    className="absolute right-2 top-2 rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <div className="pointer-events-none absolute inset-x-2 bottom-2 rounded-md bg-black/70 p-2 text-center text-[11px] text-white">
+                    {mode === "document" ? "Uploaded document" : "Uploaded picture"}
+                  </div>
+                </div>
+              )}
+
+
               {cameraZoom.scale > 1.01 && (
                 <button
                   onClick={cameraZoom.reset}
@@ -1660,7 +1690,13 @@ function Scanner() {
                           className="w-full max-w-xs"
                         >
                           <Camera className="mr-2 h-5 w-5" />
-                          {freeScan ? (
+                          {uploaded ? (
+                            isDocMode ? (
+                              "Scan the uploaded document"
+                            ) : (
+                              "Scan the uploaded picture"
+                            )
+                          ) : freeScan ? (
                             "Daily free scan available"
                           ) : (
                             <>
@@ -1674,6 +1710,45 @@ function Scanner() {
                             </>
                           )}
                         </Button>
+                        {(isDocMode || mode === "photo" || mode === "resale") && (
+                          <>
+                            <input
+                              ref={uploadInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = "";
+                                if (!file) return;
+                                const url = await fileToCompressedDataUrl(
+                                  file,
+                                  isDocMode ? 2200 : 1024,
+                                  isDocMode ? 0.95 : 0.8,
+                                );
+                                if (!url) {
+                                  setError("Could not read that image.");
+                                  return;
+                                }
+                                setError(null);
+                                setUploaded(url);
+                              }}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => uploadInputRef.current?.click()}
+                              className="w-full max-w-xs"
+                            >
+                              <Upload className="mr-2 h-4 w-4" />
+                              {uploaded
+                                ? "Choose a different image"
+                                : isDocMode
+                                  ? "Upload a document image"
+                                  : "Upload a picture"}
+                            </Button>
+                          </>
+                        )}
                         <p className="text-center text-[11px] text-muted-foreground">
                           {(() => {
                             const key: ScanMode = isDocMode ? "document" : "photo";
