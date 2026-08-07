@@ -42,7 +42,10 @@ export function isNative(): boolean {
 /** True only inside the Android app published to Google Play. */
 export function isNativeAndroid(): boolean {
   const c = cap();
-  if (c?.isNativePlatform?.() && c?.getPlatform?.() === "android") return true;
+  // Capacitor's injected bridge is the primary signal. Check the platform
+  // directly as well as isNativePlatform because a remotely loaded origin can
+  // expose the bridge methods at slightly different times during startup.
+  if (c?.getPlatform?.() === "android" && c?.isNativePlatform?.() !== false) return true;
   // Only the app shell adds this UA marker; a normal Android browser never has it.
   return hasAndroidShellUA() && isAndroidDevice();
 }

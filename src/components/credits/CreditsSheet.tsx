@@ -46,9 +46,10 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
     }
     setBuying(priceId);
     try {
-      if (isNativeAndroid()) {
+      const androidApp = isNativeAndroid();
+      if (androidApp) {
         if (!playBillingAvailable()) {
-          throw new Error("Google Play billing is unavailable on this device");
+          throw new Error("Google Play billing is unavailable. Update Scanything from Google Play.");
         }
         // Play requires in-app purchases for digital goods inside the Android app.
         const productId = PLAY_PRODUCT_BY_PRICE_ID[priceId];

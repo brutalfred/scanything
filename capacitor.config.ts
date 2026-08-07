@@ -11,10 +11,11 @@ const config: CapacitorConfig = {
   appId: "app.scanything.scanything",
   appName: "Scanything",
   webDir: "dist/client",
+  // App-only marker used by the remotely loaded site to select Play Billing.
+  // Capacitor defines this at the root level, not inside `android`.
+  appendUserAgent: "ScanythingAndroid",
   android: {
     allowMixedContent: false,
-    // Lets the remote-loaded web app detect that it runs inside the Play shell.
-    appendUserAgent: "ScanythingAndroid",
   },
   server: {
     url: "https://scanything.app",

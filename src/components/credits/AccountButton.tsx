@@ -16,6 +16,7 @@ import { useSounds } from "@/hooks/useSounds";
 import { useCameraPermission } from "@/hooks/useCameraPermission";
 import { useAiConsent } from "@/hooks/useAiConsent";
 import { useAppVersion } from "@/hooks/useAppVersion";
+import { useAndroidApp } from "@/hooks/useAndroidApp";
 import { DailyCheckin } from "./DailyCheckin";
 import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
@@ -43,6 +44,7 @@ export function AccountButton({
   const camera = useCameraPermission();
   const aiConsent = useAiConsent();
   const appVersion = useAppVersion();
+  const androidApp = useAndroidApp();
 
 
   async function handleInstall() {
@@ -359,7 +361,7 @@ export function AccountButton({
 
 
             <p className="mt-3 text-center text-[10px] text-muted-foreground opacity-60">
-              {t("version")} {appVersion}
+              {t("version")} {appVersion} · {androidApp ? "Android app" : "Web"}
             </p>
 
             <div className="mt-3 flex justify-center">
