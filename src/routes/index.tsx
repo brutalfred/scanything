@@ -339,6 +339,9 @@ function Scanner() {
   const [phase, setPhase] = useState<Phase>("camera");
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
+  /** Image picked from the device — scanned instead of the live camera frame. */
+  const [uploaded, setUploaded] = useState<string | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [items, setItems] = useState<DetectedItem[]>([]);
   /** How many items the AI actually returned before any local filtering. */
   const [rawItemCount, setRawItemCount] = useState(0);
