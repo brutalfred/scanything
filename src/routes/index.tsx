@@ -1052,6 +1052,7 @@ function Scanner() {
       return [];
     });
     setMode(m);
+    setUploaded(null);
     setVideoPaused(false);
     setError(null);
   }, []);
