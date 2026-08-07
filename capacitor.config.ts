@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   // Capacitor defines this at the root level, not inside `android`.
   // LovableApp/ is required so the Lovable OAuth helper treats the WebView as a
   // mobile shell and uses full-page navigation instead of a browser popup.
-  appendUserAgent: "ScanythingAndroid LovableApp/1.0",
+  appendUserAgent: "ScanythingAndroid",
   android: {
     allowMixedContent: false,
   },
