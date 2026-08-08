@@ -1122,8 +1122,84 @@ function Scanner() {
     setError(null);
     setTracked([]);
     setVideoPaused(false);
+    setDocPages([]);
+    appendPageRef.current = false;
     setPhase("camera");
   }, []);
+
+  /** Keeps the pages collected so far and returns to the camera for the next page. */
+  const addDocumentPage = useCallback(() => {
+    appendPageRef.current = true;
+    void playSound("sweep");
+    setItems([]);
+    setSnapshot(null);
+    setUploaded(null);
+    setError(null);
+    setSelected(null);
+    setPhase("camera");
+  }, []);
+
+  /** Files the current scan into a named collection. */
+  const saveToCollection = useCallback(async () => {
+    const name = collectionName.trim();
+    if (!name) return;
+    setSavingCollection(true);
+    try {
+      const payload =
+        mode === "video"
+          ? tracked.map((it) => ({
+              name: it.name,
+              category: it.enrichment?.category,
+              description: it.enrichment?.description,
+              confidence: it.confidence,
+              priceMin: it.enrichment?.priceMin,
+              priceMax: it.enrichment?.priceMax,
+            }))
+          : items.map((d) => ({
+              name: d.name,
+              category: d.category,
+              description: d.description,
+              confidence: d.confidence,
+              priceMin: d.priceMin,
+              priceMax: d.priceMax,
+            }));
+      if (!payload.length) {
+        toast.error("Nothing to save yet");
+        return;
+      }
+      await saveScanHistory({
+        data: { mode, items: payload, collection: name, title: name },
+      });
+      toast.success(`Saved to "${name}"`);
+      setCollectionPrompt(false);
+      setCollectionName("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save to collection");
+    } finally {
+      setSavingCollection(false);
+    }
+  }, [collectionName, items, tracked, mode]);
+
+  /** Runs a queued offline capture now. */
+  const analyzeQueued = useCallback(
+    async (entry: QueuedScan) => {
+      setQueueOpen(false);
+      setMode(entry.mode);
+      await removeQueuedScan(entry.id);
+      await refreshQueue();
+      await runScan(entry.dataUrl, entry.mode);
+    },
+    [refreshQueue, runScan],
+  );
+
+  const dropQueued = useCallback(
+    async (id: string) => {
+      await removeQueuedScan(id);
+      await refreshQueue();
+    },
+    [refreshQueue],
+  );
+
 
 
 
