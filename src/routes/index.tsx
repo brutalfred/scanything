@@ -2385,10 +2385,11 @@ function DetailPanel({
           resaleLow: resale.low,
           resaleTypical: resale.typical,
           resaleHigh: resale.high,
-          conditionHint: resale.condition ?? "",
+          conditionHint: "",
           environment: getPaddleEnvironment(),
         },
       });
+
       setListingDraft(draft);
       setListingOpen(true);
       setListingEdited(false);
