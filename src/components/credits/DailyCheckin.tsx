@@ -8,7 +8,6 @@ import {
   claimDailyCheckin,
   getCheckinState,
 } from "@/lib/checkin.functions";
-import { playSound } from "@/lib/sounds";
 
 
 export function DailyCheckin({ enabled }: { enabled: boolean }) {
@@ -26,12 +25,10 @@ export function DailyCheckin({ enabled }: { enabled: boolean }) {
     mutationFn: () => claimDailyCheckin(),
     onSuccess: (result) => {
       if (result.status === "rewarded") {
-        void playSound("coin");
         toast.success(`${CHECKIN_GOAL} days in a row — ${result.rewarded} credits added!`);
       } else if (result.status === "already_checked_in") {
         toast.info("You've already checked in today");
       } else {
-        void playSound("coin");
         toast.success(`Checked in — day ${result.currentStreak} of ${CHECKIN_GOAL}`);
       }
 

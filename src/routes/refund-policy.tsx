@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAndroidApp } from "@/hooks/useAndroidApp";
 
 export const Route = createFileRoute("/refund-policy")({
   head: () => ({
@@ -8,7 +7,7 @@ export const Route = createFileRoute("/refund-policy")({
       {
         name: "description",
         content:
-          "Scanything offers a 30-day money-back guarantee on scan credit purchases. Learn how to request a refund through Paddle and how long refunds take.",
+          "Scanything offers a 30-day money-back guarantee on scan credit purchases. Learn how to request a refund through Google Play and how long refunds take.",
       },
       { property: "og:title", content: "Refund Policy — Scanything" },
       {
@@ -89,38 +88,25 @@ function RefundPolicyPage() {
 }
 
 function RefundChannel() {
-  const android = useAndroidApp();
-
-  if (android) {
-    return (
-      <>
-        Purchases made inside the Android app are billed by Google Play. Request those
-        refunds through your Google Play order history, or contact us at{" "}
-        <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary underline">
-          {CONTACT_EMAIL}
-        </a>
-        .
-      </>
-    );
-  }
-
   return (
     <>
-      Refunds for purchases made on the website are processed by our payment provider,
-      Paddle. You can request a refund by visiting{" "}
+      Scan credits are sold as in-app products through Google Play, and Google is the
+      seller of record for those purchases. Request a refund from your{" "}
       <a
-        href="https://paddle.net"
+        href="https://play.google.com/store/account/orderhistory"
         target="_blank"
         rel="noopener noreferrer"
         className="text-primary underline"
       >
-        paddle.net
+        Google Play order history
       </a>{" "}
-      and following Paddle&apos;s refund process, or by contacting us directly at{" "}
+      (Play Store → Payments &amp; subscriptions → Budget &amp; history), or contact us
+      directly at{" "}
       <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary underline">
         {CONTACT_EMAIL}
-      </a>
-      .
+      </a>{" "}
+      and we will help you with the Google Play refund request.
     </>
   );
 }
+

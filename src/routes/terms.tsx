@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAndroidApp } from "@/hooks/useAndroidApp";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -164,41 +163,30 @@ function TermsPage() {
 }
 
 function PaymentsTermsBody() {
-  const android = useAndroidApp();
-
-  if (android) {
-    return (
-      <p>
-        Credits bought inside the Android app are sold through Google Play billing.
-        Google Play handles payment, taxes and refunds for those purchases under the
-        Google Play Terms of Service. Credits purchased are non-refundable except as
-        described in our Refund Policy.
-      </p>
-    );
-  }
-
   return (
     <>
       <p>
-        {APP_NAME} uses Paddle.com as the Merchant of Record for payments made on the
-        website. This means Paddle processes payments, taxes, billing, subscriptions,
-        cancellations, and refunds on behalf of {SELLER_NAME}. All payment terms are
-        governed by{" "}
+        Scan credits in {APP_NAME} are sold as in-app products through{" "}
+        <strong className="text-foreground">Google Play billing</strong>. Google is the
+        seller of record for those purchases and handles payment, taxes, receipts and
+        refunds on behalf of {SELLER_NAME}, under the{" "}
         <a
-          href="https://www.paddle.com/legal/checkout-buyer-terms"
+          href="https://play.google.com/intl/en_us/about/play-terms/"
           target="_blank"
           rel="noopener noreferrer"
           className="text-primary underline"
         >
-          Paddle&apos;s Buyer Terms
+          Google Play Terms of Service
         </a>
-        . Credits purchased are non-refundable except as described in our Refund Policy.
+        .
       </p>
       <p className="mt-2">
-        Our web order process is conducted by our online reseller Paddle.com. Paddle.com
-        is the Merchant of Record for those orders. Paddle provides all customer service
-        inquiries and handles returns.
+        Credits are a one-time, non-subscription purchase that is added to your account
+        balance. Credits are non-refundable once used, except as described in our Refund
+        Policy or where required by law. You can view your order history and request
+        refunds from your Google Play account.
       </p>
     </>
   );
 }
+
