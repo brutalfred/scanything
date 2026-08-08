@@ -3923,6 +3923,20 @@ function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () =
           <Sparkles className="h-3 w-3" />
           {summarizing ? "Summarizing…" : "Summarize"}
         </button>
+        <button
+          type="button"
+          disabled={translatingDoc}
+          onClick={() => void runTranslate()}
+          className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+        >
+          <Languages className="h-3 w-3" />
+          {translatingDoc
+            ? "Translating…"
+            : original
+              ? "Show original"
+              : `Translate to ${docLanguage}`}
+        </button>
+
         {onAddPage && (
           <button
             type="button"
