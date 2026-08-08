@@ -2695,6 +2695,27 @@ function DetailPanel({
                     </a>
                   ))}
                 </div>
+                <button
+                  onClick={runGenerateListing}
+                  disabled={listingLoading || listingOpen}
+                  className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-primary/60 bg-primary/20 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/30 disabled:opacity-50"
+                >
+                  {listingLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("generating")}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      {t("generateListing")}
+                    </>
+                  )}
+                </button>
+                {listingError && (
+                  <p className="mt-2 text-xs text-destructive">{listingError}</p>
+                )}
+
               </div>
             )}
 
