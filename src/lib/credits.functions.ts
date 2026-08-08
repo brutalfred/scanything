@@ -133,3 +133,51 @@ export const getAccountStats = createServerFn({ method: "POST" })
     }
     return { photoScans, creditsSpent };
   });
+
+export type TransferResult = {
+  status: "sent";
+  balance: number;
+  recipientEmail: string;
+};
+
+const TRANSFER_ERRORS: Record<string, string> = {
+  recipient_not_found: "No Scanything account uses that email address",
+  self_transfer: "You can't send credits to yourself",
+  insufficient_credits: "You don't have enough credits for that",
+  invalid_amount: "Choose an amount between 1 and 500 credits",
+  invalid_email: "Enter a valid email address",
+  daily_limit: "You've reached today's limit of 10 transfers",
+};
+
+/** Send credits from the signed-in account to another account by email. */
+export const transferCredits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { email: string; amount: number }) => {
+    const email = typeof input?.email === "string" ? input.email.trim().toLowerCase() : "";
+    const amount = Math.floor(Number(input?.amount));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) {
+      throw new Error("Enter a valid email address");
+    }
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 500) {
+      throw new Error("Choose an amount between 1 and 500 credits");
+    }
+    return { email, amount };
+  })
+  .handler(async ({ data, context }): Promise<TransferResult> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rpcData, error } = await supabaseAdmin.rpc("transfer_credits_for", {
+      _sender_id: context.userId,
+      _recipient_email: data.email,
+      _amount: data.amount,
+    });
+    if (error) {
+      const key = Object.keys(TRANSFER_ERRORS).find((k) => error.message.includes(k));
+      throw new Error(key ? TRANSFER_ERRORS[key]! : "Could not send credits");
+    }
+    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+    return {
+      status: "sent",
+      balance: Number(row?.balance ?? 0),
+      recipientEmail: String(row?.recipient_email ?? data.email),
+    };
+  });
