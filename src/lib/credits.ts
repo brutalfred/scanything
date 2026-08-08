@@ -9,6 +9,7 @@ export const CREDIT_COSTS = {
   /** Deep analysis started from a live video-mode box — half price. */
   analyze_further_live: 2,
   translate: 1,
+  resale_listing: 1,
 } as const;
 
 export type CreditReason = keyof typeof CREDIT_COSTS;
@@ -21,7 +22,9 @@ export const CREDIT_LABELS: Record<CreditReason, string> = {
   analyze_further: "Analyze further",
   analyze_further_live: "Analyze further (live scan)",
   translate: "Translate",
+  resale_listing: "Resale listing",
 };
+
 
 
 export const SIGNUP_GRANT = 5;
