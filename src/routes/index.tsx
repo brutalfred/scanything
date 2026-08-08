@@ -3761,7 +3761,18 @@ function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () =
           <Sparkles className="h-3 w-3" />
           {summarizing ? "Summarizing…" : "Summarize"}
         </button>
+        {onAddPage && (
+          <button
+            type="button"
+            onClick={onAddPage}
+            className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
+          >
+            <Plus className="h-3 w-3" />
+            Add page
+          </button>
+        )}
       </div>
+
 
       {confirmSummary && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
