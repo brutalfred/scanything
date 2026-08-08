@@ -804,6 +804,7 @@ function Scanner() {
                 confidence: d.confidence,
                 priceMin: d.priceMin,
                 priceMax: d.priceMax,
+                fullText: isDoc ? (d.description ?? undefined) : undefined,
               })),
             },
           })
@@ -1163,6 +1164,7 @@ function Scanner() {
               confidence: d.confidence,
               priceMin: d.priceMin,
               priceMax: d.priceMax,
+              fullText: mode === "document" ? (d.description ?? undefined) : undefined,
             }));
       if (!payload.length) {
         toast.error("Nothing to save yet");
