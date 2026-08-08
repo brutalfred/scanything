@@ -2359,6 +2359,41 @@ function DetailPanel({
     }
   }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots, extraNote]);
 
+  const generateListingFn = useServerFn(generateListingDraft);
+
+  const runGenerateListing = useCallback(async () => {
+    if (!panelCredits.spend("resale_listing")) return;
+    if (!enrichment || !"resale" in item || !item.resale) return;
+    setListingLoading(true);
+    setListingError(null);
+    try {
+      const resale = item.resale;
+      const draft = await generateListingFn({
+        data: {
+          name,
+          description: enrichment.description,
+          category: enrichment.category,
+          priceMin: enrichment.priceMin,
+          priceMax: enrichment.priceMax,
+          currency: enrichment.currency,
+          resaleLow: resale.low,
+          resaleTypical: resale.typical,
+          resaleHigh: resale.high,
+          conditionHint: enrichment.condition,
+          environment: getPaddleEnvironment(),
+        },
+      });
+      setListingDraft(draft);
+      setListingOpen(true);
+      setListingEdited(false);
+    } catch (e) {
+      setListingError(e instanceof Error ? e.message : "Listing generation failed.");
+    } finally {
+      setListingLoading(false);
+    }
+  }, [panelCredits, enrichment, item, name, generateListingFn]);
+
+
 
   const runTranslate = useCallback(async () => {
     if (!panelCredits.spend("translate")) return;
