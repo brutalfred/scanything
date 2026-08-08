@@ -698,88 +698,142 @@ function Scanner() {
   }, []);
 
 
-  const capture = useCallback(async () => {
-    const isDoc = mode === "document";
-    const isResale = mode === "resale";
-    if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
-    startScanSpend(isDoc ? "document" : "photo");
+  const runScan = useCallback(
+    async (dataUrl: string, m: Mode) => {
+      const isDoc = m === "document";
+      const isResale = m === "resale";
+      if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
+      startScanSpend(isDoc ? "document" : "photo");
+      cancelScanRef.current = false;
+      setSnapshot(dataUrl);
 
-    void playSound("shutter");
-    // Documents need every glyph, so capture at a much higher resolution.
-    const dataUrl = uploaded ?? grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
-    if (!dataUrl) return;
-    setUploaded(null);
-    setSnapshot(dataUrl);
-
-    try {
-      sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
-    } catch {
-      /* storage full — keep the in-memory view */
-    }
-    stopCamera();
-    setPhase("analyzing");
-    setError(null);
-    try {
-      let detected: DetectedItem[] = [];
-      if (isDoc) {
-        // Deskew + flatten lighting + stretch contrast before OCR.
-        const { preprocessForOcr } = await import("@/lib/ocr-preprocess");
-        const cleaned = await preprocessForOcr(dataUrl);
-        const doc = await analyzeDocument({ data: { imageBase64: cleaned, environment } });
-        detected = (doc.items ?? []).filter(Boolean);
-        setRawItemCount(detected.length);
-      } else {
-        const result = await analyzeRoom({
-          data: { imageBase64: dataUrl, environment, resale: isResale },
-        });
-        setRawItemCount(result.items.length);
-        detected = result.items.filter(
-          (it) => !isBodyPart(it.name),
-        );
-
-      }
-      credits.refresh();
-      setItems(detected);
-      setPhase("results");
-      historyIdRef.current = null;
-      if (detected.length) {
-        void saveScanHistory({
-          data: {
-            mode: isDoc ? "document" : isResale ? "resale" : "photo",
-            items: detected.map((d) => ({
-              name: d.name,
-              category: d.category,
-              description: d.description,
-              confidence: d.confidence,
-              priceMin: d.priceMin,
-              priceMax: d.priceMax,
-            })),
-          },
-        })
-          .then((row) => {
-            historyIdRef.current = row.id;
-          })
-          .catch(() => {});
-      }
-      try {
-        sessionStorage.setItem(
-          LAST_SCAN_KEY,
-          JSON.stringify({ snapshot: dataUrl, items: detected }),
-        );
-      } catch {
-        /* storage full — keep the in-memory view */
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Analysis failed.");
-      setPhase("results");
-      credits.refresh();
       try {
         sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
       } catch {
-        /* ignore */
+        /* storage full — keep the in-memory view */
       }
+      stopCamera();
+      setPhase("analyzing");
+      setError(null);
+      try {
+        let detected: DetectedItem[] = [];
+        if (isDoc) {
+          // Deskew + flatten lighting + stretch contrast before OCR.
+          const { preprocessForOcr } = await import("@/lib/ocr-preprocess");
+          const cleaned = await preprocessForOcr(dataUrl);
+          const doc = await analyzeDocument({ data: { imageBase64: cleaned, environment } });
+          detected = (doc.items ?? []).filter(Boolean);
+          if (cancelScanRef.current) return;
+          setRawItemCount(detected.length);
+        } else {
+          const result = await analyzeRoom({
+            data: { imageBase64: dataUrl, environment, resale: isResale },
+          });
+          if (cancelScanRef.current) return;
+          setRawItemCount(result.items.length);
+          detected = result.items.filter(
+            (it) => !isBodyPart(it.name),
+          );
+
+        }
+        credits.refresh();
+        if (cancelScanRef.current) return;
+        setItems(detected);
+        setPhase("results");
+        if (isDoc) {
+          const pageText = detected
+            .map((d) => d.description ?? "")
+            .filter(Boolean)
+            .join("\n\n");
+          const append = appendPageRef.current;
+          appendPageRef.current = false;
+          setDocPages((prev) => (append ? [...prev, pageText] : [pageText]));
+        }
+        historyIdRef.current = null;
+        if (detected.length) {
+          void saveScanHistory({
+            data: {
+              mode: isDoc ? "document" : isResale ? "resale" : "photo",
+              items: detected.map((d) => ({
+                name: d.name,
+                category: d.category,
+                description: d.description,
+                confidence: d.confidence,
+                priceMin: d.priceMin,
+                priceMax: d.priceMax,
+              })),
+            },
+          })
+            .then((row) => {
+              historyIdRef.current = row.id;
+            })
+            .catch(() => {});
+        }
+        try {
+          sessionStorage.setItem(
+            LAST_SCAN_KEY,
+            JSON.stringify({ snapshot: dataUrl, items: detected }),
+          );
+        } catch {
+          /* storage full — keep the in-memory view */
+        }
+      } catch (e) {
+        if (cancelScanRef.current) return;
+        setError(e instanceof Error ? e.message : "Analysis failed.");
+        setPhase("results");
+        credits.refresh();
+        try {
+          sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+    [stopCamera, credits, environment, startScanSpend],
+  );
+
+  const capture = useCallback(async () => {
+    const isDoc = mode === "document";
+    const isResale = mode === "resale";
+    // Documents need every glyph, so capture at a much higher resolution.
+    const dataUrl = uploaded ?? grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
+    if (!dataUrl) return;
+
+    // Offline: park the shot in the queue instead of burning a credit on a
+    // request that cannot reach the server.
+    if (isOffline()) {
+      try {
+        await queueScan({ mode: isDoc ? "document" : isResale ? "resale" : "photo", dataUrl });
+        setUploaded(null);
+        await refreshQueue();
+        toast.success("You're offline — scan saved to the queue.");
+      } catch {
+        toast.error("Could not save this scan offline.");
+      }
+      return;
     }
-  }, [grabFrame, stopCamera, credits, mode, environment, startScanSpend, uploaded]);
+
+    void playSound("shutter");
+    setUploaded(null);
+    await runScan(dataUrl, mode);
+  }, [grabFrame, mode, uploaded, runScan, refreshQueue]);
+
+  const cancelScan = useCallback(() => {
+    cancelScanRef.current = true;
+    setPhase("camera");
+    setSnapshot(null);
+    setItems([]);
+    setRawItemCount(0);
+    setError(null);
+    setLoadingMore(false);
+    try {
+      sessionStorage.removeItem(LAST_SCAN_KEY);
+    } catch {
+      /* ignore */
+    }
+    toast("Scan cancelled");
+  }, []);
+
 
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
