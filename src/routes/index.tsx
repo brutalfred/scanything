@@ -2812,11 +2812,12 @@ function DetailPanel({
                       <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
                         {t("recommendedForThisItem")}
                       </label>
-                      {effectiveCountry && (
+                      {detectedCountry && (
                         <span className="text-[10px] text-muted-foreground">
-                          {t("region")}: {effectiveCountry} ({t("autoDetected")})
+                          {t("region")}: {detectedCountry} ({t("autoDetected")})
                         </span>
                       )}
+
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {recommendedMarketplaces.map((m) => (
