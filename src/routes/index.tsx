@@ -2255,9 +2255,9 @@ function DetailPanel({
   const [listingDraft, setListingDraft] = useState<ListingDraft | null>(null);
   const [listingLoading, setListingLoading] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
-  const [listingRegion, setListingRegion] = useState<string | null>(null);
   const [listingEdited, setListingEdited] = useState(false);
   const [listingError, setListingError] = useState<string | null>(null);
+
 
 
   const detectedCountry = useMemo(() => detectCountry(), []);
