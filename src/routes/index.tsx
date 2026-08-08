@@ -32,6 +32,10 @@ import {
   ChevronDown,
   Plus,
   Upload,
+  CloudOff,
+  FolderPlus,
+
+
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -83,6 +87,14 @@ import {
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useLanguage } from "@/hooks/useLanguage";
 import { LANGUAGE_TAG } from "@/lib/i18n";
+import {
+  isOffline,
+  listQueuedScans,
+  queueScan,
+  removeQueuedScan,
+  type QueuedScan,
+} from "@/lib/scan-queue";
+
 
 
 
@@ -354,6 +366,36 @@ function Scanner() {
   const [loadMoreNote, setLoadMoreNote] = useState<string | null>(null);
   /** History row of the current photo scan, so "Load more" appends to the same entry. */
   const historyIdRef = useRef<string | null>(null);
+  /** Set while an analysis is in flight and the user hits Cancel. */
+  const cancelScanRef = useRef(false);
+  /** Pages of a stitched multi-page document scan. */
+  const [docPages, setDocPages] = useState<string[]>([]);
+  const appendPageRef = useRef(false);
+  /** Scans captured while offline, waiting to be analyzed. */
+  const [queued, setQueued] = useState<QueuedScan[]>([]);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [collectionPrompt, setCollectionPrompt] = useState(false);
+  const [collectionName, setCollectionName] = useState("");
+  const [savingCollection, setSavingCollection] = useState(false);
+  const [online, setOnline] = useState(true);
+
+  const refreshQueue = useCallback(async () => {
+    setQueued(await listQueuedScans());
+  }, []);
+
+  useEffect(() => {
+    void refreshQueue();
+    const sync = () => setOnline(!isOffline());
+    sync();
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, [refreshQueue]);
+
+
 
 
   // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
@@ -698,88 +740,142 @@ function Scanner() {
   }, []);
 
 
-  const capture = useCallback(async () => {
-    const isDoc = mode === "document";
-    const isResale = mode === "resale";
-    if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
-    startScanSpend(isDoc ? "document" : "photo");
+  const runScan = useCallback(
+    async (dataUrl: string, m: Mode) => {
+      const isDoc = m === "document";
+      const isResale = m === "resale";
+      if (!credits.spend(isDoc ? "document_scan" : "photo_scan")) return;
+      startScanSpend(isDoc ? "document" : "photo");
+      cancelScanRef.current = false;
+      setSnapshot(dataUrl);
 
-    void playSound("shutter");
-    // Documents need every glyph, so capture at a much higher resolution.
-    const dataUrl = uploaded ?? grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
-    if (!dataUrl) return;
-    setUploaded(null);
-    setSnapshot(dataUrl);
-
-    try {
-      sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
-    } catch {
-      /* storage full — keep the in-memory view */
-    }
-    stopCamera();
-    setPhase("analyzing");
-    setError(null);
-    try {
-      let detected: DetectedItem[] = [];
-      if (isDoc) {
-        // Deskew + flatten lighting + stretch contrast before OCR.
-        const { preprocessForOcr } = await import("@/lib/ocr-preprocess");
-        const cleaned = await preprocessForOcr(dataUrl);
-        const doc = await analyzeDocument({ data: { imageBase64: cleaned, environment } });
-        detected = (doc.items ?? []).filter(Boolean);
-        setRawItemCount(detected.length);
-      } else {
-        const result = await analyzeRoom({
-          data: { imageBase64: dataUrl, environment, resale: isResale },
-        });
-        setRawItemCount(result.items.length);
-        detected = result.items.filter(
-          (it) => !isBodyPart(it.name),
-        );
-
-      }
-      credits.refresh();
-      setItems(detected);
-      setPhase("results");
-      historyIdRef.current = null;
-      if (detected.length) {
-        void saveScanHistory({
-          data: {
-            mode: isDoc ? "document" : isResale ? "resale" : "photo",
-            items: detected.map((d) => ({
-              name: d.name,
-              category: d.category,
-              description: d.description,
-              confidence: d.confidence,
-              priceMin: d.priceMin,
-              priceMax: d.priceMax,
-            })),
-          },
-        })
-          .then((row) => {
-            historyIdRef.current = row.id;
-          })
-          .catch(() => {});
-      }
-      try {
-        sessionStorage.setItem(
-          LAST_SCAN_KEY,
-          JSON.stringify({ snapshot: dataUrl, items: detected }),
-        );
-      } catch {
-        /* storage full — keep the in-memory view */
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Analysis failed.");
-      setPhase("results");
-      credits.refresh();
       try {
         sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
       } catch {
-        /* ignore */
+        /* storage full — keep the in-memory view */
       }
+      stopCamera();
+      setPhase("analyzing");
+      setError(null);
+      try {
+        let detected: DetectedItem[] = [];
+        if (isDoc) {
+          // Deskew + flatten lighting + stretch contrast before OCR.
+          const { preprocessForOcr } = await import("@/lib/ocr-preprocess");
+          const cleaned = await preprocessForOcr(dataUrl);
+          const doc = await analyzeDocument({ data: { imageBase64: cleaned, environment } });
+          detected = (doc.items ?? []).filter(Boolean);
+          if (cancelScanRef.current) return;
+          setRawItemCount(detected.length);
+        } else {
+          const result = await analyzeRoom({
+            data: { imageBase64: dataUrl, environment, resale: isResale },
+          });
+          if (cancelScanRef.current) return;
+          setRawItemCount(result.items.length);
+          detected = result.items.filter(
+            (it) => !isBodyPart(it.name),
+          );
+
+        }
+        credits.refresh();
+        if (cancelScanRef.current) return;
+        setItems(detected);
+        setPhase("results");
+        if (isDoc) {
+          const pageText = detected
+            .map((d) => d.description ?? "")
+            .filter(Boolean)
+            .join("\n\n");
+          const append = appendPageRef.current;
+          appendPageRef.current = false;
+          setDocPages((prev) => (append ? [...prev, pageText] : [pageText]));
+        }
+        historyIdRef.current = null;
+        if (detected.length) {
+          void saveScanHistory({
+            data: {
+              mode: isDoc ? "document" : isResale ? "resale" : "photo",
+              items: detected.map((d) => ({
+                name: d.name,
+                category: d.category,
+                description: d.description,
+                confidence: d.confidence,
+                priceMin: d.priceMin,
+                priceMax: d.priceMax,
+              })),
+            },
+          })
+            .then((row) => {
+              historyIdRef.current = row.id;
+            })
+            .catch(() => {});
+        }
+        try {
+          sessionStorage.setItem(
+            LAST_SCAN_KEY,
+            JSON.stringify({ snapshot: dataUrl, items: detected }),
+          );
+        } catch {
+          /* storage full — keep the in-memory view */
+        }
+      } catch (e) {
+        if (cancelScanRef.current) return;
+        setError(e instanceof Error ? e.message : "Analysis failed.");
+        setPhase("results");
+        credits.refresh();
+        try {
+          sessionStorage.setItem(LAST_SCAN_KEY, JSON.stringify({ snapshot: dataUrl, items: [] }));
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+    [stopCamera, credits, environment, startScanSpend],
+  );
+
+  const capture = useCallback(async () => {
+    const isDoc = mode === "document";
+    const isResale = mode === "resale";
+    // Documents need every glyph, so capture at a much higher resolution.
+    const dataUrl = uploaded ?? grabFrame(isDoc ? 2200 : 1024, isDoc ? 0.95 : 0.8);
+    if (!dataUrl) return;
+
+    // Offline: park the shot in the queue instead of burning a credit on a
+    // request that cannot reach the server.
+    if (isOffline()) {
+      try {
+        await queueScan({ mode: isDoc ? "document" : isResale ? "resale" : "photo", dataUrl });
+        setUploaded(null);
+        await refreshQueue();
+        toast.success("You're offline — scan saved to the queue.");
+      } catch {
+        toast.error("Could not save this scan offline.");
+      }
+      return;
     }
-  }, [grabFrame, stopCamera, credits, mode, environment, startScanSpend, uploaded]);
+
+    void playSound("shutter");
+    setUploaded(null);
+    await runScan(dataUrl, mode);
+  }, [grabFrame, mode, uploaded, runScan, refreshQueue]);
+
+  const cancelScan = useCallback(() => {
+    cancelScanRef.current = true;
+    setPhase("camera");
+    setSnapshot(null);
+    setItems([]);
+    setRawItemCount(0);
+    setError(null);
+    setLoadingMore(false);
+    try {
+      sessionStorage.removeItem(LAST_SCAN_KEY);
+    } catch {
+      /* ignore */
+    }
+    toast("Scan cancelled");
+  }, []);
+
 
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
@@ -1030,8 +1126,84 @@ function Scanner() {
     setError(null);
     setTracked([]);
     setVideoPaused(false);
+    setDocPages([]);
+    appendPageRef.current = false;
     setPhase("camera");
   }, []);
+
+  /** Keeps the pages collected so far and returns to the camera for the next page. */
+  const addDocumentPage = useCallback(() => {
+    appendPageRef.current = true;
+    void playSound("sweep");
+    setItems([]);
+    setSnapshot(null);
+    setUploaded(null);
+    setError(null);
+    setSelected(null);
+    setPhase("camera");
+  }, []);
+
+  /** Files the current scan into a named collection. */
+  const saveToCollection = useCallback(async () => {
+    const name = collectionName.trim();
+    if (!name) return;
+    setSavingCollection(true);
+    try {
+      const payload =
+        mode === "video"
+          ? tracked.map((it) => ({
+              name: it.name,
+              category: it.enrichment?.category,
+              description: it.enrichment?.description,
+              confidence: it.confidence,
+              priceMin: it.enrichment?.priceMin,
+              priceMax: it.enrichment?.priceMax,
+            }))
+          : items.map((d) => ({
+              name: d.name,
+              category: d.category,
+              description: d.description,
+              confidence: d.confidence,
+              priceMin: d.priceMin,
+              priceMax: d.priceMax,
+            }));
+      if (!payload.length) {
+        toast.error("Nothing to save yet");
+        return;
+      }
+      await saveScanHistory({
+        data: { mode, items: payload, collection: name, title: name },
+      });
+      toast.success(`Saved to "${name}"`);
+      setCollectionPrompt(false);
+      setCollectionName("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save to collection");
+    } finally {
+      setSavingCollection(false);
+    }
+  }, [collectionName, items, tracked, mode]);
+
+  /** Runs a queued offline capture now. */
+  const analyzeQueued = useCallback(
+    async (entry: QueuedScan) => {
+      setQueueOpen(false);
+      setMode(entry.mode);
+      await removeQueuedScan(entry.id);
+      await refreshQueue();
+      await runScan(entry.dataUrl, entry.mode);
+    },
+    [refreshQueue, runScan],
+  );
+
+  const dropQueued = useCallback(
+    async (id: string) => {
+      await removeQueuedScan(id);
+      await refreshQueue();
+    },
+    [refreshQueue],
+  );
+
 
 
 
@@ -1306,12 +1478,26 @@ function Scanner() {
               </button>
             )}
 
+            {queued.length > 0 && (
+              <button
+                onClick={() => setQueueOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/70 bg-card px-3 py-1.5 text-xs font-medium text-primary hover:bg-accent"
+                title="Offline scans waiting to be analyzed"
+              >
+                <CloudOff className="h-3.5 w-3.5" />
+                <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                  {queued.length}
+                </span>
+              </button>
+            )}
+
             {snapshot && (
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 {t("newScan")}
               </Button>
             )}
+
           </div>
         </div>
         <div className="h-px w-full gold-line opacity-80" />
@@ -1513,7 +1699,7 @@ function Scanner() {
               </div>
 
               {mode === "video" && (
-                <div className="pointer-events-none absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
+                <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
                       videoPaused
@@ -1524,8 +1710,18 @@ function Scanner() {
                     }`}
                   />
                   {videoPaused ? t("pause") : scanning ? t("analyzing") : "Live"}
+                  {scanning && !videoPaused && (
+                    <button
+                      type="button"
+                      onClick={() => setVideoPaused(true)}
+                      className="ml-1 rounded-full border border-white/40 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </div>
               )}
+
 
               {uploaded && (
                 <div className="absolute inset-0 z-20 bg-black">
@@ -1822,11 +2018,19 @@ function Scanner() {
                 </div>
               </div>
               {phase === "analyzing" && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-background/80 p-3 text-foreground backdrop-blur-sm">
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 bg-background/80 p-3 text-foreground backdrop-blur-sm">
                   <Loader2 className="h-8 w-8 animate-spin" />
                   <p className="text-sm">{t("analyzing")}</p>
+                  <button
+                    type="button"
+                    onClick={cancelScan}
+                    className="rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary"
+                  >
+                    Cancel
+                  </button>
                 </div>
               )}
+
               <div className="absolute bottom-2 right-2 z-10 flex items-center gap-2">
                 <button
                   type="button"
@@ -1983,6 +2187,39 @@ function Scanner() {
               </div>
             )}
 
+            {phase === "results" && mode === "document" && docPages.length > 0 && (
+              <div className="mt-4 rounded-xl border border-primary/40 bg-card p-3">
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Document · {docPages.length} {docPages.length === 1 ? "page" : "pages"}
+                </div>
+                <DocumentTextBlock
+                  text={docPages
+                    .map((p, i) => (docPages.length > 1 ? `--- Page ${i + 1} ---\n${p}` : p))
+                    .join("\n\n")}
+                  onAddPage={addDocumentPage}
+                />
+              </div>
+            )}
+
+            {phase === "results" && (items.length > 0 || docPages.length > 0) && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  data-no-sound
+                  variant="outline"
+                  onClick={() => {
+                    void playSound("click");
+                    setCollectionPrompt(true);
+                  }}
+                  className="border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  Save to collection
+                </Button>
+              </div>
+            )}
+
+
+
 
           </div>
         )}
@@ -2127,6 +2364,122 @@ function Scanner() {
 
       {/* Video scan warning for signed-in users */}
       <ScanHistorySheet open={historyOpen} onClose={() => setHistoryOpen(false)} />
+
+      {queueOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          onClick={() => setQueueOpen(false)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 gold-glow sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <CloudOff className="h-4 w-4 text-primary" />
+              <h2 className="flex-1 text-sm font-semibold text-foreground">Offline scans</h2>
+              <button
+                onClick={() => setQueueOpen(false)}
+                className="rounded-full p-1 text-muted-foreground hover:text-foreground"
+                aria-label={t("close")}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-3 text-[11px] text-muted-foreground">
+              {online
+                ? "You're back online — analyze these captures whenever you're ready."
+                : "Still offline. These captures are stored on this device and can be analyzed once you're back online."}
+            </p>
+            <div className="space-y-2">
+              {queued.map((q) => (
+                <div
+                  key={q.id}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-2"
+                >
+                  <img
+                    src={q.dataUrl}
+                    alt="Queued capture"
+                    className="h-14 w-14 rounded-lg object-cover"
+                  />
+                  <div className="flex-1">
+                    <div className="text-xs font-medium capitalize text-foreground">
+                      {q.mode} scan
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {new Date(q.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={!online}
+                    onClick={() => void analyzeQueued(q)}
+                  >
+                    Analyze
+                  </Button>
+                  <button
+                    onClick={() => void dropQueued(q.id)}
+                    className="rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                    aria-label="Delete queued scan"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              {queued.length === 0 && (
+                <p className="py-8 text-center text-xs text-muted-foreground">
+                  Nothing queued right now.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {collectionPrompt && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setCollectionPrompt(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-2xl border border-primary/40 bg-card p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm font-semibold text-foreground">Save to collection</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Name the folder these results should be filed under, e.g. "Attic" or "Contracts".
+            </p>
+            <input
+              autoFocus
+              value={collectionName}
+              onChange={(e) => setCollectionName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void saveToCollection();
+              }}
+              maxLength={60}
+              placeholder="Collection name"
+              className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCollectionPrompt(false)}
+                className="flex-1 rounded-full border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-primary hover:text-primary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!collectionName.trim() || savingCollection}
+                onClick={() => void saveToCollection()}
+                className="flex-1 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {savingCollection ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {videoWarningOpen && (
         <div
@@ -3377,7 +3730,7 @@ function ConfidenceBadge({ value, className = "" }: { value?: number; className?
 }
 
 /** Scanned document text with copy + inline edit controls. */
-function DocumentTextBlock({ text }: { text: string }) {
+function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () => void }) {
   const [value, setValue] = useState(text);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -3524,7 +3877,18 @@ function DocumentTextBlock({ text }: { text: string }) {
           <Sparkles className="h-3 w-3" />
           {summarizing ? "Summarizing…" : "Summarize"}
         </button>
+        {onAddPage && (
+          <button
+            type="button"
+            onClick={onAddPage}
+            className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
+          >
+            <Plus className="h-3 w-3" />
+            Add page
+          </button>
+        )}
       </div>
+
 
       {confirmSummary && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">

@@ -340,6 +340,7 @@ export type Database = {
       }
       scan_history: {
         Row: {
+          collection: string | null
           created_at: string
           id: string
           items: Json
@@ -349,6 +350,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          collection?: string | null
           created_at?: string
           id?: string
           items?: Json
@@ -358,6 +360,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          collection?: string | null
           created_at?: string
           id?: string
           items?: Json

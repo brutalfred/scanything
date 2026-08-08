@@ -46,6 +46,7 @@ export type ScanHistoryEntry = {
   id: string;
   title: string | null;
   mode: string;
+  collection: string | null;
   items: ScanHistoryItem[];
   createdAt: string;
 };
@@ -56,15 +57,16 @@ export const listScanHistory = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("scan_history")
-      .select("id, title, mode, items, created_at")
+      .select("id, title, mode, items, collection, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(300);
     if (error) throw new Error(error.message);
     return (data ?? []).map((r) => ({
       id: r.id,
       title: r.title,
       mode: r.mode,
+      collection: (r as { collection?: string | null }).collection ?? null,
       items: (Array.isArray(r.items) ? r.items : []) as ScanHistoryItem[],
       createdAt: r.created_at,
     }));
@@ -72,39 +74,58 @@ export const listScanHistory = createServerFn({ method: "POST" })
 
 export const saveScanHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { mode?: string; items: ScanHistoryItem[]; title?: string | null }) => {
-    const items = Array.isArray(input?.items) ? input.items.slice(0, 200) : [];
-    return {
-      mode: ["video", "document", "resale"].includes(String(input?.mode))
-        ? String(input?.mode)
-        : "photo",
-      title: typeof input?.title === "string" ? input.title.slice(0, 120) : null,
-      items: items.map((i) => ({
-        name: String(i?.name ?? "").slice(0, 120),
-        category: i?.category ? String(i.category).slice(0, 40) : undefined,
-        description: i?.description ? String(i.description).slice(0, 600) : undefined,
-        confidence: typeof i?.confidence === "number" ? i.confidence : undefined,
-        priceMin: typeof i?.priceMin === "number" ? i.priceMin : undefined,
-        priceMax: typeof i?.priceMax === "number" ? i.priceMax : undefined,
-        deep: sanitizeDeep(i?.deep),
+  .inputValidator(
+    (input: {
+      mode?: string;
+      items: ScanHistoryItem[];
+      title?: string | null;
+      collection?: string | null;
+    }) => {
+      const items = Array.isArray(input?.items) ? input.items.slice(0, 200) : [];
+      return {
+        mode: ["video", "document", "resale"].includes(String(input?.mode))
+          ? String(input?.mode)
+          : "photo",
+        title: typeof input?.title === "string" ? input.title.slice(0, 120) : null,
+        collection:
+          typeof input?.collection === "string" && input.collection.trim()
+            ? input.collection.trim().slice(0, 60)
+            : null,
+        items: items.map((i) => ({
+          name: String(i?.name ?? "").slice(0, 120),
+          category: i?.category ? String(i.category).slice(0, 40) : undefined,
+          description: i?.description ? String(i.description).slice(0, 600) : undefined,
+          confidence: typeof i?.confidence === "number" ? i.confidence : undefined,
+          priceMin: typeof i?.priceMin === "number" ? i.priceMin : undefined,
+          priceMax: typeof i?.priceMax === "number" ? i.priceMax : undefined,
+          deep: sanitizeDeep(i?.deep),
 
-      })),
-    };
-  })
+        })),
+      };
+    },
+  )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     const { supabase, userId } = context;
     const { data: row, error } = await supabase
       .from("scan_history")
-      .insert({ user_id: userId, mode: data.mode, title: data.title, items: data.items })
+      .insert({
+        user_id: userId,
+        mode: data.mode,
+        title: data.title,
+        items: data.items,
+        collection: data.collection,
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
 
-    // Keep only the 10 most recent scans per user.
+    // Keep only the 10 most recent loose scans per user. Scans filed into a
+    // collection are kept forever.
     const { data: keep } = await supabase
       .from("scan_history")
       .select("id")
       .eq("user_id", userId)
+      .is("collection", null)
       .order("created_at", { ascending: false })
       .limit(10);
     if (keep && keep.length === 10) {
@@ -119,12 +140,35 @@ export const saveScanHistory = createServerFn({ method: "POST" })
           .from("scan_history")
           .delete()
           .eq("user_id", userId)
+          .is("collection", null)
           .lt("created_at", cutoff.created_at);
       }
     }
 
     return { id: row.id };
   });
+
+/** Moves an existing scan into a named collection (or back out with null). */
+export const setScanCollection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; collection: string | null }) => ({
+    id: String(input?.id ?? ""),
+    collection:
+      typeof input?.collection === "string" && input.collection.trim()
+        ? input.collection.trim().slice(0, 60)
+        : null,
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("scan_history")
+      .update({ collection: data.collection })
+      .eq("id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 export const renameScanHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
