@@ -3748,12 +3748,46 @@ function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () =
   const [copied, setCopied] = useState(false);
   const [confirmSummary, setConfirmSummary] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
+  /** Original (untranslated) text, kept so the user can switch back. */
+  const [original, setOriginal] = useState<string | null>(null);
+  const [translatingDoc, setTranslatingDoc] = useState(false);
   const docCredits = useCreditsContext();
+  const { language: docLanguage } = useLanguage();
 
   useEffect(() => {
     setValue(text);
     setEditing(false);
+    setOriginal(null);
   }, [text]);
+
+  const runTranslate = async () => {
+    if (original) {
+      // Toggle back to the scanned original.
+      setValue(original);
+      setOriginal(null);
+      return;
+    }
+    if (!value.trim()) return toast.error("No text to translate");
+    setTranslatingDoc(true);
+    try {
+      const result = await translateDocument({
+        data: { text: value.slice(0, 60000), targetLanguage: docLanguage },
+      });
+      if (result.text) {
+        setOriginal(value);
+        setValue(result.text);
+        toast.success(`Translated to ${docLanguage}`);
+      } else {
+        toast.error("Could not translate the text");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not translate the text");
+    } finally {
+      setTranslatingDoc(false);
+    }
+  };
+
+
 
   const runSummary = async () => {
     setConfirmSummary(false);
