@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Coins, Loader2, X } from "lucide-react";
+import { Coins, Loader2, Send, X } from "lucide-react";
 
 import { toast } from "sonner";
 import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
@@ -11,6 +11,8 @@ import { isNativeAndroid } from "@/lib/platform";
 import { buyWithPlay, playBillingAvailable } from "@/lib/play-billing";
 import type { CreditsApi } from "@/hooks/useCredits";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useServerFn } from "@tanstack/react-start";
+import { transferCredits } from "@/lib/credits.functions";
 
 
 
@@ -33,6 +35,31 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const { openCheckout } = usePaddleCheckout();
   const { t } = useLanguage();
   const [buying, setBuying] = useState<string | null>(null);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendEmail, setSendEmail] = useState("");
+  const [sendAmount, setSendAmount] = useState("");
+  const [sending, setSending] = useState(false);
+  const sendCreditsFn = useServerFn(transferCredits);
+
+  async function sendCredits(e: React.FormEvent) {
+    e.preventDefault();
+    if (sending) return;
+    setSending(true);
+    try {
+      const res = await sendCreditsFn({
+        data: { email: sendEmail.trim(), amount: Number(sendAmount) },
+      });
+      toast.success(`Sent ${sendAmount} credits to ${res.recipientEmail}`);
+      setSendEmail("");
+      setSendAmount("");
+      setSendOpen(false);
+      await credits.refresh?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send credits");
+    } finally {
+      setSending(false);
+    }
+  }
   const environment = getPaddleEnvironment();
 
 
