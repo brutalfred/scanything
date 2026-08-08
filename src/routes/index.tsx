@@ -2777,6 +2777,11 @@ function DetailPanel({
   }, [name, panelCredits]);
 
   const [namePickerOpen, setNamePickerOpen] = useState(false);
+  /**
+   * Language of this information box only. Independent of the account-tab
+   * language: everything generated inside the box follows this.
+   */
+  const [boxLanguage, setBoxLanguage] = useState<string>("English");
   const [nameTranslating, setNameTranslating] = useState(false);
   const [nameTranslateError, setNameTranslateError] = useState<string | null>(null);
   const [nameTranslation, setNameTranslation] = useState<
@@ -2797,6 +2802,13 @@ function DetailPanel({
 
   const runNameTranslate = useCallback(
     async (language: string) => {
+      setBoxLanguage(language);
+      if (language === "English") {
+        setNameTranslation(null);
+        setNameTranslateError(null);
+        setNamePickerOpen(false);
+        return;
+      }
       const cacheKey = `${language}|${name}|${enrichment?.description ?? ""}`;
       const cached = TRANSLATION_CACHE.get(cacheKey);
       if (cached) {
@@ -2831,20 +2843,10 @@ function DetailPanel({
   );
 
   /**
-   * Follow the app-wide language: scan content is auto-translated whenever the
-   * user browses the app in something other than English.
+   * The box starts in the original (English) language. It only changes when the
+   * user picks a language inside this box — the account-tab language never
+   * affects the scanned content shown here.
    */
-  useEffect(() => {
-    if (appLanguage === "English") {
-      // Back to English: drop any AI translation so the original text shows again.
-      setNameTranslation((prev) => (prev ? null : prev));
-      setNameTranslateError(null);
-      return;
-    }
-    if (nameTranslation?.language === appLanguage) return;
-    void runNameTranslate(appLanguage);
-    // Re-run when the item, its details or the app language change.
-  }, [appLanguage, nameTranslation?.language, runNameTranslate]);
 
 
   /** Localized UI label helper: AI translation first, then the built-in dictionary. */
@@ -2871,7 +2873,7 @@ function DetailPanel({
     description: string;
     labels: string[];
   } | null>(null);
-  const deepLang = nameTranslation?.language ?? (appLanguage === "English" ? null : appLanguage);
+  const deepLang = boxLanguage === "English" ? null : boxLanguage;
 
   useEffect(() => {
     if (!deep || !deepLang) {
@@ -2991,7 +2993,8 @@ function DetailPanel({
           <>
             {enrichment.category === "document" ? (
               <DocumentTextBlock
-                text={nameTranslation?.description || enrichment.description}
+                text={enrichment.description}
+                language={boxLanguage}
               />
             ) : (
               <p className="mt-3 text-sm leading-relaxed">
