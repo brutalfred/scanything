@@ -2187,6 +2187,39 @@ function Scanner() {
               </div>
             )}
 
+            {phase === "results" && mode === "document" && docPages.length > 0 && (
+              <div className="mt-4 rounded-xl border border-primary/40 bg-card p-3">
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Document · {docPages.length} {docPages.length === 1 ? "page" : "pages"}
+                </div>
+                <DocumentTextBlock
+                  text={docPages
+                    .map((p, i) => (docPages.length > 1 ? `--- Page ${i + 1} ---\n${p}` : p))
+                    .join("\n\n")}
+                  onAddPage={addDocumentPage}
+                />
+              </div>
+            )}
+
+            {phase === "results" && (items.length > 0 || docPages.length > 0) && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  data-no-sound
+                  variant="outline"
+                  onClick={() => {
+                    void playSound("click");
+                    setCollectionPrompt(true);
+                  }}
+                  className="border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  Save to collection
+                </Button>
+              </div>
+            )}
+
+
+
 
           </div>
         )}
