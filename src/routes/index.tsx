@@ -44,6 +44,8 @@ import {
   analyzeRoom,
   analyzeDocument,
   summarizeDocument,
+  translateDocument,
+
   quickScan,
   enrichItem,
   analyzeFurther,
