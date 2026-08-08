@@ -3285,7 +3285,44 @@ function DocumentTextBlock({ text }: { text: string }) {
           <FileText className="h-3 w-3" />
           Export .pdf
         </button>
+        <button
+          type="button"
+          disabled={summarizing}
+          onClick={() => setConfirmSummary(true)}
+          className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/20 disabled:opacity-50"
+        >
+          <Sparkles className="h-3 w-3" />
+          {summarizing ? "Summarizing…" : "Summarize"}
+        </button>
       </div>
+
+      {confirmSummary && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-xs rounded-2xl border border-primary/40 bg-card p-4 text-center shadow-xl">
+            <p className="text-sm font-semibold text-foreground">Are you sure?</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              The scanned text will be replaced by the summary.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmSummary(false)}
+                className="flex-1 rounded-full border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-primary hover:text-primary"
+              >
+                Go back
+              </button>
+              <button
+                type="button"
+                onClick={() => void runSummary()}
+                className="flex-1 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+              >
+                Summarize
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
     </div>
   );
