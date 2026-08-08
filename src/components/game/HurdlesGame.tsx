@@ -1,10 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  playSound,
-  setCrowdIntensity,
-  startCrowdAmbience,
-  stopCrowdAmbience,
-  swellCrowd,
 
 const TRACK_M = 400;
 const FIRST_HURDLE_M = 45;
@@ -100,7 +94,6 @@ export function HurdlesGame({
       document.removeEventListener("visibilitychange", onHide);
       clearTimers();
       stopLoop();
-      stopCrowdAmbience(true);
     };
   }, []);
 
@@ -149,7 +142,6 @@ export function HurdlesGame({
       spd = Math.max(0, spd - drag * dt);
       if (now - lastCrowdUpdate.current > 200) {
         lastCrowdUpdate.current = now;
-        setCrowdIntensity(Math.min(1, spd / 12) * 0.75 + (dist / TRACK_M) * 0.25);
       }
 
       const prev = dist;
@@ -181,7 +173,6 @@ export function HurdlesGame({
             : "You hit a hurdle! Race over — restart.",
         );
         setPhase("crashed");
-        setCrowdIntensity(0);
         window.setTimeout(() => stopCrowdAmbience(), 900);
         return;
       }
@@ -198,7 +189,6 @@ export function HurdlesGame({
         const ms = Math.round(now - start);
         setElapsed(ms);
         setPhase("finished");
-        swellCrowd(0.4, 1.6);
         window.setTimeout(() => stopCrowdAmbience(), 2600);
         onFinish(ms);
         return;
@@ -231,8 +221,6 @@ export function HurdlesGame({
     setStumbling(false);
     setPhase("countdown");
     lastCrowdUpdate.current = 0;
-    setCrowdIntensity(0.15);
-    startCrowdAmbience();
 
     const seq: [string, number][] = [
       ["3", 0],
@@ -247,7 +235,6 @@ export function HurdlesGame({
         setTimeout(() => {
           setCountText(text);
           if (text === "GO!") {
-            swellCrowd(0.35, 1.2);
           } else if (text === "Ready…" || text === "Set…") {
             if (text === "Set…") setCrowdIntensity(0.05); // crowd hushes
           } else {
@@ -267,7 +254,6 @@ export function HurdlesGame({
       clearTimers();
       stopLoop();
       setFalseStart(true);
-      stopCrowdAmbience();
       setCountText("");
       setPhase("idle");
       return;
