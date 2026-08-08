@@ -2273,7 +2273,7 @@ function DetailPanel({
       detectedCountry,
     );
   }, [enrichment, name, detectedCountry]);
-  const isResaleItem = "resale" in item && item.resale;
+
 
 
 
