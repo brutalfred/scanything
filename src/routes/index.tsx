@@ -3614,7 +3614,7 @@ function ConfidenceBadge({ value, className = "" }: { value?: number; className?
 }
 
 /** Scanned document text with copy + inline edit controls. */
-function DocumentTextBlock({ text }: { text: string }) {
+function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () => void }) {
   const [value, setValue] = useState(text);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
