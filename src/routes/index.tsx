@@ -1474,12 +1474,26 @@ function Scanner() {
               </button>
             )}
 
+            {queued.length > 0 && (
+              <button
+                onClick={() => setQueueOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/70 bg-card px-3 py-1.5 text-xs font-medium text-primary hover:bg-accent"
+                title="Offline scans waiting to be analyzed"
+              >
+                <CloudOff className="h-3.5 w-3.5" />
+                <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                  {queued.length}
+                </span>
+              </button>
+            )}
+
             {snapshot && (
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 {t("newScan")}
               </Button>
             )}
+
           </div>
         </div>
         <div className="h-px w-full gold-line opacity-80" />
