@@ -376,9 +376,11 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
       <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 shadow-[0_0_40px_-6px_hsl(var(--primary)/0.45)] gold-glow sm:rounded-2xl">
         <div className="mb-3 flex items-center gap-2">
-          {selected || folder ? (
+          {selected || folder || collection ? (
             <button
-              onClick={() => (selected ? setSelected(null) : setFolder(null))}
+              onClick={() =>
+                selected ? setSelected(null) : collection ? setCollection(null) : setFolder(null)
+              }
               className="rounded-full p-1 text-muted-foreground hover:text-foreground"
               aria-label={t("back")}
             >
@@ -390,9 +392,11 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
           <h2 className="flex-1 text-sm font-semibold text-foreground">
             {selected
               ? selected.title || formatStamp(selected.createdAt)
-              : folder
-                ? modeLabel(folder)
-                : t("scanHistory")}
+              : collection
+                ? collection
+                : folder
+                  ? modeLabel(folder)
+                  : t("scanHistory")}
           </h2>
           <button
             onClick={onClose}
@@ -410,29 +414,108 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
         )}
         {error && !loading && <p className="py-6 text-center text-xs text-destructive">{error}</p>}
 
-        {!loading && !error && !selected && !folder && (
-          <div className="space-y-2">
-            {entries.length === 0 && (
-              <p className="py-8 text-center text-xs text-muted-foreground">{t("noScansYet")}</p>
-            )}
-            {entries.length > 0 &&
-              FOLDERS.map(({ key, icon: Icon, labelKey }) => {
-                const count = entries.filter((e) => folderOf(e.mode) === key).length;
-                return (
+        {!loading && !error && !selected && !folder && !collection && (
+          <div className="space-y-3">
+            <div className="inline-flex w-full rounded-full border border-border/60 bg-secondary p-0.5 text-[11px]">
+              <button
+                onClick={() => setTab("scans")}
+                className={`flex-1 rounded-full px-2.5 py-1 font-medium transition-colors ${tab === "scans" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {t("scanHistory")}
+              </button>
+              <button
+                onClick={() => setTab("collections")}
+                className={`flex-1 rounded-full px-2.5 py-1 font-medium transition-colors ${tab === "collections" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Collections
+              </button>
+            </div>
+
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search all scanned text…"
+                className="w-full rounded-lg border border-border bg-background py-2 pl-8 pr-3 text-xs text-foreground outline-none focus:border-primary"
+              />
+            </div>
+
+            {q ? (
+              <div className="space-y-2">
+                {searchResults.length === 0 && (
+                  <p className="py-8 text-center text-xs text-muted-foreground">No matches.</p>
+                )}
+                {searchResults.map((entry) => (
                   <button
-                    key={key}
-                    onClick={() => setFolder(key)}
-                    disabled={count === 0}
-                    className="flex w-full items-center gap-3 rounded-xl border border-border bg-secondary/40 px-3 py-3 text-left transition-colors hover:border-primary disabled:opacity-40"
+                    key={entry.id}
+                    onClick={() => setSelected(entry)}
+                    className="w-full rounded-xl border border-border bg-secondary/40 px-3 py-2 text-left transition-colors hover:border-primary"
                   >
-                    <Icon className="h-4 w-4 text-primary" />
-                    <span className="flex-1 text-xs font-medium text-foreground">{t(labelKey)}</span>
-                    <span className="text-[10px] text-muted-foreground">{count}</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    <span className="block truncate text-xs font-medium text-foreground">
+                      {entry.title || formatStamp(entry.createdAt)}
+                    </span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {entry.collection ? `${entry.collection} · ` : ""}
+                      {modeLabel(entry.mode)} · {entry.items.length}{" "}
+                      {entry.items.length === 1 ? t("item") : t("items").toLowerCase()}
+                    </span>
                   </button>
-                );
-              })}
+                ))}
+              </div>
+            ) : tab === "scans" ? (
+              <div className="space-y-2">
+                {loose.length === 0 && (
+                  <p className="py-8 text-center text-xs text-muted-foreground">{t("noScansYet")}</p>
+                )}
+                {loose.length > 0 &&
+                  FOLDERS.map(({ key, icon: Icon, labelKey }) => {
+                    const count = loose.filter((e) => folderOf(e.mode) === key).length;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setFolder(key)}
+                        disabled={count === 0}
+                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-secondary/40 px-3 py-3 text-left transition-colors hover:border-primary disabled:opacity-40"
+                      >
+                        <Icon className="h-4 w-4 text-primary" />
+                        <span className="flex-1 text-xs font-medium text-foreground">
+                          {t(labelKey)}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">{count}</span>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    );
+                  })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {collectionNames.length === 0 && (
+                  <p className="py-8 text-center text-xs text-muted-foreground">
+                    No collections yet — use "Save to collection" after a scan.
+                  </p>
+                )}
+                {collectionNames.map((name) => {
+                  const count = filed.filter((e) => e.collection === name).length;
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => setCollection(name)}
+                      className="flex w-full items-center gap-3 rounded-xl border border-border bg-secondary/40 px-3 py-3 text-left transition-colors hover:border-primary"
+                    >
+                      <FolderOpen className="h-4 w-4 text-primary" />
+                      <span className="flex-1 truncate text-xs font-medium text-foreground">
+                        {name}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">{count}</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
+
         )}
 
         {!loading && !error && !selected && folder && (
