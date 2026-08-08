@@ -87,6 +87,7 @@ import {
 } from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import { LANGUAGE_TAG } from "@/lib/i18n";
 import {
   isOffline,
@@ -347,6 +348,7 @@ function Index() {
 function Scanner() {
   const credits = useCreditsContext();
   const { t } = useLanguage();
+  const appVersion = useAppVersion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -2237,7 +2239,7 @@ function Scanner() {
             </Link>
 
           </div>
-          <p>© {new Date().getFullYear()} Scanything. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Scanything. All rights reserved. v{appVersion}</p>
           <div className="mt-3 flex items-center justify-center gap-4">
             <a
               href="https://x.com/scanythingapp"
