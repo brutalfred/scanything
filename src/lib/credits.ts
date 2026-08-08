@@ -8,6 +8,8 @@ export const CREDIT_COSTS = {
   analyze_further: 5,
   /** Deep analysis started from a live video-mode box — half price. */
   analyze_further_live: 2,
+  /** Deep analysis of a scanned document — text-only, so it stays cheap. */
+  analyze_further_document: 1,
   translate: 1,
   resale_listing: 1,
 } as const;
@@ -21,13 +23,15 @@ export const CREDIT_LABELS: Record<CreditReason, string> = {
   enrich: "Item details",
   analyze_further: "Analyze further",
   analyze_further_live: "Analyze further (live scan)",
+  analyze_further_document: "Analyze further (document)",
   translate: "Translate",
   resale_listing: "Resale listing",
 };
 
 
 
-export const SIGNUP_GRANT = 5;
+export const SIGNUP_GRANT = 10;
+
 
 export const INSUFFICIENT_CREDITS = "insufficient_credits";
 
