@@ -2564,7 +2564,15 @@ function DetailPanel({
   historyId?: string | null;
   onClose: () => void;
 }) {
-  const deepReason: CreditReason = live ? "analyze_further_live" : "analyze_further";
+  /** Documents are text-only follow-ups, so they use the cheaper deep-analysis price. */
+  const isDocumentItem =
+    ((item as TrackedItem).enrichment?.category ?? (item as DetectedItem).category) === "document";
+  const deepReason: CreditReason = isDocumentItem
+    ? "analyze_further_document"
+    : live
+      ? "analyze_further_live"
+      : "analyze_further";
+
 
   const isTracked = (i: TrackedItem | DetectedItem): i is TrackedItem =>
     (i as TrackedItem).id !== undefined;
