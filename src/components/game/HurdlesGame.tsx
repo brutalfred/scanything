@@ -64,7 +64,6 @@ export function HurdlesGame({
   const [obstacles, setObstacles] = useState<Obstacle[]>(() => buildObstacles());
 
   const pendingTaps = useRef(0);
-  const lastCrowdUpdate = useRef(0);
   const jumpStart = useRef(0);
   const jumpDuration = useRef(0);
   const jumpCharging = useRef(false);
@@ -86,9 +85,7 @@ export function HurdlesGame({
   };
 
   useEffect(() => {
-    const onHide = () => {
-      if (document.visibilityState === "hidden") stopCrowdAmbience(true);
-    };
+    const onHide = () => {};
     document.addEventListener("visibilitychange", onHide);
     return () => {
       document.removeEventListener("visibilitychange", onHide);
@@ -140,9 +137,6 @@ export function HurdlesGame({
         drag += extraDrag;
       }
       spd = Math.max(0, spd - drag * dt);
-      if (now - lastCrowdUpdate.current > 200) {
-        lastCrowdUpdate.current = now;
-      }
 
       const prev = dist;
       dist = Math.min(TRACK_M, dist + spd * dt);
@@ -153,7 +147,6 @@ export function HurdlesGame({
         if (prev < o.m && dist >= o.m) {
           cleared.current.add(i);
           if (currentY < o.height && !crashedOn) crashedOn = o;
-          else swellCrowd(0.18, 0.4);
         }
       });
 
@@ -173,7 +166,6 @@ export function HurdlesGame({
             : "You hit a hurdle! Race over — restart.",
         );
         setPhase("crashed");
-        window.setTimeout(() => stopCrowdAmbience(), 900);
         return;
       }
 
@@ -189,7 +181,6 @@ export function HurdlesGame({
         const ms = Math.round(now - start);
         setElapsed(ms);
         setPhase("finished");
-        window.setTimeout(() => stopCrowdAmbience(), 2600);
         onFinish(ms);
         return;
       }
@@ -220,7 +211,6 @@ export function HurdlesGame({
     setCrashMsg(null);
     setStumbling(false);
     setPhase("countdown");
-    lastCrowdUpdate.current = 0;
 
     const seq: [string, number][] = [
       ["3", 0],
@@ -234,11 +224,6 @@ export function HurdlesGame({
       timers.current.push(
         setTimeout(() => {
           setCountText(text);
-          if (text === "GO!") {
-          } else if (text === "Ready…" || text === "Set…") {
-            if (text === "Set…") setCrowdIntensity(0.05); // crowd hushes
-          } else {
-          }
           if (text === "GO!") {
             setPhase("running");
             runLoop();
