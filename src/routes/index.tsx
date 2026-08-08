@@ -34,12 +34,10 @@ import {
 
 import { toast } from "sonner";
 
-
 import {
   analyzeRoom,
   analyzeDocument,
   summarizeDocument,
-
   quickScan,
   enrichItem,
   analyzeFurther,
@@ -49,9 +47,11 @@ import {
   type QuickItem,
   type DeepAnalysis,
   type Translation,
-
 } from "@/lib/analyze-room.functions";
+import { generateListingDraft, type ListingDraft } from "@/lib/listing.functions";
+import { detectCountry, getMarketplacesForItem } from "@/lib/marketplaces";
 import { Button } from "@/components/ui/button";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
