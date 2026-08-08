@@ -518,7 +518,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
 
         )}
 
-        {!loading && !error && !selected && folder && (
+        {!loading && !error && !selected && (folder || collection) && (
           <div className="space-y-2">
             {visible.length === 0 && (
               <p className="py-8 text-center text-xs text-muted-foreground">{t("noScansYet")}</p>
