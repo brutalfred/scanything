@@ -2715,9 +2715,150 @@ function DetailPanel({
                 {listingError && (
                   <p className="mt-2 text-xs text-destructive">{listingError}</p>
                 )}
-
               </div>
             )}
+
+            {listingOpen && listingDraft && (
+              <div className="mt-4 rounded-lg border border-primary/40 bg-primary/5 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs font-medium text-primary">{t("listingDraft")}</h4>
+                  <button
+                    onClick={() => {
+                      setListingOpen(false);
+                      setListingDraft(null);
+                    }}
+                    className="rounded-full p-1 text-muted-foreground hover:bg-accent"
+                    aria-label="Close listing"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t("listingTitle")}
+                    </label>
+                    {listingEdited ? (
+                      <input
+                        type="text"
+                        value={listingDraft.title}
+                        onChange={(e) =>
+                          setListingDraft((prev) => (prev ? { ...prev, title: e.target.value } : prev))
+                        }
+                        className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                      />
+                    ) : (
+                      <p className="text-sm font-semibold text-foreground">{listingDraft.title}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t("listingDescription")}
+                    </label>
+                    {listingEdited ? (
+                      <textarea
+                        value={listingDraft.description}
+                        onChange={(e) =>
+                          setListingDraft((prev) =>
+                            prev ? { ...prev, description: e.target.value } : prev
+                          )
+                        }
+                        className="mt-1 min-h-[80px] w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                      />
+                    ) : (
+                      <p className="text-sm leading-relaxed text-foreground">
+                        {listingDraft.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {t("conditionLabel")}
+                      </label>
+                      <p className="text-sm font-medium text-foreground">{listingDraft.condition}</p>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {t("listingPrice")}
+                      </label>
+                      <p className="text-sm font-medium text-foreground">
+                        {listingDraft.price} {listingDraft.currency}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t("listingKeywords")}
+                    </label>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {listingDraft.keywords.map((k) => (
+                        <span
+                          key={k}
+                          className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          {k}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {t("recommendedForThisItem")}
+                      </label>
+                      {effectiveCountry && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {t("region")}: {effectiveCountry} ({t("autoDetected")})
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {recommendedMarketplaces.map((m) => (
+                        <a
+                          key={m.id}
+                          href={m.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                        >
+                          {m.label}
+                          <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => {
+                        const text = `${listingDraft.title}\n\n${listingDraft.description}\n\nPrice: ${listingDraft.price} ${listingDraft.currency}\nCondition: ${listingDraft.condition}\nKeywords: ${listingDraft.keywords.join(", ")}`;
+                        navigator.clipboard
+                          .writeText(text)
+                          .then(() => toast.success(t("listingCopied")))
+                          .catch(() => toast.error("Copy failed"));
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {t("copyListing")}
+                    </button>
+                    <button
+                      onClick={() => setListingEdited((prev) => !prev)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      {listingEdited ? t("saveListing") : t("editListing")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
 
             {(!["plate", "document"].includes(enrichment.category) ||
               ("resale" in item && item.resale)) && (
