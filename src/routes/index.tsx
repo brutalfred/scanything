@@ -44,6 +44,8 @@ import {
   analyzeRoom,
   analyzeDocument,
   summarizeDocument,
+  translateDocument,
+
   quickScan,
   enrichItem,
   analyzeFurther,
@@ -67,7 +69,7 @@ import {
 import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
 import { CreditMeter } from "@/components/credits/CreditMeter";
 import { AccountButton } from "@/components/credits/AccountButton";
-import { CREDIT_COSTS, type CreditReason } from "@/lib/credits";
+import { CREDIT_COSTS, SIGNUP_GRANT, type CreditReason } from "@/lib/credits";
 import {
   baseScanCost,
   estimateScanCost,
@@ -1757,7 +1759,7 @@ function Scanner() {
 
               {isGuest && (
                 <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/85 p-3 text-center text-xs text-white">
-                  <p className="mb-2">Sign in for your 5 free credits and get started.</p>
+                  <p className="mb-2">Sign in for your {SIGNUP_GRANT} free credits and get started.</p>
                   <Link
                     to="/auth"
                     className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
@@ -2564,7 +2566,15 @@ function DetailPanel({
   historyId?: string | null;
   onClose: () => void;
 }) {
-  const deepReason: CreditReason = live ? "analyze_further_live" : "analyze_further";
+  /** Documents are text-only follow-ups, so they use the cheaper deep-analysis price. */
+  const isDocumentItem =
+    ((item as TrackedItem).enrichment?.category ?? (item as DetectedItem).category) === "document";
+  const deepReason: CreditReason = isDocumentItem
+    ? "analyze_further_document"
+    : live
+      ? "analyze_further_live"
+      : "analyze_further";
+
 
   const isTracked = (i: TrackedItem | DetectedItem): i is TrackedItem =>
     (i as TrackedItem).id !== undefined;
@@ -2700,6 +2710,7 @@ function DetailPanel({
           extraImages: extraShots.map((s) => s.replace(/^data:[^,]+,/, "")),
           userNote: extraNote.trim() || undefined,
           live,
+          document: isDocumentItem,
 
           environment: getPaddleEnvironment(),
         },
@@ -2716,7 +2727,8 @@ function DetailPanel({
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots, extraNote]);
+  }, [imageBase64, name, panelCredits, live, isDocumentItem, deepReason, historyId, extraShots, extraNote]);
+
 
   const generateListingFn = useServerFn(generateListingDraft);
 
@@ -3736,12 +3748,46 @@ function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () =
   const [copied, setCopied] = useState(false);
   const [confirmSummary, setConfirmSummary] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
+  /** Original (untranslated) text, kept so the user can switch back. */
+  const [original, setOriginal] = useState<string | null>(null);
+  const [translatingDoc, setTranslatingDoc] = useState(false);
   const docCredits = useCreditsContext();
+  const { language: docLanguage } = useLanguage();
 
   useEffect(() => {
     setValue(text);
     setEditing(false);
+    setOriginal(null);
   }, [text]);
+
+  const runTranslate = async () => {
+    if (original) {
+      // Toggle back to the scanned original.
+      setValue(original);
+      setOriginal(null);
+      return;
+    }
+    if (!value.trim()) return toast.error("No text to translate");
+    setTranslatingDoc(true);
+    try {
+      const result = await translateDocument({
+        data: { text: value.slice(0, 60000), targetLanguage: docLanguage },
+      });
+      if (result.text) {
+        setOriginal(value);
+        setValue(result.text);
+        toast.success(`Translated to ${docLanguage}`);
+      } else {
+        toast.error("Could not translate the text");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not translate the text");
+    } finally {
+      setTranslatingDoc(false);
+    }
+  };
+
+
 
   const runSummary = async () => {
     setConfirmSummary(false);
@@ -3877,6 +3923,20 @@ function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () =
           <Sparkles className="h-3 w-3" />
           {summarizing ? "Summarizing…" : "Summarize"}
         </button>
+        <button
+          type="button"
+          disabled={translatingDoc}
+          onClick={() => void runTranslate()}
+          className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+        >
+          <Languages className="h-3 w-3" />
+          {translatingDoc
+            ? "Translating…"
+            : original
+              ? "Show original"
+              : `Translate to ${docLanguage}`}
+        </button>
+
         {onAddPage && (
           <button
             type="button"
