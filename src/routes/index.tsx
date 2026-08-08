@@ -2365,6 +2365,122 @@ function Scanner() {
       {/* Video scan warning for signed-in users */}
       <ScanHistorySheet open={historyOpen} onClose={() => setHistoryOpen(false)} />
 
+      {queueOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          onClick={() => setQueueOpen(false)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 gold-glow sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <CloudOff className="h-4 w-4 text-primary" />
+              <h2 className="flex-1 text-sm font-semibold text-foreground">Offline scans</h2>
+              <button
+                onClick={() => setQueueOpen(false)}
+                className="rounded-full p-1 text-muted-foreground hover:text-foreground"
+                aria-label={t("close")}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-3 text-[11px] text-muted-foreground">
+              {online
+                ? "You're back online — analyze these captures whenever you're ready."
+                : "Still offline. These captures are stored on this device and can be analyzed once you're back online."}
+            </p>
+            <div className="space-y-2">
+              {queued.map((q) => (
+                <div
+                  key={q.id}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-2"
+                >
+                  <img
+                    src={q.dataUrl}
+                    alt="Queued capture"
+                    className="h-14 w-14 rounded-lg object-cover"
+                  />
+                  <div className="flex-1">
+                    <div className="text-xs font-medium capitalize text-foreground">
+                      {q.mode} scan
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {new Date(q.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={!online}
+                    onClick={() => void analyzeQueued(q)}
+                  >
+                    Analyze
+                  </Button>
+                  <button
+                    onClick={() => void dropQueued(q.id)}
+                    className="rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                    aria-label="Delete queued scan"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              {queued.length === 0 && (
+                <p className="py-8 text-center text-xs text-muted-foreground">
+                  Nothing queued right now.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {collectionPrompt && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setCollectionPrompt(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-2xl border border-primary/40 bg-card p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm font-semibold text-foreground">Save to collection</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Name the folder these results should be filed under, e.g. "Attic" or "Contracts".
+            </p>
+            <input
+              autoFocus
+              value={collectionName}
+              onChange={(e) => setCollectionName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void saveToCollection();
+              }}
+              maxLength={60}
+              placeholder="Collection name"
+              className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCollectionPrompt(false)}
+                className="flex-1 rounded-full border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-primary hover:text-primary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!collectionName.trim() || savingCollection}
+                onClick={() => void saveToCollection()}
+                className="flex-1 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {savingCollection ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {videoWarningOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
