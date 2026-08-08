@@ -99,7 +99,56 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
         <div className="mb-3 flex items-center gap-2 text-3xl font-bold text-primary">
           <Coins className="h-7 w-7" />
           <span className="tabular-nums">{credits.balance}</span>
+          {credits.signedIn && (
+            <button
+              type="button"
+              onClick={() => setSendOpen((v) => !v)}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border-2 border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+            >
+              <Send className="h-3.5 w-3.5" />
+              Send credits
+            </button>
+          )}
         </div>
+
+        {credits.signedIn && sendOpen && (
+          <form
+            onSubmit={sendCredits}
+            className="mb-4 space-y-2 rounded-xl border border-primary/40 bg-secondary/30 p-3"
+          >
+            <p className="text-xs text-muted-foreground">
+              Send credits to another Scanything account by email.
+            </p>
+            <input
+              type="email"
+              required
+              value={sendEmail}
+              onChange={(e) => setSendEmail(e.target.value)}
+              placeholder="friend@example.com"
+              maxLength={255}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={500}
+                required
+                value={sendAmount}
+                onChange={(e) => setSendAmount(e.target.value)}
+                placeholder="Credits"
+                className="w-28 rounded-lg border border-border bg-background px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-primary"
+              />
+              <button
+                type="submit"
+                disabled={sending}
+                className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {sending ? "Sending…" : "Send"}
+              </button>
+            </div>
+          </form>
+        )}
 
 
 
