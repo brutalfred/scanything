@@ -79,7 +79,6 @@ import {
 
 import { AiConsentModal } from "@/components/AiConsentModal";
 import { useAiConsent } from "@/hooks/useAiConsent";
-import { playSound } from "@/lib/sounds";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import {
   saveScanHistory,
@@ -541,7 +540,6 @@ function Scanner() {
   useEffect(() => {
     const newIds = tracked.filter((t) => !trackedSoundIdsRef.current.has(t.id));
     if (newIds.length > 0) {
-      void playSound("bubble");
     }
     tracked.forEach((t) => trackedSoundIdsRef.current.add(t.id));
   }, [tracked]);
@@ -551,7 +549,6 @@ function Scanner() {
   useEffect(() => {
     if (phase === "results" && items.length > 0 && !photoItemsSoundPlayedRef.current) {
       photoItemsSoundPlayedRef.current = true;
-      void playSound("bubble");
     }
     if (phase === "camera" || items.length === 0) {
       photoItemsSoundPlayedRef.current = false;
@@ -857,7 +854,6 @@ function Scanner() {
       return;
     }
 
-    void playSound("shutter");
     setUploaded(null);
     await runScan(dataUrl, mode);
   }, [grabFrame, mode, uploaded, runScan, refreshQueue]);
@@ -922,7 +918,6 @@ function Scanner() {
         return next;
       });
       if (added.length) {
-        void playSound("bubble");
         const payload = added.map((d) => ({
           name: d.name,
           category: d.category,
@@ -1111,7 +1106,6 @@ function Scanner() {
 
 
   const reset = useCallback(() => {
-    void playSound("sweep");
     trackedSoundIdsRef.current.clear();
     photoItemsSoundPlayedRef.current = false;
     try {
@@ -1136,7 +1130,6 @@ function Scanner() {
   /** Keeps the pages collected so far and returns to the camera for the next page. */
   const addDocumentPage = useCallback(() => {
     appendPageRef.current = true;
-    void playSound("sweep");
     setItems([]);
     setSnapshot(null);
     setUploaded(null);
@@ -1268,7 +1261,6 @@ function Scanner() {
       const img = snapshot ?? grabFrame(1280, 0.9) ?? null;
       setSelectedImage(img);
       setSelected(item);
-      void playSound("bubble");
     },
     [openAddressSearch, snapshot],
   );
@@ -2168,7 +2160,6 @@ function Scanner() {
                   data-no-sound
                   variant="outline"
                   onClick={() => {
-                    void playSound("click");
                     void loadMore();
                   }}
                   disabled={loadingMore || !credits.signedIn}
@@ -2209,7 +2200,6 @@ function Scanner() {
                   data-no-sound
                   variant="outline"
                   onClick={() => {
-                    void playSound("click");
                     setCollectionPrompt(true);
                   }}
                   className="border-primary/50 text-primary hover:bg-primary/10"

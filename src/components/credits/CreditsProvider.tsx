@@ -4,7 +4,6 @@ import { useCredits, type CreditsApi } from "@/hooks/useCredits";
 import { CreditsSheet } from "./CreditsSheet";
 import { WelcomeInfoModal } from "@/components/WelcomeInfoModal";
 import { CREDIT_LABELS, type CreditReason } from "@/lib/credits";
-import { playSound } from "@/lib/sounds";
 
 
 type CreditsContextValue = CreditsApi & {
@@ -32,7 +31,6 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") !== "success") return;
-    void playSound("coin");
     params.delete("checkout");
     const qs = params.toString();
     window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, X } from "lucide-react";
-import { playSound } from "@/lib/sounds";
 
 import { toast } from "sonner";
 import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
@@ -56,7 +55,6 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
         if (!productId) throw new Error("This pack is not available in the app");
         await buyWithPlay(productId);
         await credits.refresh?.();
-        void playSound("coin");
         toast.success("Credits added to your account");
         return;
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Check, Download, LogIn, LogOut, ShieldCheck, Trophy, User2, Volume2, VolumeX, X } from "lucide-react";
+import { Camera, Check, Download, LogIn, LogOut, ShieldCheck, Trophy, User2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
@@ -12,7 +12,6 @@ import { LANGUAGES, LANGUAGE_NATIVE } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
-import { useSounds } from "@/hooks/useSounds";
 import { useCameraPermission } from "@/hooks/useCameraPermission";
 import { useAiConsent } from "@/hooks/useAiConsent";
 import { useAppVersion } from "@/hooks/useAppVersion";
@@ -40,7 +39,6 @@ export function AccountButton({
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
-  const { muted, volume, toggleMute, setVolume } = useSounds();
   const camera = useCameraPermission();
   const aiConsent = useAiConsent();
   const appVersion = useAppVersion();
@@ -148,40 +146,6 @@ export function AccountButton({
                 </dd>
               </div>
             </dl>
-
-            <div className="mt-4 rounded-xl border border-current/30 bg-current/5">
-              <button
-                type="button"
-                onClick={toggleMute}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 font-semibold transition-colors hover:bg-current/10"
-              >
-                <span className="flex items-center gap-2">
-                  {muted || volume === 0 ? (
-                    <VolumeX className="h-4 w-4" />
-                  ) : (
-                    <Volume2 className="h-4 w-4" />
-                  )}
-                  {t("soundEffects")}
-                </span>
-                <span className="text-xs font-medium opacity-70">{muted ? t("muted") : t("on")}</span>
-              </button>
-              <div className="flex items-center gap-3 px-3 pb-3">
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={Math.round(volume * 100)}
-                  onChange={(e) => setVolume(Number(e.target.value) / 100)}
-                  aria-label="Sound effects volume"
-                  className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-current/25 accent-current disabled:opacity-50"
-                  disabled={muted}
-                />
-                <span className="w-9 shrink-0 text-right text-xs font-medium tabular-nums opacity-70">
-                  {Math.round(volume * 100)}%
-                </span>
-              </div>
-            </div>
 
             <div className="mt-3 rounded-xl border border-current/30 bg-current/5 px-3 py-2">
               <div className="flex items-center justify-between gap-3">

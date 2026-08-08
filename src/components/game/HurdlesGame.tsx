@@ -5,7 +5,6 @@ import {
   startCrowdAmbience,
   stopCrowdAmbience,
   swellCrowd,
-} from "@/lib/sounds";
 
 const TRACK_M = 400;
 const FIRST_HURDLE_M = 45;
@@ -183,7 +182,6 @@ export function HurdlesGame({
         );
         setPhase("crashed");
         setCrowdIntensity(0);
-        void playSound("aww");
         window.setTimeout(() => stopCrowdAmbience(), 900);
         return;
       }
@@ -201,8 +199,6 @@ export function HurdlesGame({
         setElapsed(ms);
         setPhase("finished");
         swellCrowd(0.4, 1.6);
-        void playSound("cheer");
-        void playSound("champagne");
         window.setTimeout(() => stopCrowdAmbience(), 2600);
         onFinish(ms);
         return;
@@ -251,14 +247,10 @@ export function HurdlesGame({
         setTimeout(() => {
           setCountText(text);
           if (text === "GO!") {
-            void playSound("pistol");
             swellCrowd(0.35, 1.2);
-            void playSound("cheer");
           } else if (text === "Ready…" || text === "Set…") {
-            void playSound("beepHigh");
             if (text === "Set…") setCrowdIntensity(0.05); // crowd hushes
           } else {
-            void playSound("beepLow");
           }
           if (text === "GO!") {
             setPhase("running");
@@ -293,7 +285,6 @@ export function HurdlesGame({
     jumpDuration.current = JUMP_MIN_TIME;
     jumpHeight.current = JUMP_MIN_HEIGHT;
     jumpCharging.current = true;
-    void playSound("bubble");
   };
 
   const jumpUp = () => {
