@@ -288,6 +288,10 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [folder, setFolder] = useState<FolderKey | null>(null);
+  const [tab, setTab] = useState<"scans" | "collections">("scans");
+  const [collection, setCollection] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+
 
   const load = useCallback(async () => {
     setLoading(true);
