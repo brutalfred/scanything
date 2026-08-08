@@ -354,6 +354,36 @@ function Scanner() {
   const [loadMoreNote, setLoadMoreNote] = useState<string | null>(null);
   /** History row of the current photo scan, so "Load more" appends to the same entry. */
   const historyIdRef = useRef<string | null>(null);
+  /** Set while an analysis is in flight and the user hits Cancel. */
+  const cancelScanRef = useRef(false);
+  /** Pages of a stitched multi-page document scan. */
+  const [docPages, setDocPages] = useState<string[]>([]);
+  const appendPageRef = useRef(false);
+  /** Scans captured while offline, waiting to be analyzed. */
+  const [queued, setQueued] = useState<QueuedScan[]>([]);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [collectionPrompt, setCollectionPrompt] = useState(false);
+  const [collectionName, setCollectionName] = useState("");
+  const [savingCollection, setSavingCollection] = useState(false);
+  const [online, setOnline] = useState(true);
+
+  const refreshQueue = useCallback(async () => {
+    setQueued(await listQueuedScans());
+  }, []);
+
+  useEffect(() => {
+    void refreshQueue();
+    const sync = () => setOnline(!isOffline());
+    sync();
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, [refreshQueue]);
+
+
 
 
   // Restore the last photo scan so the picture stays open (survives reloads / tab restores).
