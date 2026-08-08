@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAndroidApp } from "@/hooks/useAndroidApp";
 
 export const Route = createFileRoute("/refund-policy")({
   head: () => ({
@@ -8,7 +7,7 @@ export const Route = createFileRoute("/refund-policy")({
       {
         name: "description",
         content:
-          "Scanything offers a 30-day money-back guarantee on scan credit purchases. Learn how to request a refund through Paddle and how long refunds take.",
+          "Scanything offers a 30-day money-back guarantee on scan credit purchases. Learn how to request a refund through Google Play and how long refunds take.",
       },
       { property: "og:title", content: "Refund Policy — Scanything" },
       {
