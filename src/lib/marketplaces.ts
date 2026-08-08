@@ -458,7 +458,8 @@ export function detectCountry(): string | null {
   if (typeof window === "undefined") return null;
   try {
     const locale =
-      navigator.language || (navigator as { languages?: string[] }).languages?.[0] || "en-US";
+      navigator.language || (navigator as { languages?: readonly string[] }).languages?.[0] || "en-US";
+
     const parts = locale.split("-");
     if (parts.length > 1) {
       const code = parts[parts.length - 1].toUpperCase();
