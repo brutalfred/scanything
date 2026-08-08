@@ -225,7 +225,31 @@ export const EN = {
   back: "Back",
   item: "item",
   couldNotLoadHistory: "Could not load history.",
+
+  // resale listing
+  generateListing: "Generate listing",
+  listingDraft: "Listing draft",
+  copyListing: "Copy listing",
+  openMarketplace: "Open marketplace",
+  recommendedForThisItem: "Recommended marketplaces",
+  conditionLabel: "Condition",
+  listingPrice: "Listing price",
+  noPhotosAvailable: "No photos available",
+  generating: "Generating…",
+  marketplaceSearch: "Search on {{marketplace}}",
+  copyToClipboard: "Copy to clipboard",
+  copied: "Copied",
+  listingCopied: "Listing copied to clipboard",
+  editListing: "Edit listing",
+  saveListing: "Save listing",
+  listingDescription: "Description",
+  listingTitle: "Title",
+  listingKeywords: "Keywords",
+  region: "Region",
+  autoDetected: "Auto-detected",
+  allMarketplaces: "All marketplaces",
 } as const;
+
 
 export type TranslationKey = keyof typeof EN;
 export type Dictionary = Partial<Record<TranslationKey, string>>;
