@@ -38,6 +38,8 @@ import { toast } from "sonner";
 import {
   analyzeRoom,
   analyzeDocument,
+  summarizeDocument,
+
   quickScan,
   enrichItem,
   analyzeFurther,
