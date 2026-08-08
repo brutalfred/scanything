@@ -7,7 +7,7 @@ import {
   type ScanHistoryEntry,
   type ScanHistoryItem,
 } from "@/lib/scan-history.functions";
-import { translateName } from "@/lib/analyze-room.functions";
+import { translateName, translateDocument } from "@/lib/analyze-room.functions";
 import { useLanguage } from "@/hooks/useLanguage";
 import { LANGUAGES } from "@/lib/i18n";
 
@@ -29,8 +29,62 @@ const HISTORY_TRANSLATIONS = new Map<
   { translation: string; description: string; category: string; labels: string[] }
 >();
 
+/** Full scanned document text, translatable back and forth inside this box only. */
+function HistoryDocumentText({ text, language }: { text: string; language: string }) {
+  const [value, setValue] = useState(text);
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (language === "English") {
+      setValue(text);
+      return;
+    }
+    let cancelled = false;
+    setBusy(true);
+    void (async () => {
+      try {
+        const result = await translateDocument({
+          data: { text: text.slice(0, 60000), targetLanguage: language },
+        });
+        if (!cancelled && result.text) setValue(result.text);
+      } catch {
+        /* keep the original text */
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [text, language]);
+
+  return (
+    <div className="mt-3">
+      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-secondary p-3 font-mono text-xs leading-relaxed text-foreground">
+        {busy ? "Translating…" : value}
+      </pre>
+      <button
+        type="button"
+        onClick={() => {
+          navigator.clipboard.writeText(value).then(
+            () => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            },
+            () => {},
+          );
+        }}
+        className="mt-2 inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
+      >
+        {copied ? "Copied" : "Copy to clipboard"}
+      </button>
+    </div>
+  );
+}
+
 function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: () => void }) {
-  const { language: appLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${item.name} buy price`)}`;
   const infoUrl = `https://www.google.com/search?q=${encodeURIComponent(item.name)}`;
   const showPrice =
@@ -44,6 +98,8 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
   );
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  /** Language of this information box only. */
+  const [boxLanguage, setBoxLanguage] = useState<string>("English");
   const [translating, setTranslating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tr, setTr] = useState<{
@@ -57,6 +113,7 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
   const run = useCallback(
     async (language: string) => {
       setPickerOpen(false);
+      setBoxLanguage(language);
       if (language === "English") {
         setTr(null);
         setError(null);
@@ -91,15 +148,7 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
     [item.name, item.description, item.category, LABELS],
   );
 
-  // Follow the app language automatically.
-  useEffect(() => {
-    if (appLanguage === "English") {
-      setTr((prev) => (prev ? null : prev));
-      return;
-    }
-    if (tr?.language === appLanguage) return;
-    void run(appLanguage);
-  }, [appLanguage, tr?.language, run]);
+  // This box has its own language, independent of the account-tab language.
 
   const tl = (i: number) => tr?.labels?.[i] || LABELS[i] || "";
 
@@ -173,10 +222,14 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
           </button>
         </div>
 
-        {item.description && (
-          <p className="mt-3 text-sm leading-relaxed text-foreground">
-            {tr?.description || item.description}
-          </p>
+        {item.fullText ? (
+          <HistoryDocumentText text={item.fullText} language={boxLanguage} />
+        ) : (
+          item.description && (
+            <p className="mt-3 text-sm leading-relaxed text-foreground">
+              {tr?.description || item.description}
+            </p>
+          )
         )}
 
         {item.deep && (

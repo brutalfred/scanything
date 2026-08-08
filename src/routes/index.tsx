@@ -804,6 +804,7 @@ function Scanner() {
                 confidence: d.confidence,
                 priceMin: d.priceMin,
                 priceMax: d.priceMax,
+                fullText: isDoc ? (d.description ?? undefined) : undefined,
               })),
             },
           })
@@ -1163,6 +1164,7 @@ function Scanner() {
               confidence: d.confidence,
               priceMin: d.priceMin,
               priceMax: d.priceMax,
+              fullText: mode === "document" ? (d.description ?? undefined) : undefined,
             }));
       if (!payload.length) {
         toast.error("Nothing to save yet");
@@ -2608,6 +2610,8 @@ function DetailPanel({
 
   // Resale listing draft state
   const [listingDraft, setListingDraft] = useState<ListingDraft | null>(null);
+  /** Untranslated draft, kept so switching the box language re-translates cleanly. */
+  const [listingBase, setListingBase] = useState<ListingDraft | null>(null);
   const [listingLoading, setListingLoading] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
   const [listingEdited, setListingEdited] = useState(false);
@@ -2747,6 +2751,7 @@ function DetailPanel({
         },
       });
 
+      setListingBase(draft);
       setListingDraft(draft);
       setListingOpen(true);
       setListingEdited(false);
@@ -2775,6 +2780,11 @@ function DetailPanel({
   }, [name, panelCredits]);
 
   const [namePickerOpen, setNamePickerOpen] = useState(false);
+  /**
+   * Language of this information box only. Independent of the account-tab
+   * language: everything generated inside the box follows this.
+   */
+  const [boxLanguage, setBoxLanguage] = useState<string>("English");
   const [nameTranslating, setNameTranslating] = useState(false);
   const [nameTranslateError, setNameTranslateError] = useState<string | null>(null);
   const [nameTranslation, setNameTranslation] = useState<
@@ -2795,6 +2805,13 @@ function DetailPanel({
 
   const runNameTranslate = useCallback(
     async (language: string) => {
+      setBoxLanguage(language);
+      if (language === "English") {
+        setNameTranslation(null);
+        setNameTranslateError(null);
+        setNamePickerOpen(false);
+        return;
+      }
       const cacheKey = `${language}|${name}|${enrichment?.description ?? ""}`;
       const cached = TRANSLATION_CACHE.get(cacheKey);
       if (cached) {
@@ -2829,20 +2846,10 @@ function DetailPanel({
   );
 
   /**
-   * Follow the app-wide language: scan content is auto-translated whenever the
-   * user browses the app in something other than English.
+   * The box starts in the original (English) language. It only changes when the
+   * user picks a language inside this box — the account-tab language never
+   * affects the scanned content shown here.
    */
-  useEffect(() => {
-    if (appLanguage === "English") {
-      // Back to English: drop any AI translation so the original text shows again.
-      setNameTranslation((prev) => (prev ? null : prev));
-      setNameTranslateError(null);
-      return;
-    }
-    if (nameTranslation?.language === appLanguage) return;
-    void runNameTranslate(appLanguage);
-    // Re-run when the item, its details or the app language change.
-  }, [appLanguage, nameTranslation?.language, runNameTranslate]);
 
 
   /** Localized UI label helper: AI translation first, then the built-in dictionary. */
@@ -2869,7 +2876,7 @@ function DetailPanel({
     description: string;
     labels: string[];
   } | null>(null);
-  const deepLang = nameTranslation?.language ?? (appLanguage === "English" ? null : appLanguage);
+  const deepLang = boxLanguage === "English" ? null : boxLanguage;
 
   useEffect(() => {
     if (!deep || !deepLang) {
@@ -2904,6 +2911,43 @@ function DetailPanel({
     (i: number) => deepTranslation?.labels?.[i] || DEEP_LABELS[i] || "",
     [deepTranslation, DEEP_LABELS],
   );
+
+  // --- Listing draft auto-translation (follows the box language) ---
+  useEffect(() => {
+    if (!listingBase) return;
+    if (listingEdited) return;
+    if (boxLanguage === "English") {
+      setListingDraft(listingBase);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await translateName({
+          data: {
+            text: listingBase.title,
+            targetLanguage: boxLanguage,
+            description: listingBase.description,
+            category: listingBase.condition,
+            labels: listingBase.keywords,
+          },
+        });
+        if (cancelled) return;
+        setListingDraft({
+          ...listingBase,
+          title: r.translation || listingBase.title,
+          description: r.description || listingBase.description,
+          condition: r.category || listingBase.condition,
+          keywords: r.labels?.length ? r.labels : listingBase.keywords,
+        });
+      } catch {
+        // Keep the original draft if translation fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [listingBase, boxLanguage, listingEdited]);
 
 
 
@@ -2989,7 +3033,8 @@ function DetailPanel({
           <>
             {enrichment.category === "document" ? (
               <DocumentTextBlock
-                text={nameTranslation?.description || enrichment.description}
+                text={enrichment.description}
+                language={boxLanguage}
               />
             ) : (
               <p className="mt-3 text-sm leading-relaxed">
@@ -3734,50 +3779,62 @@ function ConfidenceBadge({ value, className = "" }: { value?: number; className?
 }
 
 /** Scanned document text with copy + inline edit controls. */
-function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () => void }) {
+function DocumentTextBlock({
+  text,
+  onAddPage,
+  language,
+}: {
+  text: string;
+  onAddPage?: () => void;
+  /** When provided, the block follows this language instead of its own picker. */
+  language?: string;
+}) {
   const [value, setValue] = useState(text);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [confirmSummary, setConfirmSummary] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
-  /** Original (untranslated) text, kept so the user can switch back. */
-  const [original, setOriginal] = useState<string | null>(null);
+  /** Original (untranslated) text, kept so the user can switch back and forth. */
+  const [base, setBase] = useState(text);
   const [translatingDoc, setTranslatingDoc] = useState(false);
+  const [langPickerOpen, setLangPickerOpen] = useState(false);
+  /** Language of this text block only — never tied to the account-tab language. */
+  const [localLang, setLocalLang] = useState<string>("English");
+  const docLanguage = language ?? localLang;
   const docCredits = useCreditsContext();
-  const { language: docLanguage } = useLanguage();
 
   useEffect(() => {
     setValue(text);
+    setBase(text);
     setEditing(false);
-    setOriginal(null);
   }, [text]);
 
-  const runTranslate = async () => {
-    if (original) {
-      // Toggle back to the scanned original.
-      setValue(original);
-      setOriginal(null);
+  // Translate the scanned text back and forth as the chosen language changes.
+  useEffect(() => {
+    if (!base.trim()) return;
+    if (docLanguage === "English") {
+      setValue(base);
       return;
     }
-    if (!value.trim()) return toast.error("No text to translate");
+    let cancelled = false;
     setTranslatingDoc(true);
-    try {
-      const result = await translateDocument({
-        data: { text: value.slice(0, 60000), targetLanguage: docLanguage },
-      });
-      if (result.text) {
-        setOriginal(value);
-        setValue(result.text);
-        toast.success(`Translated to ${docLanguage}`);
-      } else {
-        toast.error("Could not translate the text");
+    void (async () => {
+      try {
+        const result = await translateDocument({
+          data: { text: base.slice(0, 60000), targetLanguage: docLanguage },
+        });
+        if (!cancelled && result.text) setValue(result.text);
+      } catch (e) {
+        if (!cancelled)
+          toast.error(e instanceof Error ? e.message : "Could not translate the text");
+      } finally {
+        if (!cancelled) setTranslatingDoc(false);
       }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not translate the text");
-    } finally {
-      setTranslatingDoc(false);
-    }
-  };
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [base, docLanguage]);
 
 
 
@@ -3791,6 +3848,7 @@ function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () =
         data: { text: value.slice(0, 40000), environment: getPaddleEnvironment() },
       });
       if (result.summary) {
+        setBase(result.summary);
         setValue(result.summary);
         toast.success("Summary ready");
       } else {
@@ -3915,19 +3973,17 @@ function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () =
           <Sparkles className="h-3 w-3" />
           {summarizing ? "Summarizing…" : "Summarize"}
         </button>
-        <button
-          type="button"
-          disabled={translatingDoc}
-          onClick={() => void runTranslate()}
-          className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
-        >
-          <Languages className="h-3 w-3" />
-          {translatingDoc
-            ? "Translating…"
-            : original
-              ? "Show original"
-              : `Translate to ${docLanguage}`}
-        </button>
+        {!language && (
+          <button
+            type="button"
+            disabled={translatingDoc}
+            onClick={() => setLangPickerOpen((v) => !v)}
+            className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-3 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+          >
+            <Languages className="h-3 w-3" />
+            {translatingDoc ? "Translating…" : `Language: ${docLanguage}`}
+          </button>
+        )}
 
         {onAddPage && (
           <button
@@ -3941,6 +3997,25 @@ function DocumentTextBlock({ text, onAddPage }: { text: string; onAddPage?: () =
         )}
       </div>
 
+
+      {!language && langPickerOpen && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {["English", ...NAME_LANGUAGES.filter((l) => l !== "English")].map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              onClick={() => {
+                setLocalLang(lang);
+                setLangPickerOpen(false);
+              }}
+              disabled={translatingDoc}
+              className="rounded-full border border-border px-2 py-0.5 text-[10px] text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+            >
+              {lang}
+            </button>
+          ))}
+        </div>
+      )}
 
       {confirmSummary && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
