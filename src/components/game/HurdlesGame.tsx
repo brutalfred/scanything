@@ -85,10 +85,7 @@ export function HurdlesGame({
   };
 
   useEffect(() => {
-    const onHide = () => {};
-    document.addEventListener("visibilitychange", onHide);
     return () => {
-      document.removeEventListener("visibilitychange", onHide);
       clearTimers();
       stopLoop();
     };
