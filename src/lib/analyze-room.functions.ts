@@ -387,6 +387,9 @@ const DeepInput = z.object({
   userNote: z.string().trim().max(300).optional(),
 
   live: z.boolean().optional(),
+  /** Opened from a scanned document — text-only follow-up, so it costs 1 credit. */
+  document: z.boolean().optional(),
+
 }).merge(EnvironmentSchema);
 
 
