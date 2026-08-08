@@ -32,6 +32,9 @@ import {
   ChevronDown,
   Plus,
   Upload,
+  CloudOff,
+  FolderPlus,
+  Trash2,
 } from "lucide-react";
 
 import { toast } from "sonner";
