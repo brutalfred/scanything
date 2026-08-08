@@ -596,6 +596,66 @@ export const summarizeDocument = createServerFn({ method: "POST" })
     return { summary: String(content ?? "").trim() };
   });
 
+const DOC_TRANSLATE_SYSTEM = `You are a document translation engine. You ALWAYS translate, never refuse, never explain.
+Translate the user's document text into the requested target language, written in that language's native script.
+Rules:
+- Translate every line. Never summarize, shorten, omit or add content.
+- Keep the original layout: same line breaks, blank lines, bullet markers, table pipes ("|") and indentation.
+- Keep numbers, dates, amounts, currency codes, emails, URLs, reference numbers and proper brand names unchanged.
+- Keep page markers such as "--- Page 2 ---" exactly as they are.
+- Output ONLY the translated text, with no preamble, quotes, headings or commentary.`;
+
+const DocTranslateInput = z
+  .object({
+    text: z.string().min(1).max(60000),
+    targetLanguage: z.string().min(1).max(40),
+  });
+
+/** Free translation of a whole scanned document (multi-page safe) into the app language. */
+export const translateDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => DocTranslateInput.parse(data))
+  .handler(async ({ data, context }): Promise<{ text: string }> => {
+    // Long documents are split on line boundaries so nothing is cut off mid-page.
+    const chunks: string[] = [];
+    const limit = 6000;
+    let current = "";
+    for (const line of data.text.split("\n")) {
+      if (current.length + line.length + 1 > limit && current) {
+        chunks.push(current);
+        current = "";
+      }
+      current += (current ? "\n" : "") + line;
+    }
+    if (current) chunks.push(current);
+
+    const out: string[] = [];
+    for (const chunk of chunks) {
+      const content = await callGateway(
+        "translate_document",
+        {
+          model: "google/gemini-3-flash-preview",
+          temperature: 0,
+          max_tokens: 8192,
+          messages: [
+            { role: "system", content: DOC_TRANSLATE_SYSTEM },
+            {
+              role: "user",
+              content: `Target language: ${data.targetLanguage}\n\nDocument text:\n${chunk}`,
+            },
+          ],
+        },
+        context.userId,
+      );
+      out.push(String(content ?? "").trim());
+    }
+
+    const text = out.join("\n").trim();
+    if (!text) throw new Error("Translation failed. Please try again.");
+    return { text };
+  });
+
+
 
 
 
