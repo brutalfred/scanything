@@ -155,7 +155,7 @@ function PricingPage() {
           <div className="rounded-2xl border border-border bg-secondary/20 p-6">
             <h3 className="mb-4 text-lg font-semibold text-foreground">New accounts</h3>
             <p className="text-sm text-muted-foreground">
-              Every new Scanything account starts with 5 free credits so you can try a scan before topping up. After that, buy a credit pack any time from the credit counter in the app.
+              Every new Scanything account starts with {SIGNUP_GRANT} free credits so you can try a few scans before topping up. After that, buy a credit pack any time from the credit counter in the app.
             </p>
             <div className="mt-6">
               <Link
