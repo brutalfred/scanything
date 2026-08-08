@@ -1699,7 +1699,7 @@ function Scanner() {
               </div>
 
               {mode === "video" && (
-                <div className="pointer-events-none absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
+                <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
                       videoPaused
@@ -1710,8 +1710,18 @@ function Scanner() {
                     }`}
                   />
                   {videoPaused ? t("pause") : scanning ? t("analyzing") : "Live"}
+                  {scanning && !videoPaused && (
+                    <button
+                      type="button"
+                      onClick={() => setVideoPaused(true)}
+                      className="ml-1 rounded-full border border-white/40 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </div>
               )}
+
 
               {uploaded && (
                 <div className="absolute inset-0 z-20 bg-black">
