@@ -348,6 +348,7 @@ function Index() {
 function Scanner() {
   const credits = useCreditsContext();
   const { t } = useLanguage();
+  const appVersion = useAppVersion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
