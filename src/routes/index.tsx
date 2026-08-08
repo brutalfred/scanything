@@ -2261,7 +2261,6 @@ function DetailPanel({
 
 
   const detectedCountry = useMemo(() => detectCountry(), []);
-  const effectiveCountry = listingRegion || detectedCountry;
   const recommendedMarketplaces = useMemo(() => {
     if (!enrichment) return [];
     return getMarketplacesForItem(
@@ -2271,10 +2270,11 @@ function DetailPanel({
         price: enrichment.priceMax,
         currency: enrichment.currency,
       },
-      effectiveCountry,
+      detectedCountry,
     );
-  }, [enrichment, name, effectiveCountry]);
+  }, [enrichment, name, detectedCountry]);
   const isResaleItem = "resale" in item && item.resale;
+
 
 
   // Optional preview: how much extra photos are expected to sharpen the result.
