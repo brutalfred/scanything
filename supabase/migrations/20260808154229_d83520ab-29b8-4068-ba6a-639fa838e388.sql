@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.transfer_credits_for(uuid, text, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.transfer_credits_for(uuid, text, integer) TO service_role;

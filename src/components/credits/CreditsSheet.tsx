@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Coins, Loader2, X } from "lucide-react";
+import { Coins, Loader2, Send, X } from "lucide-react";
 
 import { toast } from "sonner";
 import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
@@ -11,6 +11,8 @@ import { isNativeAndroid } from "@/lib/platform";
 import { buyWithPlay, playBillingAvailable } from "@/lib/play-billing";
 import type { CreditsApi } from "@/hooks/useCredits";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useServerFn } from "@tanstack/react-start";
+import { transferCredits } from "@/lib/credits.functions";
 
 
 
@@ -33,6 +35,31 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const { openCheckout } = usePaddleCheckout();
   const { t } = useLanguage();
   const [buying, setBuying] = useState<string | null>(null);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendEmail, setSendEmail] = useState("");
+  const [sendAmount, setSendAmount] = useState("");
+  const [sending, setSending] = useState(false);
+  const sendCreditsFn = useServerFn(transferCredits);
+
+  async function sendCredits(e: React.FormEvent) {
+    e.preventDefault();
+    if (sending) return;
+    setSending(true);
+    try {
+      const res = await sendCreditsFn({
+        data: { email: sendEmail.trim(), amount: Number(sendAmount) },
+      });
+      toast.success(`Sent ${sendAmount} credits to ${res.recipientEmail}`);
+      setSendEmail("");
+      setSendAmount("");
+      setSendOpen(false);
+      await credits.refresh?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send credits");
+    } finally {
+      setSending(false);
+    }
+  }
   const environment = getPaddleEnvironment();
 
 
@@ -99,7 +126,56 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
         <div className="mb-3 flex items-center gap-2 text-3xl font-bold text-primary">
           <Coins className="h-7 w-7" />
           <span className="tabular-nums">{credits.balance}</span>
+          {credits.signedIn && (
+            <button
+              type="button"
+              onClick={() => setSendOpen((v) => !v)}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border-2 border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+            >
+              <Send className="h-3.5 w-3.5" />
+              Send credits
+            </button>
+          )}
         </div>
+
+        {credits.signedIn && sendOpen && (
+          <form
+            onSubmit={sendCredits}
+            className="mb-4 space-y-2 rounded-xl border border-primary/40 bg-secondary/30 p-3"
+          >
+            <p className="text-xs text-muted-foreground">
+              Send credits to another Scanything account by email.
+            </p>
+            <input
+              type="email"
+              required
+              value={sendEmail}
+              onChange={(e) => setSendEmail(e.target.value)}
+              placeholder="friend@example.com"
+              maxLength={255}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={500}
+                required
+                value={sendAmount}
+                onChange={(e) => setSendAmount(e.target.value)}
+                placeholder="Credits"
+                className="w-28 rounded-lg border border-border bg-background px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-primary"
+              />
+              <button
+                type="submit"
+                disabled={sending}
+                className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {sending ? "Sending…" : "Send"}
+              </button>
+            </div>
+          </form>
+        )}
 
 
 
