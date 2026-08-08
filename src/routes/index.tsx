@@ -2239,7 +2239,7 @@ function Scanner() {
             </Link>
 
           </div>
-          <p>© {new Date().getFullYear()} Scanything. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Scanything. All rights reserved. v{appVersion}</p>
           <div className="mt-3 flex items-center justify-center gap-4">
             <a
               href="https://x.com/scanythingapp"
