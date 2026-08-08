@@ -2610,6 +2610,8 @@ function DetailPanel({
 
   // Resale listing draft state
   const [listingDraft, setListingDraft] = useState<ListingDraft | null>(null);
+  /** Untranslated draft, kept so switching the box language re-translates cleanly. */
+  const [listingBase, setListingBase] = useState<ListingDraft | null>(null);
   const [listingLoading, setListingLoading] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
   const [listingEdited, setListingEdited] = useState(false);
@@ -2749,6 +2751,7 @@ function DetailPanel({
         },
       });
 
+      setListingBase(draft);
       setListingDraft(draft);
       setListingOpen(true);
       setListingEdited(false);
@@ -2908,6 +2911,43 @@ function DetailPanel({
     (i: number) => deepTranslation?.labels?.[i] || DEEP_LABELS[i] || "",
     [deepTranslation, DEEP_LABELS],
   );
+
+  // --- Listing draft auto-translation (follows the box language) ---
+  useEffect(() => {
+    if (!listingBase) return;
+    if (listingEdited) return;
+    if (boxLanguage === "English") {
+      setListingDraft(listingBase);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await translateName({
+          data: {
+            text: listingBase.title,
+            targetLanguage: boxLanguage,
+            description: listingBase.description,
+            category: listingBase.condition,
+            labels: listingBase.keywords,
+          },
+        });
+        if (cancelled) return;
+        setListingDraft({
+          ...listingBase,
+          title: r.translation || listingBase.title,
+          description: r.description || listingBase.description,
+          condition: r.category || listingBase.condition,
+          keywords: r.labels?.length ? r.labels : listingBase.keywords,
+        });
+      } catch {
+        // Keep the original draft if translation fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [listingBase, boxLanguage, listingEdited]);
 
 
 
