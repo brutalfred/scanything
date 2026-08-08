@@ -86,7 +86,7 @@ import {
   saveScanHistoryItemDeep,
 } from "@/lib/scan-history.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import { LANGUAGE_TAG } from "@/lib/i18n";
 import {
   isOffline,
