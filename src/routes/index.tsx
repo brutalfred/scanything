@@ -1,6 +1,8 @@
 import logoAsset from "@/assets/scanything-logo.png.asset.json";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import {
   Camera,
   Loader2,
@@ -34,12 +36,10 @@ import {
 
 import { toast } from "sonner";
 
-
 import {
   analyzeRoom,
   analyzeDocument,
   summarizeDocument,
-
   quickScan,
   enrichItem,
   analyzeFurther,
@@ -49,9 +49,11 @@ import {
   type QuickItem,
   type DeepAnalysis,
   type Translation,
-
 } from "@/lib/analyze-room.functions";
+import { generateListingDraft, type ListingDraft } from "@/lib/listing.functions";
+import { detectCountry, getMarketplacesForItem } from "@/lib/marketplaces";
 import { Button } from "@/components/ui/button";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -2226,7 +2228,9 @@ function DetailPanel({
         searchUrl: item.searchUrl,
         infoUrl: item.infoUrl,
         confidence: item.confidence,
+        resale: item.resale,
       };
+
 
   const panelCredits = useCreditsContext();
   const { language: appLanguage, t } = useLanguage();
@@ -2246,6 +2250,32 @@ function DetailPanel({
   const extraInputRef = useRef<HTMLInputElement | null>(null);
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
   const replaceIndexRef = useRef<number | null>(null);
+
+  // Resale listing draft state
+  const [listingDraft, setListingDraft] = useState<ListingDraft | null>(null);
+  const [listingLoading, setListingLoading] = useState(false);
+  const [listingOpen, setListingOpen] = useState(false);
+  const [listingEdited, setListingEdited] = useState(false);
+  const [listingError, setListingError] = useState<string | null>(null);
+
+
+
+  const detectedCountry = useMemo(() => detectCountry(), []);
+  const recommendedMarketplaces = useMemo(() => {
+    if (!enrichment) return [];
+    return getMarketplacesForItem(
+      {
+        name,
+        category: enrichment.category,
+        price: enrichment.priceMax,
+        currency: enrichment.currency,
+      },
+      detectedCountry,
+    );
+  }, [enrichment, name, detectedCountry]);
+
+
+
 
   // Optional preview: how much extra photos are expected to sharpen the result.
   const resultPreview = useMemo(() => {
@@ -2334,6 +2364,43 @@ function DetailPanel({
       setDeepLoading(false);
     }
   }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots, extraNote]);
+
+  const generateListingFn = useServerFn(generateListingDraft);
+
+  const runGenerateListing = useCallback(async () => {
+    if (!panelCredits.spend("resale_listing")) return;
+    if (!enrichment?.resale) return;
+    setListingLoading(true);
+    setListingError(null);
+    try {
+      const resale = enrichment.resale;
+      const draft = await generateListingFn({
+        data: {
+          name,
+          description: enrichment.description,
+          category: enrichment.category,
+          priceMin: enrichment.priceMin,
+          priceMax: enrichment.priceMax,
+          currency: enrichment.currency,
+          resaleLow: resale.low,
+          resaleTypical: resale.typical,
+          resaleHigh: resale.high,
+          conditionHint: "",
+          environment: getPaddleEnvironment(),
+        },
+      });
+
+      setListingDraft(draft);
+      setListingOpen(true);
+      setListingEdited(false);
+    } catch (e) {
+      setListingError(e instanceof Error ? e.message : "Listing generation failed.");
+    } finally {
+      setListingLoading(false);
+    }
+  }, [panelCredits, enrichment, name, generateListingFn]);
+
+
 
 
   const runTranslate = useCallback(async () => {
@@ -2628,8 +2695,171 @@ function DetailPanel({
                     </a>
                   ))}
                 </div>
+                <button
+                  onClick={runGenerateListing}
+                  disabled={listingLoading || listingOpen}
+                  className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-primary/60 bg-primary/20 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/30 disabled:opacity-50"
+                >
+                  {listingLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("generating")}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      {t("generateListing")}
+                    </>
+                  )}
+                </button>
+                {listingError && (
+                  <p className="mt-2 text-xs text-destructive">{listingError}</p>
+                )}
               </div>
             )}
+
+            {listingOpen && listingDraft && (
+              <div className="mt-4 rounded-lg border border-primary/40 bg-primary/5 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs font-medium text-primary">{t("listingDraft")}</h4>
+                  <button
+                    onClick={() => {
+                      setListingOpen(false);
+                      setListingDraft(null);
+                    }}
+                    className="rounded-full p-1 text-muted-foreground hover:bg-accent"
+                    aria-label="Close listing"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t("listingTitle")}
+                    </label>
+                    {listingEdited ? (
+                      <input
+                        type="text"
+                        value={listingDraft.title}
+                        onChange={(e) =>
+                          setListingDraft((prev) => (prev ? { ...prev, title: e.target.value } : prev))
+                        }
+                        className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                      />
+                    ) : (
+                      <p className="text-sm font-semibold text-foreground">{listingDraft.title}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t("listingDescription")}
+                    </label>
+                    {listingEdited ? (
+                      <textarea
+                        value={listingDraft.description}
+                        onChange={(e) =>
+                          setListingDraft((prev) =>
+                            prev ? { ...prev, description: e.target.value } : prev
+                          )
+                        }
+                        className="mt-1 min-h-[80px] w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                      />
+                    ) : (
+                      <p className="text-sm leading-relaxed text-foreground">
+                        {listingDraft.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {t("conditionLabel")}
+                      </label>
+                      <p className="text-sm font-medium text-foreground">{listingDraft.condition}</p>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {t("listingPrice")}
+                      </label>
+                      <p className="text-sm font-medium text-foreground">
+                        {listingDraft.price} {listingDraft.currency}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t("listingKeywords")}
+                    </label>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {listingDraft.keywords.map((k) => (
+                        <span
+                          key={k}
+                          className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          {k}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {t("recommendedForThisItem")}
+                      </label>
+                      {detectedCountry && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {t("region")}: {detectedCountry} ({t("autoDetected")})
+                        </span>
+                      )}
+
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {recommendedMarketplaces.map((m) => (
+                        <a
+                          key={m.id}
+                          href={m.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                        >
+                          {m.label}
+                          <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => {
+                        const text = `${listingDraft.title}\n\n${listingDraft.description}\n\nPrice: ${listingDraft.price} ${listingDraft.currency}\nCondition: ${listingDraft.condition}\nKeywords: ${listingDraft.keywords.join(", ")}`;
+                        navigator.clipboard
+                          .writeText(text)
+                          .then(() => toast.success(t("listingCopied")))
+                          .catch(() => toast.error("Copy failed"));
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {t("copyListing")}
+                    </button>
+                    <button
+                      onClick={() => setListingEdited((prev) => !prev)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      {listingEdited ? t("saveListing") : t("editListing")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
 
             {(!["plate", "document"].includes(enrichment.category) ||
               ("resale" in item && item.resale)) && (
