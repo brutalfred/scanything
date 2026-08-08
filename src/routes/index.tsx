@@ -2247,6 +2247,30 @@ function DetailPanel({
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
   const replaceIndexRef = useRef<number | null>(null);
 
+  // Resale listing draft state
+  const [listingDraft, setListingDraft] = useState<ListingDraft | null>(null);
+  const [listingLoading, setListingLoading] = useState(false);
+  const [listingOpen, setListingOpen] = useState(false);
+  const [listingRegion, setListingRegion] = useState<string | null>(null);
+  const [listingEdited, setListingEdited] = useState(false);
+
+  const detectedCountry = useMemo(() => detectCountry(), []);
+  const effectiveCountry = listingRegion || detectedCountry;
+  const recommendedMarketplaces = useMemo(() => {
+    if (!enrichment) return [];
+    return getMarketplacesForItem(
+      {
+        name,
+        category: enrichment.category,
+        price: enrichment.priceMax,
+        currency: enrichment.currency,
+      },
+      effectiveCountry,
+    );
+  }, [enrichment, name, effectiveCountry]);
+  const isResaleItem = "resale" in item && item.resale;
+
+
   // Optional preview: how much extra photos are expected to sharpen the result.
   const resultPreview = useMemo(() => {
     const n = extraShots.length;
