@@ -410,7 +410,12 @@ export const analyzeFurther = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => DeepInput.parse(data))
   .handler(async ({ data, context }): Promise<DeepAnalysis> => {
     const { withCredits } = await import("./credits.server");
-    const reason = data.live ? "analyze_further_live" : "analyze_further";
+    const reason = data.document
+      ? "analyze_further_document"
+      : data.live
+        ? "analyze_further_live"
+        : "analyze_further";
+
     const extras = (data.extraImages ?? []).slice(0, 4);
     const total = 1 + extras.length;
     const note = (data.userNote ?? "").trim();
