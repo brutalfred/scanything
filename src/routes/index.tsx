@@ -83,6 +83,14 @@ import {
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useLanguage } from "@/hooks/useLanguage";
 import { LANGUAGE_TAG } from "@/lib/i18n";
+import {
+  isOffline,
+  listQueuedScans,
+  queueScan,
+  removeQueuedScan,
+  type QueuedScan,
+} from "@/lib/scan-queue";
+
 
 
 
