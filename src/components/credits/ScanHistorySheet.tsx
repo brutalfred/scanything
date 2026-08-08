@@ -309,6 +309,8 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
     if (!open) return;
     setSelected(null);
     setFolder(null);
+    setCollection(null);
+    setQuery("");
     void load();
   }, [open, load]);
 
@@ -323,7 +325,31 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
           ? t("resaleScan")
           : t("photoScan");
 
-  const visible = folder ? entries.filter((e) => folderOf(e.mode) === folder) : [];
+  const loose = entries.filter((e) => !e.collection);
+  const filed = entries.filter((e) => !!e.collection);
+  const collectionNames = Array.from(new Set(filed.map((e) => e.collection as string))).sort(
+    (a, b) => a.localeCompare(b),
+  );
+
+  const q = query.trim().toLowerCase();
+  const matches = (e: ScanHistoryEntry) =>
+    !q ||
+    (e.title ?? "").toLowerCase().includes(q) ||
+    (e.collection ?? "").toLowerCase().includes(q) ||
+    e.items.some(
+      (i) =>
+        i.name.toLowerCase().includes(q) ||
+        (i.description ?? "").toLowerCase().includes(q) ||
+        (i.deep?.description ?? "").toLowerCase().includes(q),
+    );
+
+  const searchResults = q ? entries.filter(matches) : [];
+  const visible = collection
+    ? filed.filter((e) => e.collection === collection)
+    : folder
+      ? loose.filter((e) => folderOf(e.mode) === folder)
+      : [];
+
 
   const commitRename = async (entry: ScanHistoryEntry) => {
     const title = draft.trim();
