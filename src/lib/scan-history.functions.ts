@@ -15,6 +15,8 @@ export type ScanHistoryDeep = {
 
 export type ScanHistoryItem = {
   name: string;
+  /** Full untruncated document text (document scans only). */
+  fullText?: string;
   category?: string;
   description?: string;
   confidence?: number;
@@ -99,7 +101,8 @@ export const saveScanHistory = createServerFn({ method: "POST" })
           priceMin: typeof i?.priceMin === "number" ? i.priceMin : undefined,
           priceMax: typeof i?.priceMax === "number" ? i.priceMax : undefined,
           deep: sanitizeDeep(i?.deep),
-
+          fullText:
+            typeof i?.fullText === "string" && i.fullText ? i.fullText.slice(0, 60000) : undefined,
         })),
       };
     },
@@ -214,7 +217,8 @@ export const appendScanHistory = createServerFn({ method: "POST" })
       priceMin: typeof i?.priceMin === "number" ? i.priceMin : undefined,
       priceMax: typeof i?.priceMax === "number" ? i.priceMax : undefined,
       deep: sanitizeDeep(i?.deep),
-
+      fullText:
+        typeof i?.fullText === "string" && i.fullText ? i.fullText.slice(0, 60000) : undefined,
     })),
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
