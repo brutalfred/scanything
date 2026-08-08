@@ -551,6 +551,43 @@ export const analyzeDocument = createServerFn({ method: "POST" })
     return { items };
   });
 
+const SUMMARY_SYSTEM = `You summarize scanned documents.
+Write a short but detailed, easy-to-understand summary of the document text the user provides.
+Keep every important fact: names, dates, amounts, totals, deadlines, obligations and action points.
+Use plain prose with short paragraphs, and bullet lines ("- ") for lists of key figures or actions.
+Keep the same language as the document. Output only the summary text — no preamble, headings or commentary.`;
+
+const SummarizeInput = z
+  .object({ text: z.string().min(1).max(40000) })
+  .merge(EnvironmentSchema);
+
+export const summarizeDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => SummarizeInput.parse(data))
+  .handler(async ({ data, context }): Promise<{ summary: string }> => {
+    const { withCredits } = await import("./credits.server");
+    const content = await withCredits(
+      "document_scan",
+      context.userId,
+      () =>
+        callGateway(
+          "document_summary",
+          {
+            model: "google/gemini-3-flash-preview",
+            temperature: 0.2,
+            max_tokens: 2048,
+            messages: [
+              { role: "system", content: SUMMARY_SYSTEM },
+              { role: "user", content: `Summarize this document:\n\n${data.text}` },
+            ],
+          },
+          context.userId,
+        ),
+      data.environment as "sandbox" | "live",
+    );
+    return { summary: String(content ?? "").trim() };
+  });
+
 
 
 
