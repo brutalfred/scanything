@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { X, Pencil, Trash2, Loader2, ChevronLeft, ChevronRight, History, ExternalLink, Languages, Camera, Video, FileText, Tag } from "lucide-react";
+import { X, Pencil, Trash2, Loader2, ChevronLeft, ChevronRight, History, ExternalLink, Languages, Camera, Video, FileText, Tag, Search, FolderOpen } from "lucide-react";
 import {
   listScanHistory,
   renameScanHistory,
