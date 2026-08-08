@@ -2008,11 +2008,19 @@ function Scanner() {
                 </div>
               </div>
               {phase === "analyzing" && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-background/80 p-3 text-foreground backdrop-blur-sm">
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 bg-background/80 p-3 text-foreground backdrop-blur-sm">
                   <Loader2 className="h-8 w-8 animate-spin" />
                   <p className="text-sm">{t("analyzing")}</p>
+                  <button
+                    type="button"
+                    onClick={cancelScan}
+                    className="rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary"
+                  >
+                    Cancel
+                  </button>
                 </div>
               )}
+
               <div className="absolute bottom-2 right-2 z-10 flex items-center gap-2">
                 <button
                   type="button"
