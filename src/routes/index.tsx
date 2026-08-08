@@ -2708,6 +2708,7 @@ function DetailPanel({
           extraImages: extraShots.map((s) => s.replace(/^data:[^,]+,/, "")),
           userNote: extraNote.trim() || undefined,
           live,
+          document: isDocumentItem,
 
           environment: getPaddleEnvironment(),
         },
@@ -2724,7 +2725,8 @@ function DetailPanel({
     } finally {
       setDeepLoading(false);
     }
-  }, [imageBase64, name, panelCredits, live, deepReason, historyId, extraShots, extraNote]);
+  }, [imageBase64, name, panelCredits, live, isDocumentItem, deepReason, historyId, extraShots, extraNote]);
+
 
   const generateListingFn = useServerFn(generateListingDraft);
 
