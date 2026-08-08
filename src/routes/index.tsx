@@ -2228,7 +2228,9 @@ function DetailPanel({
         searchUrl: item.searchUrl,
         infoUrl: item.infoUrl,
         confidence: item.confidence,
+        resale: item.resale,
       };
+
 
   const panelCredits = useCreditsContext();
   const { language: appLanguage, t } = useLanguage();
