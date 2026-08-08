@@ -3149,11 +3149,37 @@ function DocumentTextBlock({ text }: { text: string }) {
   const [value, setValue] = useState(text);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [confirmSummary, setConfirmSummary] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const docCredits = useCreditsContext();
 
   useEffect(() => {
     setValue(text);
     setEditing(false);
   }, [text]);
+
+  const runSummary = async () => {
+    setConfirmSummary(false);
+    if (!value.trim()) return toast.error("No text to summarize");
+    if (!docCredits.spend("document_scan")) return;
+    setSummarizing(true);
+    try {
+      const result = await summarizeDocument({
+        data: { text: value.slice(0, 40000), environment: getPaddleEnvironment() },
+      });
+      if (result.summary) {
+        setValue(result.summary);
+        toast.success("Summary ready");
+      } else {
+        toast.error("Could not summarize the text");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not summarize the text");
+    } finally {
+      setSummarizing(false);
+    }
+  };
+
 
   const copy = async () => {
     try {
