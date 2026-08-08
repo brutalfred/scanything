@@ -206,6 +206,33 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          recipient_email: string
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          recipient_email: string
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          recipient_email?: string
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       daily_free_scans: {
         Row: {
           created_at: string
@@ -591,6 +618,14 @@ export type Database = {
         Returns: {
           best_alltime_ms: number
           best_month_ms: number
+          status: string
+        }[]
+      }
+      transfer_credits_for: {
+        Args: { _amount: number; _recipient_email: string; _sender_id: string }
+        Returns: {
+          balance: number
+          recipient_email: string
           status: string
         }[]
       }
