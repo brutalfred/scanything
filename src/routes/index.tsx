@@ -67,7 +67,7 @@ import {
 import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
 import { CreditMeter } from "@/components/credits/CreditMeter";
 import { AccountButton } from "@/components/credits/AccountButton";
-import { CREDIT_COSTS, type CreditReason } from "@/lib/credits";
+import { CREDIT_COSTS, SIGNUP_GRANT, type CreditReason } from "@/lib/credits";
 import {
   baseScanCost,
   estimateScanCost,
