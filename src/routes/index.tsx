@@ -2369,11 +2369,11 @@ function DetailPanel({
 
   const runGenerateListing = useCallback(async () => {
     if (!panelCredits.spend("resale_listing")) return;
-    if (!enrichment || !"resale" in item || !item.resale) return;
+    if (!enrichment?.resale) return;
     setListingLoading(true);
     setListingError(null);
     try {
-      const resale = item.resale;
+      const resale = enrichment.resale;
       const draft = await generateListingFn({
         data: {
           name,
@@ -2385,7 +2385,7 @@ function DetailPanel({
           resaleLow: resale.low,
           resaleTypical: resale.typical,
           resaleHigh: resale.high,
-          conditionHint: enrichment.condition,
+          conditionHint: resale.condition ?? "",
           environment: getPaddleEnvironment(),
         },
       });
@@ -2397,7 +2397,8 @@ function DetailPanel({
     } finally {
       setListingLoading(false);
     }
-  }, [panelCredits, enrichment, item, name, generateListingFn]);
+  }, [panelCredits, enrichment, name, generateListingFn]);
+
 
 
 
