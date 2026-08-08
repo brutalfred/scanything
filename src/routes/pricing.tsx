@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAndroidApp } from "@/hooks/useAndroidApp";
 import { Coins, Check, Sparkles } from "lucide-react";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
-import { CREDIT_COSTS, CREDIT_LABELS } from "@/lib/credits";
+import { CREDIT_COSTS, CREDIT_LABELS, SIGNUP_GRANT } from "@/lib/credits";
 import type { CreditReason } from "@/lib/credits";
 
 export const Route = createFileRoute("/pricing")({
