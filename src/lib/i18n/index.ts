@@ -261,6 +261,7 @@ export const EN = {
   askAiPlaceholder: "Ask me questions about this object.",
   askAiContext: "Context",
   askAiThinking: "Thinking…",
+  shareAsImage: "Share as image",
 } as const;
 
 

@@ -88,6 +88,7 @@ import {
   appendScanHistory,
   saveScanHistoryItemDeep,
 } from "@/lib/scan-history.functions";
+import { shareScanCard } from "@/lib/share-card";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAppVersion } from "@/hooks/useAppVersion";
@@ -3748,6 +3749,32 @@ function DetailPanel({
                 </a>
               </div>
             )}
+
+            <Button
+              variant="secondary"
+              className="mt-4 w-full justify-center"
+              onClick={() => {
+                void shareScanCard({
+                  name,
+                  category: enrichment?.category,
+                  priceLine:
+                    enrichment && enrichment.category !== "plate"
+                      ? `$${enrichment.priceMin} – $${enrichment.priceMax} ${enrichment.currency}`
+                      : undefined,
+                  resaleLine:
+                    "resale" in item && item.resale
+                      ? `Resale ~$${item.resale.typical} ${item.resale.currency} · ${item.resale.verdict === "sell" ? t("worthSelling") : t("notWorthIt")}`
+                      : undefined,
+                  imageDataUrl: imageBase64,
+                }).then((r) => {
+                  if (r === "downloaded") toast.success(t("shareAsImage"));
+                  if (r === "failed") toast.error(t("tryAgain"));
+                });
+              }}
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              {t("shareAsImage")}
+            </Button>
 
             <AskAiBlock
               itemName={name}
