@@ -1556,7 +1556,7 @@ function Scanner() {
         {phase === "camera" && !snapshot && (
           <div className="space-y-3">
             {/* Mode toggle */}
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
