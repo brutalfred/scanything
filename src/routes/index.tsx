@@ -2636,6 +2636,15 @@ function DetailPanel({
     ).slice(0, 3);
   }, [enrichment, name, detectedCountry]);
 
+  /** Every marketplace the app knows about, alphabetical, for the full dropdown. */
+  const allMarketplaces = useMemo(
+    () =>
+      [...MARKETPLACES]
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .map((m) => ({ id: m.id, label: m.label })),
+    [],
+  );
+
 
 
 
