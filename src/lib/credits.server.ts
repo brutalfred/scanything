@@ -1,7 +1,11 @@
-// Server-only credit bridge: debits credits before an AI call and refunds on failure.
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { CREDIT_COSTS, INSUFFICIENT_CREDITS, type CreditReason } from "./credits";
+import {
+  PLAN_WAIVED_REASONS,
+  inferPlanFromProductId,
+  type PlanType,
+} from "./plan-mapping";
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
@@ -29,38 +33,69 @@ export function createUserClient(token: string) {
   });
 }
 
+function isActiveRow(row: {
+  status: string;
+  current_period_end: string | null;
+}): boolean {
+  const now = Date.now();
+  const periodEnd = row.current_period_end ? new Date(row.current_period_end).getTime() : null;
+  const active =
+    ["active", "trialing"].includes(row.status) && (periodEnd === null || periodEnd > now);
+  const grace = row.status === "canceled" && periodEnd !== null && periodEnd > now;
+  return active || grace;
+}
+
+export async function getActiveUserPlan(
+  userId: string,
+  environment?: "sandbox" | "live",
+): Promise<PlanType | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const env = environment ?? "live";
+
+  const [{ data: paddleRows }, { data: playRows }] = await Promise.all([
+    supabaseAdmin
+      .from("subscriptions")
+      .select("plan, product_id, status, current_period_end")
+      .eq("user_id", userId)
+      .eq("environment", env),
+    supabaseAdmin
+      .from("play_subscriptions")
+      .select("plan, product_id, status, current_period_end")
+      .eq("user_id", userId)
+      .eq("environment", env),
+  ]);
+
+  const rows = [
+    ...(paddleRows ?? []).map((row) => ({
+      ...row,
+      plan: (row.plan ?? inferPlanFromProductId(row.product_id)) as PlanType | null,
+    })),
+    ...(playRows ?? []).map((row) => ({
+      ...row,
+      plan: (row.plan ?? inferPlanFromProductId(row.product_id)) as PlanType | null,
+    })),
+  ];
+
+  const active = rows.filter((row) => row.plan !== null && isActiveRow(row));
+
+  if (active.some((row) => row.plan === "max")) return "max";
+  if (active.some((row) => row.plan === "pro")) return "pro";
+  return null;
+}
 
 export async function hasActiveSubscription(
   userId: string,
   environment?: "sandbox" | "live",
 ): Promise<boolean> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  let query = supabaseAdmin
-    .from("subscriptions")
-    .select("status, current_period_end")
-    .eq("user_id", userId);
-
-  if (environment) query = query.eq("environment", environment);
-
-  const { data: row } = await query
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!row) return false;
-
-  const now = Date.now();
-  const periodEnd = row.current_period_end ? new Date(row.current_period_end).getTime() : null;
-  const active = ["active", "trialing"].includes(row.status) && (periodEnd === null || periodEnd > now);
-  const grace = row.status === "canceled" && periodEnd !== null && periodEnd > now;
-  return active || grace;
+  const plan = await getActiveUserPlan(userId, environment);
+  return plan !== null;
 }
 
 /**
  * Runs `fn` behind a credit debit.
  *
  * Requires a verified user id (from `requireSupabaseAuth`). Active Scanything
- * Pro subscribers skip credit consumption for the covered environment.
+ * Pro or Max subscribers skip credit consumption for the covered scan modes.
  */
 export async function withCredits<T>(
   reason: CreditReason,
@@ -68,8 +103,6 @@ export async function withCredits<T>(
   fn: () => Promise<T>,
   environment?: "sandbox" | "live",
 ): Promise<T> {
-  // The caller must pass the identity verified by `requireSupabaseAuth`.
-  // Never derive it from an unverified bearer token here.
   if (!userId) throw new Error("Unauthorized");
 
   const amount = CREDIT_COSTS[reason];
@@ -94,10 +127,10 @@ export async function withCredits<T>(
     }
   }
 
-  if (await hasActiveSubscription(userId, environment)) {
+  const plan = await getActiveUserPlan(userId, environment);
+  if (plan && PLAN_WAIVED_REASONS[plan].includes(reason)) {
     return await fn();
   }
-
 
   const { error } = await supabaseAdmin.rpc("spend_credits_for", {
     _user_id: userId,
@@ -125,5 +158,3 @@ export async function withCredits<T>(
     throw err;
   }
 }
-
-
