@@ -1,0 +1,1 @@
+REVOKE ALL ON public.credit_transfers FROM anon;
