@@ -3275,10 +3275,10 @@ function DetailPanel({
 
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {recommendedMarketplaces.map((m) => (
+                      {whereToSell.map((m) => (
                         <div
                           key={m.id}
-                          className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
+                          className="flex items-center justify-between rounded-lg border border-primary/40 bg-background px-3 py-2"
                         >
                           <a
                             href={m.url}
@@ -3300,6 +3300,36 @@ function DetailPanel({
                         </div>
                       ))}
                     </div>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="mt-2 inline-flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                        >
+                          {t("allMarketplaces")}
+                          <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                        {allMarketplaces
+                          .filter((m) => !whereToSell.some((w) => w.id === m.id))
+                          .map((m) => (
+                            <DropdownMenuItem key={m.id} asChild>
+                              <a
+                                href={getMarketplaceListingUrl(m.id, { name })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between gap-4"
+                              >
+                                {m.label}
+                                <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                              </a>
+                            </DropdownMenuItem>
+                          ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
 
                   </div>
 
