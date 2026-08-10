@@ -255,6 +255,12 @@ export const EN = {
   listOnMarketplace: "List on marketplace",
   copyForMarketplace: "Copy for marketplace",
   openListingPage: "Open listing page",
+
+  // ask ai
+  askAi: "Ask AI about this object",
+  askAiPlaceholder: "Ask me questions about this object.",
+  askAiContext: "Context",
+  askAiThinking: "Thinking…",
 } as const;
 
 
