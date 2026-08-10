@@ -3310,7 +3310,25 @@ function DetailPanel({
 
                 </div>
               </div>
-            )}
+            <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
+              <h4 className="text-xs font-medium text-foreground">{t("priceCompare")}</h4>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {getPriceCompareLinks(name).map((l) => (
+                  <a
+                    key={l.label}
+                    href={l.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                  >
+                    {l.label}
+                    <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+
 
 
             {(!["plate", "document"].includes(enrichment.category) ||
