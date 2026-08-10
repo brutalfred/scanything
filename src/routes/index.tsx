@@ -3363,6 +3363,16 @@ function DetailPanel({
                 {tl(2)}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
+              <a
+                href={getManualSearchUrl(name)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+              >
+                {t("manualSupport")}
+                <ExternalLink className="h-4 w-4 opacity-60" />
+              </a>
+
 
               <div className="rounded-lg border border-border bg-background/60 p-3">
                 <div className="flex items-center justify-between gap-2">
