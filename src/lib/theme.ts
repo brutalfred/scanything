@@ -71,7 +71,32 @@ export const THEMES = [
     swatch: ["#0b1a14", "#2fbf8f", "#a8f0d4", "#153a2c"],
     premium: true,
   },
+  {
+    key: "crimson",
+    label: "Crimson",
+    className: "theme-crimson",
+    swatch: ["#1a0b0b", "#e2453c", "#ffb3a1", "#4a1616"],
+  },
+  {
+    key: "sandstorm",
+    label: "Sandstorm",
+    className: "theme-sandstorm",
+    swatch: ["#1c170e", "#e8b95c", "#f6e3b0", "#4a3a1c"],
+  },
+  {
+    key: "midnight",
+    label: "Midnight",
+    className: "theme-midnight",
+    swatch: ["#0b0f1f", "#7c8cf8", "#c3ccff", "#232a4d"],
+  },
+  {
+    key: "bubblegum",
+    label: "Bubblegum",
+    className: "theme-bubblegum",
+    swatch: ["#fdf2f8", "#f472b6", "#f9a8d4", "#a5b4fc"],
+  },
 ] as const;
+
 
 export type ThemeKey = (typeof THEMES)[number]["key"];
 
