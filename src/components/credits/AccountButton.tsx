@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
-import { THEMES } from "@/lib/theme";
+import { THEMES, isPremiumTheme } from "@/lib/theme";
 import { LANGUAGES, LANGUAGE_NATIVE } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,6 +19,8 @@ import { useAndroidApp } from "@/hooks/useAndroidApp";
 import { DailyCheckin } from "./DailyCheckin";
 import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PlanBadge } from "@/components/PlanLogo";
 
 
 
@@ -43,6 +45,10 @@ export function AccountButton({
   const aiConsent = useAiConsent();
   const appVersion = useAppVersion();
   const androidApp = useAndroidApp();
+  const { plan, subscription } = useSubscription(signedIn && open);
+  const renewalDate = subscription?.current_period_end
+    ? new Date(subscription.current_period_end)
+    : null;
 
 
   async function handleInstall() {
@@ -123,9 +129,19 @@ export function AccountButton({
             onClick={(e) => e.stopPropagation()}
             className="theme-panel gold-glow max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-2xl p-5 text-sm shadow-2xl"
           >
-            <p className="truncate text-center text-base font-semibold">
-              {email ?? t("account")}
-            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <p className="truncate text-center text-base font-semibold">
+                {email ?? t("account")}
+              </p>
+              {plan && <PlanBadge plan={plan} />}
+            </div>
+            {plan && (
+              <p className="mt-1 text-center text-[11px] opacity-70">
+                {renewalDate
+                  ? `${t("renewsOn")} ${renewalDate.toLocaleDateString()}`
+                  : t("lifetimeAccess")}
+              </p>
+            )}
 
 
             <dl className="mt-4 space-y-2">
@@ -227,16 +243,20 @@ export function AccountButton({
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{t("theme")}</p>
               <div className="mt-2 grid grid-cols-5 gap-2">
-                {THEMES.map((th) => (
+                {THEMES.map((th) => {
+                  const locked = isPremiumTheme(th.key) && !plan;
+                  return (
                   <button
                     key={th.key}
                     type="button"
+                    disabled={locked}
+                    title={locked ? t("premiumThemesLocked") : th.label}
                     onClick={() => setTheme(th.key)}
                     aria-label={`${th.label} theme`}
                     aria-pressed={theme === th.key}
                     className={`rounded-lg border p-1 transition-transform hover:scale-105 ${
                       theme === th.key ? "border-current" : "border-transparent opacity-70"
-                    }`}
+                    } ${locked ? "cursor-not-allowed opacity-40 hover:scale-100" : ""}`}
                   >
                     <span className="flex h-6 w-full overflow-hidden rounded">
                       {th.swatch.map((c) => (
@@ -244,11 +264,16 @@ export function AccountButton({
                       ))}
                     </span>
                     <span className="mt-1 block text-[9px] font-medium leading-tight">
+                      {locked ? "🔒 " : ""}
                       {th.label}
                     </span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
+              {!plan && (
+                <p className="mt-2 text-[10px] opacity-70">{t("premiumThemesLocked")}</p>
+              )}
             </div>
 
             <div className="mt-5">
