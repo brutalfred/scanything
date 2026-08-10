@@ -8,7 +8,7 @@ import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { isNativeAndroid } from "@/lib/platform";
-import { buyWithPlay, buyPlaySubscription } from "@/lib/play-billing";
+import { buyWithPlay, buyPlaySubscription, playBillingAvailable } from "@/lib/play-billing";
 import { PLAY_SUBSCRIPTIONS } from "@/lib/play-subscriptions";
 import { SUBSCRIPTION_DESCRIPTIONS, SUBSCRIPTION_PRICE_LABELS, type PlanType } from "@/lib/plan-mapping";
 import { createPortalSession } from "@/lib/subscription.functions";
