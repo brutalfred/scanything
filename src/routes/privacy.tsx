@@ -102,8 +102,10 @@ function PrivacyPage() {
             <p>We share personal data only with the following categories of recipients:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>
-                <strong className="text-foreground">Google Play billing:</strong> Google is the seller of record for in-app purchases and processes payments, tax, invoicing and refunds. We never receive or store your card details.
+                <strong className="text-foreground">Google Play billing and Paddle:</strong>{" "}
+                Google is the seller of record for in-app purchases in the Android app and processes payment, tax, invoicing and refunds. Paddle is the seller of record for subscriptions and credit packs purchased on the web. We never receive or store your card details.
               </li>
+
               <li>
                 <strong className="text-foreground">AI and cloud service providers:</strong> providers that help us run image analysis and host the app.
               </li>
