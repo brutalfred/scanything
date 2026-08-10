@@ -243,7 +243,9 @@ function PricingPage() {
 function PaymentProcessorNote() {
   return (
     <p className="text-xs text-muted-foreground">
-      Purchases are handled securely by Google Play billing.
+      In the Android app, purchases are handled securely by Google Play billing.
+      On the web, subscriptions and credit packs are processed by Paddle.
     </p>
   );
 }
+
