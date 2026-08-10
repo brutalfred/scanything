@@ -885,8 +885,8 @@ function Scanner() {
 
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
-    if (!credits.spend("photo_scan")) return;
-    addScanSpend(CREDIT_COSTS.photo_scan);
+    if (!credits.spend("load_more")) return;
+    addScanSpend(CREDIT_COSTS.load_more);
 
     setLoadingMore(true);
     setLoadMoreNote(null);
@@ -2177,7 +2177,7 @@ function Scanner() {
                       {t("loading")}
                     </>
                   ) : (
-                    `${t("loadMore")} · ${CREDIT_COSTS.photo_scan}`
+                    `${t("loadMore")} · ${CREDIT_COSTS.load_more}`
                   )}
                 </Button>
                 <p className="text-center text-[11px] text-muted-foreground">

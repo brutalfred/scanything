@@ -208,7 +208,9 @@ Look again at the SAME photo and find ONLY additional objects that were missed: 
       : data.resale
         ? "Resale scan of this photo — value every sellable item. Return JSON only."
         : "Analyze this room photo. Return JSON only.";
-    const content = await withCredits("photo_scan", context.userId, () =>
+    // "Load more" (second pass over the same photo) is a cheap re-check.
+    const scanReason = data.pass === 2 ? "load_more" : "photo_scan";
+    const content = await withCredits(scanReason, context.userId, () =>
       callGateway("photo_scan", {
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
