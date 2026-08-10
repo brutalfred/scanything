@@ -365,6 +365,51 @@ export type Database = {
         }
         Relationships: []
       }
+      play_subscriptions: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          environment: string
+          id: string
+          order_id: string | null
+          plan: string
+          product_id: string
+          purchase_token: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
+          id?: string
+          order_id?: string | null
+          plan: string
+          product_id: string
+          purchase_token: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
+          id?: string
+          order_id?: string | null
+          plan?: string
+          product_id?: string
+          purchase_token?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       scan_history: {
         Row: {
           collection: string | null
@@ -408,6 +453,7 @@ export type Database = {
           id: string
           paddle_customer_id: string
           paddle_subscription_id: string
+          plan: string | null
           price_id: string
           product_id: string
           status: string
@@ -423,6 +469,7 @@ export type Database = {
           id?: string
           paddle_customer_id: string
           paddle_subscription_id: string
+          plan?: string | null
           price_id: string
           product_id: string
           status?: string
@@ -438,6 +485,7 @@ export type Database = {
           id?: string
           paddle_customer_id?: string
           paddle_subscription_id?: string
+          plan?: string | null
           price_id?: string
           product_id?: string
           status?: string
@@ -514,6 +562,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_active_user_plan: {
+        Args: { _env?: string; _user_id: string }
+        Returns: string
       }
       get_ad_reward_status_for: {
         Args: { _user_id: string }
