@@ -11,7 +11,9 @@ import { NativePurchases, PURCHASE_TYPE } from "@capgo/native-purchases";
 import { Capacitor } from "@capacitor/core";
 import { isNativeAndroid } from "@/lib/platform";
 import { PLAY_PRODUCTS } from "@/lib/play-products";
-import { redeemPlayPurchase } from "@/lib/play-billing.functions";
+import { PLAY_SUBSCRIPTIONS } from "@/lib/play-subscriptions";
+import { redeemPlayPurchase, redeemPlaySubscription } from "@/lib/play-billing.functions";
+
 
 export function playBillingAvailable(): boolean {
   return isNativeAndroid();
