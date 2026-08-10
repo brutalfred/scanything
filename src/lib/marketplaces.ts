@@ -532,10 +532,6 @@ export function getMarketplacesForItem(
     }));
 }
 
-/** Minimal listing draft used by formatting helpers. */
-
-
-/** Minimal listing draft used by formatting helpers. */
 export type ListingDraft = {
   title: string;
   description: string;
