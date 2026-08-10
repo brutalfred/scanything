@@ -1464,18 +1464,6 @@ function Scanner() {
                 )}
               </button>
             )}
-            {!isGuest && (
-              <button
-                onClick={() => setFilterOpen((o) => !o)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent gold-glow"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{t("filters")}</span>
-                <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
-                  {filters.size}
-                </span>
-              </button>
-            )}
 
             {queued.length > 0 && (
               <button
@@ -1568,7 +1556,7 @@ function Scanner() {
         {phase === "camera" && !snapshot && (
           <div className="space-y-3">
             {/* Mode toggle */}
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -1634,6 +1622,19 @@ function Scanner() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              {!isGuest && (
+                <button
+                  onClick={() => setFilterOpen((o) => !o)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-accent gold-glow"
+                  aria-label={t("filters")}
+                  title={t("filters")}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                    {filters.size}
+                  </span>
+                </button>
+              )}
             </div>
 
 
