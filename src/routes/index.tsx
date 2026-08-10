@@ -1,4 +1,3 @@
-import logoAsset from "@/assets/scanything-logo.png.asset.json";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -962,6 +961,7 @@ function Scanner() {
 
 
   const isGuest = !credits.signedIn;
+  const { plan: headerPlan } = useSubscription(credits.signedIn);
 
 
   const mergeDetections = useCallback((detections: QuickItem[]) => {
