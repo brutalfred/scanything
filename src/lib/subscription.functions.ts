@@ -49,7 +49,7 @@ export const getActiveSubscription = createServerFn({ method: "POST" })
     if (active.length === 0) return null;
 
     active.sort((a, b) => {
-      const rankDiff = planRank(a.plan) - planRank(b.plan);
+      const rankDiff = planRank(b.plan) - planRank(a.plan);
       if (rankDiff !== 0) return rankDiff;
       const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
       const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
