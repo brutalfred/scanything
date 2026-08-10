@@ -57,7 +57,7 @@ import {
   type Translation,
 } from "@/lib/analyze-room.functions";
 import { generateListingDraft, type ListingDraft } from "@/lib/listing.functions";
-import { detectCountry, getMarketplacesForItem } from "@/lib/marketplaces";
+import { detectCountry, getMarketplacesForItem, getMarketplaceListingUrl, formatListingForMarketplace, getPriceCompareLinks, getManualSearchUrl } from "@/lib/marketplaces";
 import { Button } from "@/components/ui/button";
 
 import {
