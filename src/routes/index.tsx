@@ -1975,7 +1975,13 @@ function Scanner() {
 
         {snapshot && (
           <div className="space-y-4">
-            <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
+            <div className="flex justify-center">
+              <Button size="sm" variant="secondary" onClick={reset}>
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                {t("newScan")}
+              </Button>
+            </div>
+
               <div {...photoZoom.handlers} className="relative overflow-hidden">
                 <div
                   className="relative w-full origin-center"
