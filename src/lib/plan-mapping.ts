@@ -43,8 +43,8 @@ export const PLAY_SUBSCRIPTION_PRODUCT_IDS: Record<string, PlanType> = {
 };
 
 export const SUBSCRIPTION_PRICE_LABELS: Record<PlanType, string> = {
-  pro: "$5.99/mo",
-  max: "$9.99/mo",
+  pro: "$9.99/mo",
+  max: "$19.99/mo",
 };
 
 export const SUBSCRIPTION_DESCRIPTIONS: Record<PlanType, string> = {
