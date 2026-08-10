@@ -737,3 +737,82 @@ export const translateName = createServerFn({ method: "POST" })
   });
 
 
+
+// ---------------------------------------------------------------------------
+// Ask AI — in-app chat about one scanned item.
+// ---------------------------------------------------------------------------
+
+const AskInput = z.object({
+  /** Short summary of everything the info box knows about this item. */
+  context: z.string().trim().max(4000),
+  /** Optional photo of the item so the model can look at it too. */
+  imageBase64: z.string().min(100).optional(),
+  /** Answer language — follows the info box, not the account-tab language. */
+  language: z.string().trim().max(40).optional(),
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().trim().min(1).max(2000),
+      }),
+    )
+    .min(1)
+    .max(24),
+}).merge(EnvironmentSchema);
+
+export type AskAnswer = { answer: string };
+
+const ASK_SYSTEM = `You are Scanything's in-app assistant. The user is looking at one scanned object and asks questions about it.
+
+Rules:
+- Answer only about this object and closely related practical topics (what it is, brand/model, use, care, repair, worth, where to buy or sell, alternatives, safety).
+- Be concise: 1-3 short paragraphs or a short bullet list. No markdown headings.
+- Say plainly when you are unsure; never invent model numbers, prices or facts.
+- Prices are rough estimates, not valuations or financial advice.
+- Never identify people, guess owners, or look up license plates.
+- Answer in the requested language.`;
+
+export const askAboutItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => AskInput.parse(data))
+  .handler(async ({ data, context }): Promise<AskAnswer> => {
+    const { withCredits } = await import("./credits.server");
+    const language = data.language && data.language !== "English" ? data.language : "English";
+
+    const history = data.messages.slice(0, -1).map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    const last = data.messages[data.messages.length - 1]!;
+
+    const userContent: Array<Record<string, unknown>> = [
+      {
+        type: "text",
+        text: `Scanned item context:\n${data.context}\n\nAnswer in ${language}.\n\nQuestion: ${last.content}`,
+      },
+    ];
+    if (data.imageBase64) {
+      userContent.push({ type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } });
+    }
+
+    const content = await withCredits(
+      "ask_ai",
+      context.userId,
+      () =>
+        callGateway(
+          "ask_ai",
+          {
+            model: "google/gemini-3.6-flash",
+            messages: [
+              { role: "system", content: ASK_SYSTEM },
+              ...history,
+              { role: "user", content: userContent },
+            ],
+          },
+          context.userId,
+        ),
+      data.environment as "sandbox" | "live",
+    );
+
+    return { answer: content.trim() || "I couldn't answer that. Try rephrasing the question." };
+  });
