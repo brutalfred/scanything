@@ -3097,20 +3097,29 @@ function DetailPanel({
                 {item.resale.reason && (
                   <p className="mt-1.5 text-xs text-muted-foreground">{item.resale.reason}</p>
                 )}
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {resaleMarketLinks(name).map((l) => (
-                    <a
-                      key={l.url}
-                      href={l.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
-                    >
-                      {l.label}
-                      <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                    </a>
-                  ))}
+                <div className="mt-3">
+                  <h4 className="text-xs font-medium text-primary">{t("whereToSell")}</h4>
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {whereToSell.map((m) => (
+                      <a
+                        key={m.id}
+                        href={getMarketplaceListingUrl(m.id, { name })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                      >
+                        {m.label}
+                        <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                      </a>
+                    ))}
+                  </div>
+                  {whereToSell.length === 0 && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {t("allMarketplaces")}
+                    </p>
+                  )}
                 </div>
+
                 <button
                   onClick={runGenerateListing}
                   disabled={listingLoading || listingOpen}
