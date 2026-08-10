@@ -72,6 +72,8 @@ import {
 import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
 import { CreditMeter } from "@/components/credits/CreditMeter";
 import { AccountButton } from "@/components/credits/AccountButton";
+import { PlanLogo } from "@/components/PlanLogo";
+import { useSubscription } from "@/hooks/useSubscription";
 import { CREDIT_COSTS, SIGNUP_GRANT, type CreditReason } from "@/lib/credits";
 import {
   baseScanCost,
@@ -1433,13 +1435,7 @@ function Scanner() {
           </div>
           <h1 className="flex shrink-0 items-center justify-center select-none">
             <span className="sr-only">Scanything — AI camera room analyzer</span>
-            <img
-              src={logoAsset.url}
-              alt="Scanything logo"
-              className="h-20 w-auto max-w-full object-contain sm:h-[100px]"
-              width={1024}
-              height={512}
-            />
+            <PlanLogo plan={headerPlan} />
           </h1>
 
           <div className="flex min-w-0 flex-1 basis-0 flex-wrap items-center justify-end gap-2">
