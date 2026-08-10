@@ -2517,18 +2517,6 @@ function Scanner() {
 
   );
 }
-/** Marketplace research links for a resale-scanned item. */
-function resaleMarketLinks(name: string): { label: string; url: string }[] {
-  const q = encodeURIComponent(name);
-  return [
-    {
-      label: "eBay sold",
-      url: `https://www.ebay.com/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1`,
-    },
-    { label: "Facebook", url: `https://www.facebook.com/marketplace/search/?query=${q}` },
-    { label: "Etsy", url: `https://www.etsy.com/search?q=${q}` },
-  ];
-}
 
 
 
