@@ -885,8 +885,8 @@ function Scanner() {
 
   const loadMore = useCallback(async () => {
     if (!snapshot || loadingMore) return;
-    if (!credits.spend("photo_scan")) return;
-    addScanSpend(CREDIT_COSTS.photo_scan);
+    if (!credits.spend("load_more")) return;
+    addScanSpend(CREDIT_COSTS.load_more);
 
     setLoadingMore(true);
     setLoadMoreNote(null);
@@ -1478,12 +1478,8 @@ function Scanner() {
               </button>
             )}
 
-            {snapshot && (
-              <Button size="sm" variant="secondary" onClick={reset}>
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                {t("newScan")}
-              </Button>
-            )}
+
+
 
           </div>
         </div>
@@ -1975,8 +1971,15 @@ function Scanner() {
 
         {snapshot && (
           <div className="space-y-4">
+            <div className="flex justify-center">
+              <Button size="sm" variant="secondary" onClick={reset}>
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                {t("newScan")}
+              </Button>
+            </div>
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
               <div {...photoZoom.handlers} className="relative overflow-hidden">
+
                 <div
                   className="relative w-full origin-center"
                   style={{
@@ -2177,7 +2180,7 @@ function Scanner() {
                       {t("loading")}
                     </>
                   ) : (
-                    `${t("loadMore")} · ${CREDIT_COSTS.photo_scan}`
+                    `${t("loadMore")} · ${CREDIT_COSTS.load_more}`
                   )}
                 </Button>
                 <p className="text-center text-[11px] text-muted-foreground">

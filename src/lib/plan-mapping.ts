@@ -12,6 +12,7 @@ export const PLAN_WAIVED_REASONS: Record<PlanType, CreditReason[]> = {
     "enrich",
     "translate",
     "ask_ai",
+    "load_more",
   ],
   max: [
     "photo_scan",
@@ -24,6 +25,7 @@ export const PLAN_WAIVED_REASONS: Record<PlanType, CreditReason[]> = {
     "quick_scan",
     "analyze_further_live",
     "ask_ai",
+    "load_more",
   ],
 };
 

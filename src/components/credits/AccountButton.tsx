@@ -2,7 +2,14 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Check, Download, LogIn, LogOut, ShieldCheck, Trophy, User2, X } from "lucide-react";
+import { Camera, Check, ChevronDown, Download, LogIn, LogOut, ShieldCheck, Trophy, User2, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
@@ -242,35 +249,48 @@ export function AccountButton({
 
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{t("theme")}</p>
-              <div className="mt-2 grid grid-cols-5 gap-2">
-                {THEMES.map((th) => {
-                  const locked = isPremiumTheme(th.key) && !plan;
-                  return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <button
-                    key={th.key}
                     type="button"
-                    disabled={locked}
-                    title={locked ? t("premiumThemesLocked") : th.label}
-                    onClick={() => setTheme(th.key)}
-                    aria-label={`${th.label} theme`}
-                    aria-pressed={theme === th.key}
-                    className={`rounded-lg border p-1 transition-transform hover:scale-105 ${
-                      theme === th.key ? "border-current" : "border-transparent opacity-70"
-                    } ${locked ? "cursor-not-allowed opacity-40 hover:scale-100" : ""}`}
+                    className="mt-2 flex w-full items-center justify-between gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 text-sm font-semibold transition-colors hover:bg-current/10"
                   >
-                    <span className="flex h-6 w-full overflow-hidden rounded">
-                      {th.swatch.map((c) => (
-                        <span key={c} className="flex-1" style={{ backgroundColor: c }} />
-                      ))}
+                    <span className="flex items-center gap-2">
+                      <span className="flex h-4 w-10 overflow-hidden rounded">
+                        {(THEMES.find((th) => th.key === theme) ?? THEMES[0]).swatch.map((c) => (
+                          <span key={c} className="flex-1" style={{ backgroundColor: c }} />
+                        ))}
+                      </span>
+                      {(THEMES.find((th) => th.key === theme) ?? THEMES[0]).label}
                     </span>
-                    <span className="mt-1 block text-[9px] font-medium leading-tight">
-                      {locked ? "🔒 " : ""}
-                      {th.label}
-                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
-                  );
-                })}
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="z-[60] max-h-64 w-56 overflow-y-auto">
+                  {THEMES.map((th) => {
+                    const locked = isPremiumTheme(th.key) && !plan;
+                    return (
+                      <DropdownMenuItem
+                        key={th.key}
+                        disabled={locked}
+                        onSelect={() => setTheme(th.key)}
+                        className="gap-2"
+                      >
+                        <span className="flex h-4 w-10 shrink-0 overflow-hidden rounded">
+                          {th.swatch.map((c) => (
+                            <span key={c} className="flex-1" style={{ backgroundColor: c }} />
+                          ))}
+                        </span>
+                        <span className="flex-1 truncate text-xs">
+                          {locked ? "🔒 " : ""}
+                          {th.label}
+                        </span>
+                        {theme === th.key && <Check className="h-3.5 w-3.5" />}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
               {!plan && (
                 <p className="mt-2 text-[10px] opacity-70">{t("premiumThemesLocked")}</p>
               )}
@@ -280,24 +300,31 @@ export function AccountButton({
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">
                 {t("language")}
               </p>
-              <div className="mt-2 grid grid-cols-3 gap-1.5">
-                {LANGUAGES.map((lang) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <button
-                    key={lang}
                     type="button"
-                    onClick={() => setLanguage(lang)}
-                    aria-pressed={language === lang}
-                    className={`rounded-lg border px-2 py-1.5 text-[10px] font-medium leading-tight transition-colors ${
-                      language === lang
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-current/25 opacity-70 hover:bg-current/10"
-                    }`}
+                    className="mt-2 flex w-full items-center justify-between gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 text-sm font-semibold transition-colors hover:bg-current/10"
                   >
-                    {LANGUAGE_NATIVE[lang]}
+                    <span className="truncate">{LANGUAGE_NATIVE[language]}</span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
-                ))}
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="z-[60] max-h-64 w-56 overflow-y-auto">
+                  {LANGUAGES.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang}
+                      onSelect={() => setLanguage(lang)}
+                      className="gap-2"
+                    >
+                      <span className="flex-1 truncate text-xs">{LANGUAGE_NATIVE[lang]}</span>
+                      {language === lang && <Check className="h-3.5 w-3.5" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+
 
 
 
