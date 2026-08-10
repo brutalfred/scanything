@@ -59,7 +59,7 @@ import {
   type Translation,
 } from "@/lib/analyze-room.functions";
 import { generateListingDraft, type ListingDraft } from "@/lib/listing.functions";
-import { detectCountry, getMarketplacesForItem, getMarketplaceListingUrl, formatListingForMarketplace, getPriceCompareLinks, getManualSearchUrl } from "@/lib/marketplaces";
+import { detectCountry, getMarketplacesForItem, getMarketplaceListingUrl, formatListingForMarketplace, getPriceCompareLinks, getManualSearchUrl, MARKETPLACES } from "@/lib/marketplaces";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -2636,6 +2636,15 @@ function DetailPanel({
     ).slice(0, 3);
   }, [enrichment, name, detectedCountry]);
 
+  /** Every marketplace the app knows about, alphabetical, for the full dropdown. */
+  const allMarketplaces = useMemo(
+    () =>
+      [...MARKETPLACES]
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .map((m) => ({ id: m.id, label: m.label })),
+    [],
+  );
+
 
 
 
@@ -3112,26 +3121,34 @@ function DetailPanel({
                 )}
                 <div className="mt-3">
                   <h4 className="text-xs font-medium text-primary">{t("whereToSell")}</h4>
-                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    {whereToSell.map((m) => (
-                      <a
-                        key={m.id}
-                        href={getMarketplaceListingUrl(m.id, { name })}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="mt-2 inline-flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                       >
-                        {m.label}
-                        <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                      </a>
-                    ))}
-                  </div>
-                  {whereToSell.length === 0 && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {t("allMarketplaces")}
-                    </p>
-                  )}
+                        {t("allMarketplaces")}
+                        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                      {allMarketplaces.map((m) => (
+                        <DropdownMenuItem key={m.id} asChild>
+                          <a
+                            href={getMarketplaceListingUrl(m.id, { name })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between gap-4"
+                          >
+                            {m.label}
+                            <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                          </a>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
+
 
                 <button
                   onClick={runGenerateListing}
@@ -3258,10 +3275,10 @@ function DetailPanel({
 
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {recommendedMarketplaces.map((m) => (
+                      {whereToSell.map((m) => (
                         <div
                           key={m.id}
-                          className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
+                          className="flex items-center justify-between rounded-lg border border-primary/40 bg-background px-3 py-2"
                         >
                           <a
                             href={m.url}
@@ -3283,6 +3300,36 @@ function DetailPanel({
                         </div>
                       ))}
                     </div>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="mt-2 inline-flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                        >
+                          {t("allMarketplaces")}
+                          <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                        {allMarketplaces
+                          .filter((m) => !whereToSell.some((w) => w.id === m.id))
+                          .map((m) => (
+                            <DropdownMenuItem key={m.id} asChild>
+                              <a
+                                href={getMarketplaceListingUrl(m.id, { name })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between gap-4"
+                              >
+                                {m.label}
+                                <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                              </a>
+                            </DropdownMenuItem>
+                          ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
 
                   </div>
 
