@@ -1478,12 +1478,8 @@ function Scanner() {
               </button>
             )}
 
-            {snapshot && (
-              <Button size="sm" variant="secondary" onClick={reset}>
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                {t("newScan")}
-              </Button>
-            )}
+
+
 
           </div>
         </div>
