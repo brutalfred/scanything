@@ -8,7 +8,7 @@ import { Scene2 } from "./scenes/Scene2";
 import { Scene3 } from "./scenes/Scene3";
 import { Scene4 } from "./scenes/Scene4";
 import { Scene5 } from "./scenes/Scene5";
-import { PersistentBackground } from "../components/PersistentBackground";
+import { PersistentBackground } from "./components/PersistentBackground";
 
 loadFont("normal", { weights: ["400", "600", "800"], subsets: ["latin"] });
 
