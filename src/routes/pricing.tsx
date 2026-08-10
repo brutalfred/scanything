@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Coins, Check, Sparkles } from "lucide-react";
+import { Coins, Check, Sparkles, Crown } from "lucide-react";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { CREDIT_COSTS, CREDIT_LABELS, SIGNUP_GRANT } from "@/lib/credits";
 import type { CreditReason } from "@/lib/credits";
+import { SUBSCRIPTION_DESCRIPTIONS, SUBSCRIPTION_PRICE_LABELS } from "@/lib/plan-mapping";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
