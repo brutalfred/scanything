@@ -57,7 +57,7 @@ import {
   type Translation,
 } from "@/lib/analyze-room.functions";
 import { generateListingDraft, type ListingDraft } from "@/lib/listing.functions";
-import { detectCountry, getMarketplacesForItem } from "@/lib/marketplaces";
+import { detectCountry, getMarketplacesForItem, getMarketplaceListingUrl, formatListingForMarketplace, getPriceCompareLinks, getManualSearchUrl } from "@/lib/marketplaces";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -2517,18 +2517,6 @@ function Scanner() {
 
   );
 }
-/** Marketplace research links for a resale-scanned item. */
-function resaleMarketLinks(name: string): { label: string; url: string }[] {
-  const q = encodeURIComponent(name);
-  return [
-    {
-      label: "eBay sold",
-      url: `https://www.ebay.com/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1`,
-    },
-    { label: "Facebook", url: `https://www.facebook.com/marketplace/search/?query=${q}` },
-    { label: "Etsy", url: `https://www.etsy.com/search?q=${q}` },
-  ];
-}
 
 
 
@@ -2632,6 +2620,20 @@ function DetailPanel({
       detectedCountry,
     );
   }, [enrichment, name, detectedCountry]);
+
+  const whereToSell = useMemo(() => {
+    if (!enrichment) return [];
+    return getMarketplacesForItem(
+      {
+        name,
+        category: enrichment.category,
+        price: enrichment.priceMax,
+        currency: enrichment.currency,
+      },
+      detectedCountry,
+    ).slice(0, 3);
+  }, [enrichment, name, detectedCountry]);
+
 
 
 
@@ -3083,20 +3085,29 @@ function DetailPanel({
                 {item.resale.reason && (
                   <p className="mt-1.5 text-xs text-muted-foreground">{item.resale.reason}</p>
                 )}
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {resaleMarketLinks(name).map((l) => (
-                    <a
-                      key={l.url}
-                      href={l.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
-                    >
-                      {l.label}
-                      <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                    </a>
-                  ))}
+                <div className="mt-3">
+                  <h4 className="text-xs font-medium text-primary">{t("whereToSell")}</h4>
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {whereToSell.map((m) => (
+                      <a
+                        key={m.id}
+                        href={getMarketplaceListingUrl(m.id, { name })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                      >
+                        {m.label}
+                        <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                      </a>
+                    ))}
+                  </div>
+                  {whereToSell.length === 0 && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {t("allMarketplaces")}
+                    </p>
+                  )}
                 </div>
+
                 <button
                   onClick={runGenerateListing}
                   disabled={listingLoading || listingOpen}
@@ -3223,34 +3234,72 @@ function DetailPanel({
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {recommendedMarketplaces.map((m) => (
-                        <a
+                        <div
                           key={m.id}
-                          href={m.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                          className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
                         >
-                          {m.label}
-                          <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                        </a>
+                          <a
+                            href={m.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-medium hover:underline"
+                          >
+                            {m.label}
+                          </a>
+                          <a
+                            href={getMarketplaceListingUrl(m.id, { name })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-2 inline-flex items-center gap-1 rounded-md border border-primary/50 px-2 py-1 text-[10px] font-medium text-primary hover:bg-primary/10"
+                          >
+                            List
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
                       ))}
                     </div>
+
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => {
-                        const text = `${listingDraft.title}\n\n${listingDraft.description}\n\nPrice: ${listingDraft.price} ${listingDraft.currency}\nCondition: ${listingDraft.condition}\nKeywords: ${listingDraft.keywords.join(", ")}`;
-                        navigator.clipboard
-                          .writeText(text)
-                          .then(() => toast.success(t("listingCopied")))
-                          .catch(() => toast.error("Copy failed"));
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      {t("copyListing")}
-                    </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          {t("copyListing")}
+                          <ChevronDown className="h-3 w-3 opacity-60" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const text = `${listingDraft.title}\n\n${listingDraft.description}\n\nPrice: ${listingDraft.price} ${listingDraft.currency}\nCondition: ${listingDraft.condition}\nKeywords: ${listingDraft.keywords.join(", ")}`;
+                            navigator.clipboard
+                              .writeText(text)
+                              .then(() => toast.success(t("listingCopied")))
+                              .catch(() => toast.error("Copy failed"));
+                          }}
+                        >
+                          Generic listing
+                        </DropdownMenuItem>
+                        {recommendedMarketplaces.slice(0, 6).map((m) => (
+                          <DropdownMenuItem
+                            key={m.id}
+                            onClick={() => {
+                              navigator.clipboard
+                                .writeText(formatListingForMarketplace(listingDraft, m.id))
+                                .then(() => toast.success(`Copied for ${m.label}`))
+                                .catch(() => toast.error("Copy failed"));
+                            }}
+                          >
+                            Copy for {m.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <button
                       onClick={() => setListingEdited((prev) => !prev)}
                       className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
@@ -3258,9 +3307,30 @@ function DetailPanel({
                       {listingEdited ? t("saveListing") : t("editListing")}
                     </button>
                   </div>
+
                 </div>
               </div>
             )}
+
+            <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
+              <h4 className="text-xs font-medium text-foreground">{t("priceCompare")}</h4>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {getPriceCompareLinks(name).map((l) => (
+                  <a
+                    key={l.label}
+                    href={l.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                  >
+                    {l.label}
+                    <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+
 
 
             {(!["plate", "document"].includes(enrichment.category) ||
@@ -3293,6 +3363,16 @@ function DetailPanel({
                 {tl(2)}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
+              <a
+                href={getManualSearchUrl(name)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+              >
+                {t("manualSupport")}
+                <ExternalLink className="h-4 w-4 opacity-60" />
+              </a>
+
 
               <div className="rounded-lg border border-border bg-background/60 p-3">
                 <div className="flex items-center justify-between gap-2">

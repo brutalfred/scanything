@@ -166,10 +166,17 @@ function PaymentsTermsBody() {
   return (
     <>
       <p>
-        Scan credits in {APP_NAME} are sold as in-app products through{" "}
-        <strong className="text-foreground">Google Play billing</strong>. Google is the
-        seller of record for those purchases and handles payment, taxes, receipts and
-        refunds on behalf of {SELLER_NAME}, under the{" "}
+        {APP_NAME} offers two ways to pay: prepaid scan credits, or monthly
+        subscription plans (Scanything Pro and Scanything Max). In the Android
+        app, all purchases are sold through{" "}
+        <strong className="text-foreground">Google Play billing</strong>. On the
+        web, subscriptions and credit packs are processed by{" "}
+        <strong className="text-foreground">Paddle</strong>.
+      </p>
+      <p className="mt-2">
+        Google and Paddle are the sellers of record for their respective
+        platforms, handling payment, taxes, receipts and refunds on behalf of{" "}
+        {SELLER_NAME}, under the{" "}
         <a
           href="https://play.google.com/intl/en_us/about/play-terms/"
           target="_blank"
@@ -177,16 +184,32 @@ function PaymentsTermsBody() {
           className="text-primary underline"
         >
           Google Play Terms of Service
+        </a>{" "}
+        and{" "}
+        <a
+          href="https://www.paddle.com/legal/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline"
+        >
+          Paddle Terms of Service
         </a>
         .
       </p>
       <p className="mt-2">
-        Credits are a one-time, non-subscription purchase that is added to your account
-        balance. Credits are non-refundable once used, except as described in our Refund
-        Policy or where required by law. You can view your order history and request
-        refunds from your Google Play account.
+        Credits are a one-time, non-subscription purchase added to your account
+        balance. Subscription plans renew automatically every month until you
+        cancel. Subscribers skip credit consumption for the scan modes covered by
+        their plan. You can cancel a subscription through the Google Play Store
+        app or through the Paddle customer portal linked in your account.
+      </p>
+      <p className="mt-2">
+        Credits are non-refundable once used, except as described in our Refund
+        Policy or where required by law. Subscription refunds follow the platform
+        that processed the charge.
       </p>
     </>
   );
 }
+
 

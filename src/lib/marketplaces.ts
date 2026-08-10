@@ -531,3 +531,93 @@ export function getMarketplacesForItem(
       url: s.m.buildUrl(item),
     }));
 }
+
+export type ListingDraft = {
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  condition: string;
+  category: string;
+  keywords: string[];
+};
+
+/** Platform-specific listing formats the user can copy and paste. */
+export function formatListingForMarketplace(
+  draft: ListingDraft,
+  marketplaceId: string,
+): string {
+  const templates: Record<string, (d: ListingDraft) => string> = {
+    ebay: (d) =>
+      `${d.title}\n\n${d.description}\n\nCondition: ${d.condition}\nPrice: ${d.price} ${d.currency}\n\nKeywords: ${d.keywords.join(", ")}`,
+    vinted: (d) =>
+      `${d.title}\n\n${d.description}\n\n${d.keywords
+        .slice(0, 8)
+        .map((k) => `#${k.replace(/\s+/g, "")}`)
+        .join(" ")}\n\n${d.price} ${d.currency}`,
+    poshmark: (d) =>
+      `${d.title}\n\n${d.description}\n\nCondition: ${d.condition}\nPrice: ${d.price} ${d.currency}\n\n${d.keywords
+        .slice(0, 5)
+        .join(" ")}`,
+    mercari: (d) =>
+      `${d.title}\n\n${d.description}\n\n${d.condition} · ${d.price} ${d.currency}\n\n${d.keywords.join(", ")}`,
+    depop: (d) =>
+      `${d.title}\n\n${d.description}\n\n${d.price} ${d.currency}\n\n${d.keywords.slice(0, 6).join(" ")}`,
+    facebook: (d) => `${d.title}\n\n${d.description}\n\n${d.price} ${d.currency}`,
+    offerup: (d) => `${d.title}\n\n${d.description}\n\n${d.price} ${d.currency}`,
+    craigslist: (d) => `${d.title}\n\n${d.description}\n\n${d.price} ${d.currency}`,
+    gumtree: (d) => `${d.title}\n\n${d.description}\n\n${d.price} ${d.currency}`,
+    shpock: (d) => `${d.title}\n\n${d.description}\n\n${d.price} ${d.currency}`,
+    marktplaats: (d) => `${d.title}\n\n${d.description}\n\n${d.price} ${d.currency}`,
+    catawiki: (d) => `${d.title}\n\n${d.description}\n\n${d.price} ${d.currency}`,
+    default: (d) =>
+      `${d.title}\n\n${d.description}\n\nPrice: ${d.price} ${d.currency}\nCondition: ${d.condition}\n\nKeywords: ${d.keywords.join(", ")}`,
+  };
+  return (templates[marketplaceId] ?? templates["default"])(draft);
+}
+
+const SELL_URLS: Record<string, string> = {
+  facebook: "https://www.facebook.com/marketplace/create/item",
+  poshmark: "https://poshmark.com/create/listing",
+  vinted: "https://www.vinted.com/sell/new",
+  mercari: "https://www.mercari.com/sell/",
+  depop: "https://www.depop.com/sell/",
+  offerup: "https://offerup.com/post",
+  gumtree: "https://www.gumtree.com/post-ad",
+  shpock: "https://www.shpock.com/sell",
+  marktplaats: "https://www.marktplaats.nl/pl/a/verkopen.html",
+  catawiki: "https://www.catawiki.com/en/sell",
+  craigslist: "https://www.craigslist.org/about/sites",
+};
+
+/** URL for the platform's listing creation page (or search/home as fallback). */
+export function getMarketplaceListingUrl(
+  marketplaceId: string,
+  item: { name: string },
+): string {
+  const sell = SELL_URLS[marketplaceId];
+  if (sell) return sell;
+  const m = MARKETPLACES.find((x) => x.id === marketplaceId);
+  return m?.buildUrl(item) ?? "#";
+}
+
+/** Quick retailer price comparisons for a product name. */
+export function getPriceCompareLinks(
+  name: string,
+): { label: string; url: string }[] {
+  const q = encodeURIComponent(name);
+  return [
+    { label: "Google Shopping", url: `https://www.google.com/search?tbm=shop&q=${q}` },
+    { label: "Amazon", url: `https://www.amazon.com/s?k=${q}` },
+    { label: "eBay", url: `https://www.ebay.com/sch/i.html?_nkw=${q}` },
+    { label: "Walmart", url: `https://www.walmart.com/search?q=${q}` },
+  ];
+}
+
+/** Search for the official manual or support page. */
+export function getManualSearchUrl(name: string): string {
+  return `https://www.google.com/search?q=${encodeURIComponent(
+    `${name} manual support pdf official`,
+  )}`;
+}
+

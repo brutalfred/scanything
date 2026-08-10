@@ -11,7 +11,9 @@ import { NativePurchases, PURCHASE_TYPE } from "@capgo/native-purchases";
 import { Capacitor } from "@capacitor/core";
 import { isNativeAndroid } from "@/lib/platform";
 import { PLAY_PRODUCTS } from "@/lib/play-products";
-import { redeemPlayPurchase } from "@/lib/play-billing.functions";
+import { PLAY_SUBSCRIPTIONS } from "@/lib/play-subscriptions";
+import { redeemPlayPurchase, redeemPlaySubscription } from "@/lib/play-billing.functions";
+
 
 export function playBillingAvailable(): boolean {
   return isNativeAndroid();
@@ -77,3 +79,63 @@ export async function buyWithPlay(productId: string): Promise<number> {
   });
   return result.balance;
 }
+
+/** Localized subscription price strings from Play, keyed by product id. */
+export async function getPlaySubscriptionPrices(): Promise<Record<string, string>> {
+  await ensureBilling();
+  const out: Record<string, string> = {};
+  try {
+    const { products } = await NativePurchases.getProducts({
+      productIdentifiers: PLAY_SUBSCRIPTIONS.map((s) => s.productId),
+      productType: PURCHASE_TYPE.SUBS,
+    });
+    for (const product of products ?? []) {
+      if (product?.identifier && product.priceString) {
+        out[product.identifier] = product.priceString;
+      }
+    }
+  } catch {
+    // Prices are cosmetic — fall back to the built-in USD labels.
+  }
+  return out;
+}
+
+/**
+ * Runs the Play subscription flow, verifies the subscription on the server and
+ * records the entitlement. Returns the activated plan.
+ */
+export async function buyPlaySubscription(
+  productId: string,
+): Promise<{ plan: "pro" | "max"; status: "granted" | "already_redeemed" }> {
+  await ensureBilling();
+
+  const sub = PLAY_SUBSCRIPTIONS.find((s) => s.productId === productId);
+  if (!sub) throw new Error("Unknown subscription");
+
+  let transaction;
+  try {
+    transaction = await NativePurchases.purchaseProduct({
+      productIdentifier: productId,
+      productType: PURCHASE_TYPE.SUBS,
+      isConsumable: false,
+      quantity: 1,
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Google Play could not start the subscription: ${detail}`);
+  }
+
+  const token = transaction?.purchaseToken;
+  if (!token) throw new Error("Google Play did not return a purchase token");
+
+  const { getPaddleEnvironment } = await import("@/lib/paddle");
+  const result = await redeemPlaySubscription({
+    data: {
+      productId,
+      purchaseToken: String(token),
+      environment: getPaddleEnvironment(),
+    },
+  });
+  return result;
+}
+

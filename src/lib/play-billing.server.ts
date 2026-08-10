@@ -203,3 +203,70 @@ export async function acknowledgePlayPurchase(productId: string, purchaseToken: 
     handlePlayApiError(res, body);
   }
 }
+
+export type PlaySubscriptionState = {
+  valid: boolean;
+  orderId: string | null;
+  expiryTime: string | null;
+  startTime: string | null;
+  acknowledged: boolean;
+  autoRenewing: boolean;
+};
+
+/** Verifies a Google Play subscription token with the Play Developer API. */
+export async function verifyPlaySubscriptionPurchase(
+  productId: string,
+  purchaseToken: string,
+): Promise<PlaySubscriptionState> {
+  const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME || "app.scanything.scanything";
+  const token = await getAccessToken();
+  const url =
+    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
+    `${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}`;
+
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) {
+    const body = await res.text();
+    handlePlayApiError(res, body);
+  }
+  const data = (await res.json()) as {
+    orderId?: string;
+    expiryTimeMillis?: string;
+    startTimeMillis?: string;
+    paymentState?: number;
+    acknowledgementState?: number;
+    autoRenewing?: boolean;
+  };
+
+  const now = Date.now();
+  const expiry = data.expiryTimeMillis ? Number(data.expiryTimeMillis) : null;
+  const valid = expiry !== null && expiry > now && data.paymentState !== 0;
+
+  return {
+    valid,
+    orderId: data.orderId ?? null,
+    expiryTime: expiry ? new Date(expiry).toISOString() : null,
+    startTime: data.startTimeMillis ? new Date(Number(data.startTimeMillis)).toISOString() : null,
+    acknowledged: data.acknowledgementState === 1,
+    autoRenewing: data.autoRenewing ?? false,
+  };
+}
+
+/** Acknowledges a verified subscription so Google does not auto-refund it. */
+export async function acknowledgePlaySubscription(productId: string, purchaseToken: string) {
+  const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME || "app.scanything.scanything";
+  const token = await getAccessToken();
+  const url =
+    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
+    `${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (!res.ok && res.status !== 400) {
+    const body = await res.text();
+    handlePlayApiError(res, body);
+  }
+}
+

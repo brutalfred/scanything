@@ -248,7 +248,15 @@ export const EN = {
   region: "Region",
   autoDetected: "Auto-detected",
   allMarketplaces: "All marketplaces",
+
+  whereToSell: "Where to sell this",
+  priceCompare: "Price compare",
+  manualSupport: "Find manual / support",
+  listOnMarketplace: "List on marketplace",
+  copyForMarketplace: "Copy for marketplace",
+  openListingPage: "Open listing page",
 } as const;
+
 
 
 export type TranslationKey = keyof typeof EN;

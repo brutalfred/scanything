@@ -58,9 +58,16 @@ function RefundPolicyPage() {
 
 
           <section>
-            <h2 className="mb-2 text-lg font-semibold text-foreground">What can be refunded</h2>
+            <h2 className="mb-2 text-lg font-semibold text-foreground">Credit refunds</h2>
             <p>
               Refunds apply to unused credit balances purchased within the last 30 days. If you have already used the credits to perform scans or analysis, we may reduce the refund by the value of the used credits.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-2 text-lg font-semibold text-foreground">Subscription refunds</h2>
+            <p>
+              Monthly subscriptions are billed by Google Play (in the Android app) or by Paddle (on the web). Refunds and cancellations follow the policy of the platform that processed the charge. You can cancel at any time through the Google Play Store app or the Paddle customer portal linked in your account. We do not prorate partial months except where required by law.
             </p>
           </section>
 
@@ -70,6 +77,7 @@ function RefundPolicyPage() {
               Approved refunds are typically returned to your original payment method within 5–10 business days, depending on your bank or payment provider.
             </p>
           </section>
+
 
           <section>
             <h2 className="mb-2 text-lg font-semibold text-foreground">Questions</h2>
