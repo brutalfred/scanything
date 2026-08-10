@@ -2633,6 +2633,20 @@ function DetailPanel({
     );
   }, [enrichment, name, detectedCountry]);
 
+  const whereToSell = useMemo(() => {
+    if (!enrichment) return [];
+    return getMarketplacesForItem(
+      {
+        name,
+        category: enrichment.category,
+        price: enrichment.priceMax,
+        currency: enrichment.currency,
+      },
+      detectedCountry,
+    ).slice(0, 3);
+  }, [enrichment, name, detectedCountry]);
+
+
 
 
 
