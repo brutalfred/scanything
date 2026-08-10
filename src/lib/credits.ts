@@ -14,6 +14,8 @@ export const CREDIT_COSTS = {
   resale_listing: 1,
   /** One question in the in-item Ask AI chat. */
   ask_ai: 1,
+  /** Second pass over the same photo ("Load more"). */
+  load_more: 1,
 } as const;
 
 export type CreditReason = keyof typeof CREDIT_COSTS;
@@ -29,6 +31,7 @@ export const CREDIT_LABELS: Record<CreditReason, string> = {
   translate: "Translate",
   resale_listing: "Resale listing",
   ask_ai: "Ask AI question",
+  load_more: "Load more items",
 };
 
 
