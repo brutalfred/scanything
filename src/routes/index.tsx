@@ -1981,8 +1981,9 @@ function Scanner() {
                 {t("newScan")}
               </Button>
             </div>
-
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
               <div {...photoZoom.handlers} className="relative overflow-hidden">
+
                 <div
                   className="relative w-full origin-center"
                   style={{
