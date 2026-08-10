@@ -91,6 +91,8 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     return;
   }
 
+  const plan = inferPlanFromPriceId(priceId) ?? inferPlanFromProductId(productId);
+
   const supabase = getSupabase();
   const { error } = await supabase.from("subscriptions").upsert(
     {
@@ -99,6 +101,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
       paddle_customer_id: data.customerId,
       product_id: productId,
       price_id: priceId,
+      plan,
       status: data.status,
       current_period_start: data.currentBillingPeriod?.startsAt ?? null,
       current_period_end: data.currentBillingPeriod?.endsAt ?? null,
@@ -115,6 +118,10 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
   const supabase = getSupabase();
+  const item = data?.items?.[0];
+  const productId = item?.product?.importMeta?.externalId as string | undefined;
+  const plan = productId ? inferPlanFromProductId(productId) : undefined;
+
   const { error } = await supabase
     .from("subscriptions")
     .update({
@@ -122,6 +129,7 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
       current_period_start: data.currentBillingPeriod?.startsAt ?? null,
       current_period_end: data.currentBillingPeriod?.endsAt ?? null,
       cancel_at_period_end: data.scheduledChange?.action === "cancel",
+      ...(plan ? { plan } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("paddle_subscription_id", data.id)
@@ -129,6 +137,7 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
 
   if (error) throw new Error(error.message);
 }
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
