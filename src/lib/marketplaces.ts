@@ -525,6 +525,15 @@ export function getMarketplacesForItem(
   return scored
     .filter((s) => s.score > 0)
     .slice(0, 8)
+    .map((s) => ({
+      id: s.m.id,
+      label: s.m.label,
+      url: s.m.buildUrl(item),
+    }));
+}
+
+/** Minimal listing draft used by formatting helpers. */
+
 
 /** Minimal listing draft used by formatting helpers. */
 export type ListingDraft = {
