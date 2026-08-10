@@ -34,6 +34,8 @@ import {
   Upload,
   CloudOff,
   FolderPlus,
+  MessageCircle,
+  Send,
 
 
 } from "lucide-react";
@@ -49,6 +51,7 @@ import {
   quickScan,
   enrichItem,
   analyzeFurther,
+  askAboutItem,
   translateText,
   translateName,
   type DetectedItem,
@@ -85,6 +88,7 @@ import {
   appendScanHistory,
   saveScanHistoryItemDeep,
 } from "@/lib/scan-history.functions";
+import { shareScanCard } from "@/lib/share-card";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAppVersion } from "@/hooks/useAppVersion";
@@ -2954,6 +2958,29 @@ function DetailPanel({
 
 
 
+  /** Everything the info box knows, summarized as the chat's starting context. */
+  const askContext = useMemo(() => {
+    const lines: string[] = [`Item: ${name}`];
+    if (enrichment?.category) lines.push(`Category: ${enrichment.category}`);
+    if (enrichment?.description) lines.push(`Description: ${enrichment.description}`);
+    if (enrichment && enrichment.category !== "plate") {
+      lines.push(
+        `Estimated price range: ${enrichment.priceMin}-${enrichment.priceMax} ${enrichment.currency}`,
+      );
+    }
+    if ("resale" in item && item.resale) {
+      lines.push(
+        `Second-hand resale: typical ${item.resale.typical} (${item.resale.low}-${item.resale.high} ${item.resale.currency}), verdict ${item.resale.verdict}. ${item.resale.reason ?? ""}`,
+      );
+    }
+    if (deep) {
+      lines.push(
+        `Deep analysis: ${[deep.brand, deep.product].filter(Boolean).join(" ")} (${Math.round(deep.confidence)}% confidence). ${deep.description ?? ""}`,
+      );
+    }
+    return lines.join("\n").slice(0, 4000);
+  }, [name, enrichment, item, deep]);
+
   return (
     <div
       className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
@@ -3722,6 +3749,39 @@ function DetailPanel({
                 </a>
               </div>
             )}
+
+            <Button
+              variant="secondary"
+              className="mt-4 w-full justify-center"
+              onClick={() => {
+                void shareScanCard({
+                  name,
+                  category: enrichment?.category,
+                  priceLine:
+                    enrichment && enrichment.category !== "plate"
+                      ? `$${enrichment.priceMin} – $${enrichment.priceMax} ${enrichment.currency}`
+                      : undefined,
+                  resaleLine:
+                    "resale" in item && item.resale
+                      ? `Resale ~$${item.resale.typical} ${item.resale.currency} · ${item.resale.verdict === "sell" ? t("worthSelling") : t("notWorthIt")}`
+                      : undefined,
+                  imageDataUrl: imageBase64,
+                }).then((r) => {
+                  if (r === "downloaded") toast.success(t("shareAsImage"));
+                  if (r === "failed") toast.error(t("tryAgain"));
+                });
+              }}
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              {t("shareAsImage")}
+            </Button>
+
+            <AskAiBlock
+              itemName={name}
+              imageBase64={imageBase64}
+              language={boxLanguage}
+              context={askContext}
+            />
           </>
         ) : (
           <div className="mt-6 flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
@@ -3731,6 +3791,154 @@ function DetailPanel({
         )}
 
       </div>
+    </div>
+  );
+}
+
+/**
+ * In-app chat about one scanned item. The info box context (and the photo) are
+ * attached automatically; the user only types the question.
+ */
+function AskAiBlock({
+  itemName,
+  imageBase64,
+  language,
+  context,
+}: {
+  itemName: string;
+  imageBase64: string | null;
+  language: string;
+  context: string;
+}) {
+  const { t } = useLanguage();
+  const credits = useCreditsContext();
+  const ask = useServerFn(askAboutItem);
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const endRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "nearest" });
+  }, [messages, busy]);
+
+  const send = useCallback(async () => {
+    const question = input.trim();
+    if (!question || busy) return;
+    if (!credits.spend("ask_ai")) return;
+    const next = [...messages, { role: "user" as const, content: question }];
+    setMessages(next);
+    setInput("");
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await ask({
+        data: {
+          context,
+          language,
+          imageBase64: imageBase64 ? imageBase64.replace(/^data:[^,]+,/, "") : undefined,
+          messages: next.slice(-12),
+          environment: getPaddleEnvironment(),
+        },
+      });
+      setMessages((prev) => [...prev, { role: "assistant", content: res.answer }]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not get an answer.");
+    } finally {
+      setBusy(false);
+    }
+  }, [input, busy, credits, messages, ask, context, language, imageBase64]);
+
+  return (
+    <div className="mt-4 rounded-xl border border-primary/40 bg-primary/5 p-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 text-left"
+      >
+        <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+          <MessageCircle className="h-4 w-4" />
+          {t("askAi")}
+        </span>
+        <span className="text-[11px] text-muted-foreground">
+          {CREDIT_COSTS.ask_ai} · {open ? t("hidePreview") : t("showPreview")}
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-3">
+          <div className="flex items-start gap-2 rounded-lg border border-border bg-background/60 p-2">
+            {imageBase64 && (
+              <img
+                src={imageBase64}
+                alt={itemName}
+                className="h-10 w-10 shrink-0 rounded object-cover"
+              />
+            )}
+            <p className="line-clamp-3 text-[11px] leading-relaxed text-muted-foreground">
+              {t("askAiContext")}: {context.replace(/\n/g, " · ")}
+            </p>
+          </div>
+
+          {messages.length > 0 && (
+            <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={
+                    m.role === "user"
+                      ? "ml-auto max-w-[85%] rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground"
+                      : "max-w-[95%] whitespace-pre-wrap text-xs leading-relaxed text-foreground"
+                  }
+                >
+                  {m.content}
+                </div>
+              ))}
+              {busy && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t("askAiThinking")}
+                </div>
+              )}
+              <div ref={endRef} />
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+              {error}
+            </div>
+          )}
+
+          <div className="mt-3 flex items-end gap-2">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
+              rows={2}
+              maxLength={2000}
+              placeholder={t("askAiPlaceholder")}
+              className="min-h-[44px] flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+            <Button
+              type="button"
+              size="icon"
+              onClick={() => void send()}
+              disabled={busy || !input.trim() || !credits.canAfford("ask_ai")}
+              aria-label={t("askAi")}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
