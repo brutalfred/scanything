@@ -81,8 +81,10 @@ function PrivacyPage() {
                 <strong className="text-foreground">To provide the service:</strong> creating your account, processing scans, and managing your credits. (Legal basis: contract performance)
               </li>
               <li>
-                <strong className="text-foreground">To process payments:</strong> purchases of scan credits are handled by Google Play billing, which processes the payment, tax and receipt. We only receive a confirmation that the purchase succeeded. (Legal basis: contract performance)
+                <strong className="text-foreground">To process payments:</strong>{" "}
+                purchases of scan credits and subscriptions are handled by Google Play billing (in the Android app) and by Paddle (on the web). We only receive confirmation that the purchase succeeded. (Legal basis: contract performance)
               </li>
+
               <li>
                 <strong className="text-foreground">To keep the app secure:</strong> preventing fraud, abuse, and unauthorized access. (Legal basis: legitimate interests)
               </li>
