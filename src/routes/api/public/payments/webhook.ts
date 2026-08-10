@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { verifyWebhook, EventName, type PaddleEnv } from "@/lib/paddle.server";
 import { CREDITS_BY_PRICE_ID } from "@/lib/credit-packs";
+import { inferPlanFromPriceId, inferPlanFromProductId } from "@/lib/plan-mapping";
+
 
 let _supabase: ReturnType<typeof createClient<Database>> | null = null;
 function getSupabase() {
