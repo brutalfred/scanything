@@ -1,14 +1,6 @@
 {
   "name": "remotion",
   "module": "index.ts",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "5.5.4"
-  },
   "dependencies": {
     "@remotion/bundler": "^4.0.507",
     "@remotion/cli": "^4.0.507",
@@ -21,6 +13,12 @@
     "@types/react": "^19.2.18",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "remotion": "^4.0.507"
-  }
+    "remotion": "^4.0.507",
+    "typescript": "5.7.3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "private": true,
+  "type": "module"
 }
