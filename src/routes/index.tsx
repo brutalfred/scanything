@@ -3261,20 +3261,45 @@ function DetailPanel({
 
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => {
-                        const text = `${listingDraft.title}\n\n${listingDraft.description}\n\nPrice: ${listingDraft.price} ${listingDraft.currency}\nCondition: ${listingDraft.condition}\nKeywords: ${listingDraft.keywords.join(", ")}`;
-                        navigator.clipboard
-                          .writeText(text)
-                          .then(() => toast.success(t("listingCopied")))
-                          .catch(() => toast.error("Copy failed"));
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      {t("copyListing")}
-                    </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          {t("copyListing")}
+                          <ChevronDown className="h-3 w-3 opacity-60" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const text = `${listingDraft.title}\n\n${listingDraft.description}\n\nPrice: ${listingDraft.price} ${listingDraft.currency}\nCondition: ${listingDraft.condition}\nKeywords: ${listingDraft.keywords.join(", ")}`;
+                            navigator.clipboard
+                              .writeText(text)
+                              .then(() => toast.success(t("listingCopied")))
+                              .catch(() => toast.error("Copy failed"));
+                          }}
+                        >
+                          Generic listing
+                        </DropdownMenuItem>
+                        {recommendedMarketplaces.slice(0, 6).map((m) => (
+                          <DropdownMenuItem
+                            key={m.id}
+                            onClick={() => {
+                              navigator.clipboard
+                                .writeText(formatListingForMarketplace(listingDraft, m.id))
+                                .then(() => toast.success(`Copied for ${m.label}`))
+                                .catch(() => toast.error("Copy failed"));
+                            }}
+                          >
+                            Copy for {m.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <button
                       onClick={() => setListingEdited((prev) => !prev)}
                       className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
@@ -3282,6 +3307,7 @@ function DetailPanel({
                       {listingEdited ? t("saveListing") : t("editListing")}
                     </button>
                   </div>
+
                 </div>
               </div>
             )}
