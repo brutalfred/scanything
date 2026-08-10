@@ -3234,18 +3234,31 @@ function DetailPanel({
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {recommendedMarketplaces.map((m) => (
-                        <a
+                        <div
                           key={m.id}
-                          href={m.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                          className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
                         >
-                          {m.label}
-                          <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                        </a>
+                          <a
+                            href={m.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-medium hover:underline"
+                          >
+                            {m.label}
+                          </a>
+                          <a
+                            href={getMarketplaceListingUrl(m.id, { name })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-2 inline-flex items-center gap-1 rounded-md border border-primary/50 px-2 py-1 text-[10px] font-medium text-primary hover:bg-primary/10"
+                          >
+                            List
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
                       ))}
                     </div>
+
                   </div>
 
                   <div className="flex flex-wrap gap-2">
