@@ -1424,25 +1424,26 @@ function Scanner() {
       )}
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-3">
-          <div className="flex flex-shrink-0 items-center justify-start">
+          <div className="flex min-w-0 flex-1 basis-0 flex-shrink items-center justify-start">
             <AccountButton
               signedIn={credits.signedIn}
               email={credits.email}
               balance={credits.balance}
             />
           </div>
-          <h1 className="flex min-w-0 flex-1 items-center justify-center select-none">
+          <h1 className="flex shrink-0 items-center justify-center select-none">
             <span className="sr-only">Scanything — AI camera room analyzer</span>
             <img
               src={logoAsset.url}
               alt="Scanything logo"
-              className="h-20 w-full object-contain sm:h-[100px]"
+              className="h-20 w-auto max-w-full object-contain sm:h-[100px]"
               width={1024}
               height={512}
             />
           </h1>
 
-          <div className="flex flex-shrink-0 items-center justify-end gap-2">
+          <div className="flex min-w-0 flex-1 basis-0 flex-wrap items-center justify-end gap-2">
+
             <CreditMeter
               balance={credits.balance}
               loading={credits.loading}
