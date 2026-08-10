@@ -3310,6 +3310,8 @@ function DetailPanel({
 
                 </div>
               </div>
+            )}
+
             <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
               <h4 className="text-xs font-medium text-foreground">{t("priceCompare")}</h4>
               <div className="mt-2 grid grid-cols-2 gap-2">
