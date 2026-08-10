@@ -22,6 +22,18 @@ export const LANGUAGES = [
   "Hindi",
   "Russian",
   "Thai (ไทย)",
+  "Dutch",
+  "Turkish",
+  "Vietnamese",
+  "Indonesian",
+  "Greek",
+  "Czech",
+  "Romanian",
+  "Ukrainian",
+  "Hebrew",
+  "Persian",
+  "Bengali",
+  "Filipino",
 ] as const;
 
 export type Language = (typeof LANGUAGES)[number];
@@ -47,6 +59,18 @@ export const LANGUAGE_NATIVE: Record<Language, string> = {
   Hindi: "हिन्दी",
   Russian: "Русский",
   "Thai (ไทย)": "ไทย",
+  Dutch: "Nederlands",
+  Turkish: "Türkçe",
+  Vietnamese: "Tiếng Việt",
+  Indonesian: "Bahasa Indonesia",
+  Greek: "Ελληνικά",
+  Czech: "Čeština",
+  Romanian: "Română",
+  Ukrainian: "Українська",
+  Hebrew: "עברית",
+  Persian: "فارسی",
+  Bengali: "বাংলা",
+  Filipino: "Filipino",
 };
 
 /** BCP-47 tags for <html lang>. */
@@ -66,9 +90,21 @@ export const LANGUAGE_TAG: Record<Language, string> = {
   Hindi: "hi",
   Russian: "ru",
   "Thai (ไทย)": "th",
+  Dutch: "nl",
+  Turkish: "tr",
+  Vietnamese: "vi",
+  Indonesian: "id",
+  Greek: "el",
+  Czech: "cs",
+  Romanian: "ro",
+  Ukrainian: "uk",
+  Hebrew: "he",
+  Persian: "fa",
+  Bengali: "bn",
+  Filipino: "fil",
 };
 
-export const RTL_LANGUAGES: Language[] = ["Arabic"];
+export const RTL_LANGUAGES: Language[] = ["Arabic", "Hebrew", "Persian"];
 
 export function isLanguage(v: unknown): v is Language {
   return typeof v === "string" && (LANGUAGES as readonly string[]).includes(v);
@@ -262,6 +298,12 @@ export const EN = {
   askAiContext: "Context",
   askAiThinking: "Thinking…",
   shareAsImage: "Share as image",
+
+  // subscription
+  renewsOn: "Renews on",
+  lifetimeAccess: "Lifetime access",
+  premiumThemes: "Premium themes",
+  premiumThemesLocked: "Unlock 6 extra themes with Pro or Max",
 } as const;
 
 
