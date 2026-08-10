@@ -77,11 +77,74 @@ function PricingPage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold gold-text sm:text-5xl">Simple scan pricing</h1>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Pay per scan with prepaid credits. Every scan mode is included — no subscription.
+            Pay per scan with prepaid credits, or subscribe for unlimited scanning. Every scan mode is included in subscriptions.
           </p>
         </div>
 
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          {(["pro", "max"] as const).map((plan) => (
+            <div
+              key={plan}
+              className={`relative flex flex-col rounded-2xl border-2 p-5 ${
+                plan === "max"
+                  ? "border-primary bg-primary/10 gold-glow"
+                  : "border-border bg-secondary/30"
+              }`}
+            >
+              {plan === "max" && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase text-primary-foreground">
+                  Best value
+                </span>
+              )}
+              <div className="mb-2 flex items-center gap-2">
+                <Crown className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">
+                  {plan === "max" ? "Scanything Max" : "Scanything Pro"}
+                </h2>
+              </div>
+              <div className="mb-3 text-3xl font-bold text-primary">
+                {SUBSCRIPTION_PRICE_LABELS[plan]}
+              </div>
+              <p className="mb-5 text-sm text-muted-foreground">
+                {SUBSCRIPTION_DESCRIPTIONS[plan]}
+              </p>
+              <ul className="mb-5 space-y-2 text-sm text-muted-foreground">
+                {(
+                  plan === "max"
+                    ? [
+                        "Unlimited photo, document & resale scans",
+                        "Unlimited live video / quick scans",
+                        "Unlimited Analyze Further & Translate",
+                        "Cancel any time",
+                      ]
+                    : [
+                        "Unlimited photo, document & resale scans",
+                        "Unlimited Analyze Further & Translate",
+                        "Live scans still use credits",
+                        "Cancel any time",
+                      ]
+                ).map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/"
+                className="mt-auto block rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Get {plan === "max" ? "Max" : "Pro"}
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-sm font-medium text-muted-foreground">Or top up with credits</p>
+        </div>
+
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {CREDIT_PACKS.map((pack) => (
             <div
               key={pack.priceId}
