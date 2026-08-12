@@ -199,6 +199,13 @@ function PrivacyPage() {
           </section>
 
           <section>
+            <h2 className="mb-2 text-lg font-semibold text-foreground">Advertising</h2>
+            <p>
+              In the Android app, {APP_NAME} uses Google AdMob to display rewarded video ads (which let you earn credits) and banner ads. AdMob may collect your device's Advertising ID, IP address, and approximate location to serve and measure the performance of ads. The Advertising ID is a device identifier managed by Google. You can reset it or opt out of personalized ads at any time in your device's Settings → Privacy → Ads. We do not use the Advertising ID to track you across other apps or websites. On the web version of {APP_NAME}, no ads are shown.
+            </p>
+          </section>
+
+          <section>
             <h2 className="mb-2 text-lg font-semibold text-foreground">Changes to this notice</h2>
             <p>
               We may update this Privacy Notice from time to time. The latest version will always be available at this page.
