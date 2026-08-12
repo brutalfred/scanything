@@ -65,7 +65,7 @@ function PrivacyPage() {
                 <strong className="text-foreground">Image data:</strong> photos or video frames you submit for AI analysis. These are processed in real time and are not permanently stored unless you choose to save an image to your own device.
               </li>
               <li>
-                <strong className="text-foreground">Device and technical data:</strong> IP address, device type, browser information, and crash logs to help us operate and improve the app.
+                <strong className="text-foreground">Device and technical data:</strong> IP address, device type, browser information, crash logs, and an advertising identifier (Advertising ID) used to display and measure ads, to help us operate and improve the app.
               </li>
               <li>
                 <strong className="text-foreground">Support data:</strong> messages and information you send when contacting support.
