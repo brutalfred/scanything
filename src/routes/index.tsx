@@ -70,6 +70,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
 import { CreditMeter } from "@/components/credits/CreditMeter";
+import { WatchAdButton } from "@/components/credits/WatchAdButton";
 import { AccountButton } from "@/components/credits/AccountButton";
 import { PlanLogo } from "@/components/PlanLogo";
 import { useSubscription } from "@/hooks/useSubscription";
