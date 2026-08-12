@@ -107,6 +107,19 @@ function PrivacyPage() {
               </li>
 
               <li>
+                <strong className="text-foreground">Google AdMob:</strong>{" "}
+                in the Android app, we use Google AdMob to display ads (including rewarded video ads and banner ads). AdMob may collect the device's Advertising ID, IP address, and usage data to serve and measure ads. You can reset or opt out of the Advertising ID in your device settings. See{" "}
+                <a
+                  href="https://policies.google.com/technologies/ads"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Google's Ads policy
+                </a>{" "}
+                for more information.
+              </li>
+              <li>
                 <strong className="text-foreground">AI and cloud service providers:</strong> providers that help us run image analysis and host the app.
               </li>
               <li>
