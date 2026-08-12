@@ -1447,11 +1447,6 @@ function Scanner() {
               signedIn={credits.signedIn}
               onClick={credits.openSheet}
             />
-            <WatchAdButton
-              signedIn={credits.signedIn}
-              variant="icon"
-              onRewarded={() => void credits.refresh?.()}
-            />
             {phase === "camera" && torchSupported && (
               <button
                 onClick={toggleTorch}
