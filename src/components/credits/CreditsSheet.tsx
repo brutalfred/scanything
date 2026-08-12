@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, Send, X, Crown, ExternalLink, Play } from "lucide-react";
 import { adsAvailable } from "@/lib/admob";
-import { AdRewardModal } from "@/components/credits/AdRewardModal";
+import { WatchAdButton } from "@/components/credits/WatchAdButton";
 
 
 import { toast } from "sonner";
