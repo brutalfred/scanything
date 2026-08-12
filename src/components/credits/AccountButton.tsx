@@ -24,6 +24,7 @@ import { useAiConsent } from "@/hooks/useAiConsent";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { useAndroidApp } from "@/hooks/useAndroidApp";
 import { DailyCheckin } from "./DailyCheckin";
+import { WatchAdButton } from "./WatchAdButton";
 import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
 import { useSubscription } from "@/hooks/useSubscription";
