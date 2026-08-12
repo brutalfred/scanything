@@ -65,7 +65,7 @@ function PrivacyPage() {
                 <strong className="text-foreground">Image data:</strong> photos or video frames you submit for AI analysis. These are processed in real time and are not permanently stored unless you choose to save an image to your own device.
               </li>
               <li>
-                <strong className="text-foreground">Device and technical data:</strong> IP address, device type, browser information, and crash logs to help us operate and improve the app.
+                <strong className="text-foreground">Device and technical data:</strong> IP address, device type, browser information, crash logs, and an advertising identifier (Advertising ID) used to display and measure ads, to help us operate and improve the app.
               </li>
               <li>
                 <strong className="text-foreground">Support data:</strong> messages and information you send when contacting support.
@@ -92,6 +92,9 @@ function PrivacyPage() {
                 <strong className="text-foreground">To improve the app:</strong> analyzing usage and fixing errors. (Legal basis: legitimate interests)
               </li>
               <li>
+                <strong className="text-foreground">To display ads:</strong> in the Android app, we use Google AdMob to show rewarded video ads and banner ads that let you earn free credits. AdMob uses the Advertising ID to serve and measure ads. (Legal basis: legitimate interests)
+              </li>
+              <li>
                 <strong className="text-foreground">To communicate with you:</strong> support responses and important service updates. (Legal basis: contract performance or legitimate interests)
               </li>
             </ul>
@@ -106,6 +109,19 @@ function PrivacyPage() {
                 Google is the seller of record for in-app purchases in the Android app and processes payment, tax, invoicing and refunds. Paddle is the seller of record for subscriptions and credit packs purchased on the web. We never receive or store your card details.
               </li>
 
+              <li>
+                <strong className="text-foreground">Google AdMob:</strong>{" "}
+                in the Android app, we use Google AdMob to display ads (including rewarded video ads and banner ads). AdMob may collect the device's Advertising ID, IP address, and usage data to serve and measure ads. You can reset or opt out of the Advertising ID in your device settings. See{" "}
+                <a
+                  href="https://policies.google.com/technologies/ads"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Google's Ads policy
+                </a>{" "}
+                for more information.
+              </li>
               <li>
                 <strong className="text-foreground">AI and cloud service providers:</strong> providers that help us run image analysis and host the app.
               </li>
@@ -179,6 +195,13 @@ function PrivacyPage() {
             <h2 className="mb-2 text-lg font-semibold text-foreground">Cookies</h2>
             <p>
               {APP_NAME} uses essential cookies and similar technologies to keep you signed in, manage your credits, and operate the app. When you first visit, we ask for your consent to any non-essential cookies. You can change your choice at any time by clearing your browser storage for this site. We do not use third-party marketing or analytics cookies without your consent.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-2 text-lg font-semibold text-foreground">Advertising</h2>
+            <p>
+              In the Android app, {APP_NAME} uses Google AdMob to display rewarded video ads (which let you earn credits) and banner ads. AdMob may collect your device's Advertising ID, IP address, and approximate location to serve and measure the performance of ads. The Advertising ID is a device identifier managed by Google. You can reset it or opt out of personalized ads at any time in your device's Settings → Privacy → Ads. We do not use the Advertising ID to track you across other apps or websites. On the web version of {APP_NAME}, no ads are shown.
             </p>
           </section>
 
