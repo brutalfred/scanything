@@ -92,6 +92,9 @@ function PrivacyPage() {
                 <strong className="text-foreground">To improve the app:</strong> analyzing usage and fixing errors. (Legal basis: legitimate interests)
               </li>
               <li>
+                <strong className="text-foreground">To display ads:</strong> in the Android app, we use Google AdMob to show rewarded video ads and banner ads that let you earn free credits. AdMob uses the Advertising ID to serve and measure ads. (Legal basis: legitimate interests)
+              </li>
+              <li>
                 <strong className="text-foreground">To communicate with you:</strong> support responses and important service updates. (Legal basis: contract performance or legitimate interests)
               </li>
             </ul>
