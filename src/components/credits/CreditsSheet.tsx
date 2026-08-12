@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Coins, Loader2, Send, X, Crown, ExternalLink } from "lucide-react";
+import { Coins, Loader2, Send, X, Crown, ExternalLink, Play } from "lucide-react";
+import { adsAvailable } from "@/lib/admob";
+import { AdRewardModal } from "@/components/credits/AdRewardModal";
+
 
 import { toast } from "sonner";
 import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
@@ -47,7 +50,9 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const [subscribing, setSubscribing] = useState<PlanType | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+  const [adOpen, setAdOpen] = useState(false);
   const [sendEmail, setSendEmail] = useState("");
+
   const [sendAmount, setSendAmount] = useState("");
   const [sending, setSending] = useState(false);
   const sendCreditsFn = useServerFn(transferCredits);
@@ -310,6 +315,18 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
         )}
 
         <h3 className="mb-2 text-sm font-semibold text-primary">{t("topUp")}</h3>
+
+        {credits.signedIn && adsAvailable() && (
+          <button
+            type="button"
+            onClick={() => setAdOpen(true)}
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 px-3 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+          >
+            <Play className="h-4 w-4" />
+            Watch an ad for 2 credits
+          </button>
+        )}
+
         <div className="mb-4 grid grid-cols-2 gap-2">
           {CREDIT_PACKS.map((pack) => (
             <button
@@ -390,6 +407,18 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           </p>
         )}
       </div>
+
+      {adOpen && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <AdRewardModal
+            onClose={() => setAdOpen(false)}
+            onRewarded={() => {
+              void credits.refresh?.();
+            }}
+          />
+        </div>
+      )}
     </div>
+
   );
 }

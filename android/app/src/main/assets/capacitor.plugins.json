@@ -1,4 +1,5 @@
 [
+  { "pkg": "@capacitor-community/admob", "classpath": "com.getcapacitor.community.admob.AdMob" },
   { "pkg": "@capacitor/app", "classpath": "com.capacitorjs.plugins.app.AppPlugin" },
   { "pkg": "@capacitor/browser", "classpath": "com.capacitorjs.plugins.browser.BrowserPlugin" },
   { "pkg": "@capacitor/splash-screen", "classpath": "com.capacitorjs.plugins.splashscreen.SplashScreenPlugin" },
