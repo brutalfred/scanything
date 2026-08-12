@@ -70,6 +70,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
 import { CreditMeter } from "@/components/credits/CreditMeter";
+import { WatchAdButton } from "@/components/credits/WatchAdButton";
 import { AccountButton } from "@/components/credits/AccountButton";
 import { PlanLogo } from "@/components/PlanLogo";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -1445,6 +1446,11 @@ function Scanner() {
               loading={credits.loading}
               signedIn={credits.signedIn}
               onClick={credits.openSheet}
+            />
+            <WatchAdButton
+              signedIn={credits.signedIn}
+              variant="icon"
+              onRewarded={() => void credits.refresh?.()}
             />
             {phase === "camera" && torchSupported && (
               <button
