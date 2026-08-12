@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Coins, Loader2, Send, X, Crown, ExternalLink, Play } from "lucide-react";
+import { Coins, Loader2, Send, X, Crown, ExternalLink } from "lucide-react";
 import { WatchAdButton } from "@/components/credits/WatchAdButton";
 
 
