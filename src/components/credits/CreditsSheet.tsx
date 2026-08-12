@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, Send, X, Crown, ExternalLink, Play } from "lucide-react";
-import { adsAvailable } from "@/lib/admob";
 import { WatchAdButton } from "@/components/credits/WatchAdButton";
 
 
@@ -50,7 +49,6 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
   const [subscribing, setSubscribing] = useState<PlanType | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
-  const [adOpen, setAdOpen] = useState(false);
   const [sendEmail, setSendEmail] = useState("");
 
   const [sendAmount, setSendAmount] = useState("");
@@ -405,16 +403,6 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
         )}
       </div>
 
-      {adOpen && (
-        <div onClick={(e) => e.stopPropagation()}>
-          <AdRewardModal
-            onClose={() => setAdOpen(false)}
-            onRewarded={() => {
-              void credits.refresh?.();
-            }}
-          />
-        </div>
-      )}
     </div>
 
   );
