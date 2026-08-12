@@ -310,6 +310,18 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
         )}
 
         <h3 className="mb-2 text-sm font-semibold text-primary">{t("topUp")}</h3>
+
+        {credits.signedIn && adsAvailable() && (
+          <button
+            type="button"
+            onClick={() => setAdOpen(true)}
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/60 px-3 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+          >
+            <Play className="h-4 w-4" />
+            Watch an ad for 2 credits
+          </button>
+        )}
+
         <div className="mb-4 grid grid-cols-2 gap-2">
           {CREDIT_PACKS.map((pack) => (
             <button
