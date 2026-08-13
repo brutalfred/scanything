@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
