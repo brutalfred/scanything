@@ -180,7 +180,7 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
 
         <div className="mb-3 flex items-center gap-2 text-3xl font-bold text-primary">
           <Coins className="h-7 w-7" />
-          <span className="tabular-nums">{credits.balance}</span>
+          <AnimatedCount value={credits.balance} />
           {credits.signedIn && (
             <button
               type="button"

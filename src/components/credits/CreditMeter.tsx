@@ -1,5 +1,6 @@
 import { Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatedCount } from "./AnimatedCount";
 
 export function CreditMeter({
   balance,
@@ -32,7 +33,7 @@ export function CreditMeter({
       )}
     >
       <Coins className="h-4 w-4" />
-      {loading ? "…" : balance}
+      {loading ? "…" : <AnimatedCount value={balance} />}
     </button>
   );
 }
