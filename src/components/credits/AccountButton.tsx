@@ -248,7 +248,7 @@ export function AccountButton({
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
             >
               <Trophy className="h-4 w-4" />
-              400m hurdles - Compete for free credits every month
+              400m hurdles - Beat your best time
             </button>
 
             <a

@@ -143,8 +143,8 @@ export function GameSheet({
 
         <p className="mt-2 text-center text-[11px] opacity-70">
           {scope === "month"
-            ? `Monthly prizes: 1st 100 · 2nd 50 · 3rd 10 credits — ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`
-            : "All-time board — no resets, no payouts"}
+            ? `Monthly board — ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`
+            : "All-time board — no resets"}
         </p>
 
         <ul className="mt-3 space-y-1">
