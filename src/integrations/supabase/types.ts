@@ -410,6 +410,208 @@ export type Database = {
         }
         Relationships: []
       }
+      poker_chips: {
+        Row: {
+          chips: number
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chips?: number
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chips?: number
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      poker_hands: {
+        Row: {
+          acting_seat: number | null
+          action_deadline: string | null
+          board: Json
+          created_at: string
+          current_bet: number
+          dealer_seat: number
+          deck: Json
+          hand_no: number
+          hole_cards: Json
+          id: string
+          min_raise: number
+          pot: number
+          result_text: string | null
+          stage: string
+          status: string
+          table_id: string
+          updated_at: string
+          winners: Json
+        }
+        Insert: {
+          acting_seat?: number | null
+          action_deadline?: string | null
+          board?: Json
+          created_at?: string
+          current_bet?: number
+          dealer_seat?: number
+          deck?: Json
+          hand_no?: number
+          hole_cards?: Json
+          id?: string
+          min_raise?: number
+          pot?: number
+          result_text?: string | null
+          stage?: string
+          status?: string
+          table_id: string
+          updated_at?: string
+          winners?: Json
+        }
+        Update: {
+          acting_seat?: number | null
+          action_deadline?: string | null
+          board?: Json
+          created_at?: string
+          current_bet?: number
+          dealer_seat?: number
+          deck?: Json
+          hand_no?: number
+          hole_cards?: Json
+          id?: string
+          min_raise?: number
+          pot?: number
+          result_text?: string | null
+          stage?: string
+          status?: string
+          table_id?: string
+          updated_at?: string
+          winners?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poker_hands_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poker_seats: {
+        Row: {
+          all_in: boolean
+          created_at: string
+          current_bet: number
+          display_name: string
+          folded: boolean
+          has_acted: boolean
+          id: string
+          in_hand: boolean
+          is_bot: boolean
+          last_action: string | null
+          seat_index: number
+          shown_cards: Json | null
+          stack: number
+          table_id: string
+          total_committed: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          all_in?: boolean
+          created_at?: string
+          current_bet?: number
+          display_name?: string
+          folded?: boolean
+          has_acted?: boolean
+          id?: string
+          in_hand?: boolean
+          is_bot?: boolean
+          last_action?: string | null
+          seat_index: number
+          shown_cards?: Json | null
+          stack?: number
+          table_id: string
+          total_committed?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          all_in?: boolean
+          created_at?: string
+          current_bet?: number
+          display_name?: string
+          folded?: boolean
+          has_acted?: boolean
+          id?: string
+          in_hand?: boolean
+          is_bot?: boolean
+          last_action?: string | null
+          seat_index?: number
+          shown_cards?: Json | null
+          stack?: number
+          table_id?: string
+          total_committed?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poker_seats_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poker_tables: {
+        Row: {
+          big_blind: number
+          created_at: string
+          host_id: string
+          id: string
+          is_private: boolean
+          max_seats: number
+          name: string
+          small_blind: number
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          big_blind?: number
+          created_at?: string
+          host_id: string
+          id?: string
+          is_private?: boolean
+          max_seats?: number
+          name: string
+          small_blind?: number
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          big_blind?: number
+          created_at?: string
+          host_id?: string
+          id?: string
+          is_private?: boolean
+          max_seats?: number
+          name?: string
+          small_blind?: number
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       scan_history: {
         Row: {
           collection: string | null
