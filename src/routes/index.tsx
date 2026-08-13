@@ -4137,6 +4137,8 @@ function DocumentTextBlock({
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   /** Language of this text block only — never tied to the account-tab language. */
   const [localLang, setLocalLang] = useState<string>("English");
+  /** Bumped every time the user picks a language, so re-picking the same one re-runs. */
+  const [langNonce, setLangNonce] = useState(0);
   const docLanguage = language ?? localLang;
   const docCredits = useCreditsContext();
 
@@ -4144,12 +4146,14 @@ function DocumentTextBlock({
     setValue(text);
     setBase(text);
     setEditing(false);
+    setLangNonce(0);
   }, [text]);
 
   // Translate the scanned text back and forth as the chosen language changes.
   useEffect(() => {
     if (!base.trim()) return;
-    if (docLanguage === "English") {
+    // Untouched blocks show the original scan; only skip work before any pick.
+    if (langNonce === 0 && !language) {
       setValue(base);
       return;
     }
@@ -4171,7 +4175,8 @@ function DocumentTextBlock({
     return () => {
       cancelled = true;
     };
-  }, [base, docLanguage]);
+  }, [base, docLanguage, langNonce, language]);
+
 
 
 
