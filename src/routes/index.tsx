@@ -4348,6 +4348,8 @@ function DocumentTextBlock({
               type="button"
               onClick={() => {
                 setLocalLang(lang);
+                setLangNonce((n) => n + 1);
+
                 setLangPickerOpen(false);
               }}
               disabled={translatingDoc}
