@@ -839,6 +839,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_seated_at_poker_table: {
+        Args: { _table_id: string; _user_id: string }
+        Returns: boolean
+      }
       record_account_visit: { Args: { _user_id: string }; Returns: undefined }
       redeem_play_purchase: {
         Args: {
