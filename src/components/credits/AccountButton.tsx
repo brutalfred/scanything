@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -155,7 +156,9 @@ export function AccountButton({
             <dl className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <dt className="opacity-70">{t("credits")}</dt>
-                <dd className="font-semibold">{balance}</dd>
+                <dd className="font-semibold">
+                  <AnimatedCount value={balance} />
+                </dd>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="opacity-70">{t("photoScans")}</dt>

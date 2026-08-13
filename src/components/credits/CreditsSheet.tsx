@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, Send, X, Crown, ExternalLink } from "lucide-react";
 import { WatchAdButton } from "@/components/credits/WatchAdButton";
+import { AnimatedCount } from "@/components/credits/AnimatedCount";
 
 
 import { toast } from "sonner";
@@ -180,7 +181,7 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
 
         <div className="mb-3 flex items-center gap-2 text-3xl font-bold text-primary">
           <Coins className="h-7 w-7" />
-          <span className="tabular-nums">{credits.balance}</span>
+          <AnimatedCount value={credits.balance} />
           {credits.signedIn && (
             <button
               type="button"
