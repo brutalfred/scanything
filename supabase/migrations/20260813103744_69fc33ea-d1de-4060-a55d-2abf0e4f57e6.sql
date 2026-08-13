@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.is_seated_at_poker_table(uuid, uuid) FROM PUBLIC, anon, authenticated;
