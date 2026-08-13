@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Check, ChevronDown, Download, LogIn, LogOut, ShieldCheck, Trophy, User2, X } from "lucide-react";
+import { Camera, Check, ChevronDown, Download, LogIn, LogOut, ShieldCheck, Spade, Trophy, User2, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -250,6 +250,18 @@ export function AccountButton({
               <Trophy className="h-4 w-4" />
               400m hurdles - Compete for free credits every month
             </button>
+
+            <a
+              href="/poker"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
+            >
+              <Spade className="h-4 w-4" />
+              Texas Hold'em - Play free chips poker
+            </a>
+
+
 
 
             <div className="mt-5">
