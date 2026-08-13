@@ -16,14 +16,23 @@ export function PlanLogo({ plan, className }: { plan: PlanType | null; className
     />
   );
 
-  if (!plan) return img;
+  // The scan-line overlay wraps the image so the sweeping line stays clipped
+  // to the logo's bounding box.
+  const withScanLine = (
+    <span className="logo-scan-wrap relative isolate inline-flex overflow-hidden">
+      {img}
+      <span aria-hidden className="logo-scan-line" />
+    </span>
+  );
+
+  if (!plan) return withScanLine;
 
   return (
     <span className="flex flex-col items-center">
       <span
         className={`relative isolate inline-flex ${plan === "max" ? "plan-glow-max" : "plan-glow-pro"}`}
       >
-        {img}
+        {withScanLine}
       </span>
       <PlanWordmark plan={plan} />
     </span>
