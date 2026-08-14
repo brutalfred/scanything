@@ -615,6 +615,11 @@ export function getPriceCompareLinks(
 }
 
 /** Search for the official manual or support page. */
+/** Fallback when the AI could not confidently name the brand's own domain. */
+export function getOfficialSiteSearchUrl(name: string): string {
+  return `https://www.google.com/search?q=${encodeURIComponent(`${name} official site`)}`;
+}
+
 export function getManualSearchUrl(name: string): string {
   return `https://www.google.com/search?q=${encodeURIComponent(
     `${name} manual support pdf official`,
