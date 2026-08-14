@@ -333,9 +333,35 @@ export const enrichItem = createServerFn({ method: "POST" })
       infoUrl:
         parsed.infoUrl ||
         `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(data.name)}`,
+      officialUrl: cleanOfficialUrl(parsed.officialUrl),
       confidence: clampPct(parsed.confidence),
     };
   });
+
+/** Keep only plausible official-site URLs; drop shops, wikis and search pages. */
+const OFFICIAL_URL_BLOCKLIST = [
+  "google.", "bing.", "duckduckgo.", "yahoo.", "wikipedia.", "wikimedia.",
+  "amazon.", "ebay.", "etsy.", "aliexpress.", "alibaba.", "walmart.", "target.",
+  "wayfair.", "ikea-", "temu.", "shein.", "mercadolibre.", "rakuten.", "shopee.",
+  "lazada.", "facebook.", "instagram.", "x.com", "twitter.", "tiktok.",
+  "youtube.", "youtu.be", "pinterest.", "reddit.", "example.com",
+];
+
+function cleanOfficialUrl(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  let host = "";
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "https:" && u.protocol !== "http:") return "";
+    host = u.hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+  if (!host.includes(".")) return "";
+  if (OFFICIAL_URL_BLOCKLIST.some((b) => host.includes(b))) return "";
+  return s.slice(0, 500);
+}
 
 function normalizeFull(it: DetectedItem): DetectedItem {
   return {
