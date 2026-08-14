@@ -47,6 +47,7 @@ export function AccountButton({
   balance: number;
 }) {
   const [open, setOpen] = useState(false);
+  const accountSlide = useSlideDismiss("left", () => setOpen(false));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
