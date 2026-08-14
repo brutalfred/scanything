@@ -15,7 +15,6 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as PokerRouteImport } from './routes/poker'
 import { Route as EconomicsRouteImport } from './routes/economics'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -53,11 +52,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PokerRoute = PokerRouteImport.update({
-  id: '/poker',
-  path: '/poker',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EconomicsRoute = EconomicsRouteImport.update({
@@ -107,7 +101,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/economics': typeof EconomicsRoute
-  '/poker': typeof PokerRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -124,7 +117,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/economics': typeof EconomicsRoute
-  '/poker': typeof PokerRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -142,7 +134,6 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/economics': typeof EconomicsRoute
-  '/poker': typeof PokerRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -161,7 +152,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/economics'
-    | '/poker'
     | '/pricing'
     | '/privacy'
     | '/refund-policy'
@@ -178,7 +168,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/economics'
-    | '/poker'
     | '/pricing'
     | '/privacy'
     | '/refund-policy'
@@ -195,7 +184,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/economics'
-    | '/poker'
     | '/pricing'
     | '/privacy'
     | '/refund-policy'
@@ -213,7 +201,6 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   EconomicsRoute: typeof EconomicsRoute
-  PokerRoute: typeof PokerRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
@@ -268,13 +255,6 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/poker': {
-      id: '/poker'
-      path: '/poker'
-      fullPath: '/poker'
-      preLoaderRoute: typeof PokerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/economics': {
@@ -341,7 +321,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   EconomicsRoute: EconomicsRoute,
-  PokerRoute: PokerRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   RefundPolicyRoute: RefundPolicyRoute,

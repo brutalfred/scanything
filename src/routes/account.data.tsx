@@ -40,7 +40,7 @@ const CATEGORIES: { id: DataCategory; label: string; description: string }[] = [
   {
     id: "game_scores",
     label: "Game scores",
-    description: "Your 400m Hurdles times and leaderboard entries.",
+    description: "Any stored game scores and leaderboard entries.",
   },
   {
     id: "activity",
