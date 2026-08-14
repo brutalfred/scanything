@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { Camera, Coins, SlidersHorizontal, Sparkles, X } from "lucide-react";
 
 const SEEN_KEY = "scanything.onboarding.seen";
@@ -76,8 +77,9 @@ export function OnboardingTour({ signedIn, userId }: { signedIn: boolean; userId
       <div
         role="dialog"
         aria-label="How Scanything works"
+        {...slide}
         onClick={(e) => e.stopPropagation()}
-        className="gold-glow relative w-full max-w-sm rounded-2xl border border-primary/30 bg-card p-7 text-foreground"
+        className={`gold-glow relative w-full max-w-sm rounded-2xl border border-primary/30 bg-card p-7 text-foreground ${slide.className}`}
       >
         <button
           type="button"

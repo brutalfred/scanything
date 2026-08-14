@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { X, Pencil, Trash2, Loader2, ChevronLeft, ChevronRight, History, ExternalLink, Languages, Camera, Video, FileText, Tag, Search, FolderOpen } from "lucide-react";
 import {
   listScanHistory,
@@ -158,7 +159,8 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl gold-glow sm:rounded-2xl"
+        {...slide}
+        className={`max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl gold-glow sm:rounded-2xl ${slide.className}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -429,7 +431,10 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 shadow-[0_0_40px_-6px_hsl(var(--primary)/0.45)] gold-glow sm:rounded-2xl">
+      <div
+        {...slide}
+        className={`max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 shadow-[0_0_40px_-6px_hsl(var(--primary)/0.45)] gold-glow sm:rounded-2xl ${slide.className}`}
+      >
         <div className="mb-3 flex items-center gap-2">
           {selected || folder || collection ? (
             <button
