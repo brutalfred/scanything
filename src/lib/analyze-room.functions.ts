@@ -502,6 +502,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
       infoUrl:
         parsed.infoUrl ||
         `https://www.google.com/search?q=${encodeURIComponent(`${q} review specs`)}`,
+      officialUrl: cleanOfficialUrl(parsed.officialUrl),
     };
   });
 
