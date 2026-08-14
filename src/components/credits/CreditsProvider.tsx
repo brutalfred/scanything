@@ -25,6 +25,7 @@ export function useCreditsContext() {
 export function CreditsProvider({ children }: { children: React.ReactNode }) {
   const credits = useCredits();
   const [open, setOpen] = useState(false);
+  useWebReminderNudge(credits.signedIn);
 
   // Arcade coin only for reward moments (top-up, daily check-in, commercial),
   // which each trigger the sound at their own call site. Web checkout returns
@@ -93,6 +94,7 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
       )}
       {children}
       <WelcomeInfoModal signedIn={credits.signedIn} userId={credits.userId} />
+      <OnboardingTour signedIn={credits.signedIn} userId={credits.userId} />
       {open && <CreditsSheet credits={credits} onClose={() => setOpen(false)} />}
     </Ctx.Provider>
   );
