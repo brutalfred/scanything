@@ -5,7 +5,7 @@ export const CREDIT_COSTS = {
   photo_scan: 2,
   document_scan: 1,
   enrich: 1,
-  analyze_further: 5,
+  analyze_further: 2,
   /** Deep analysis started from a live video-mode box — half price. */
   analyze_further_live: 2,
   /** Deep analysis of a scanned document — text-only, so it stays cheap. */
