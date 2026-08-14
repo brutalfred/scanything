@@ -172,6 +172,10 @@ export function AccountButton({
               </div>
             </dl>
 
+            <div className="mt-4">
+              <WatchAdButton signedIn={signedIn} />
+            </div>
+
             <div className="mt-3 rounded-xl border border-current/30 bg-current/5 px-3 py-2">
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 font-semibold">
@@ -238,9 +242,8 @@ export function AccountButton({
 
             <DailyCheckin enabled={signedIn && open} />
 
-            <div className="mt-4">
-              <WatchAdButton signedIn={signedIn} />
-            </div>
+
+
 
 
 
