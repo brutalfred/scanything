@@ -3679,7 +3679,7 @@ function DetailPanel({
                 variant="secondary"
                 onClick={runDeep}
                 disabled={deepLoading || !imageBase64 || !panelCredits.canAfford(deepReason)}
-                className="justify-start"
+                className="justify-center text-center"
               >
                 {deepLoading ? (
                   <>
