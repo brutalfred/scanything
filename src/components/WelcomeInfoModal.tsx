@@ -46,6 +46,7 @@ const tips = [
 
 export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; userId: string | null }) {
   const [open, setOpen] = useState(false);
+  const slide = useSlideDismiss("bottom", () => setOpen(false));
 
   useEffect(() => {
     if (!signedIn || !userId) return;

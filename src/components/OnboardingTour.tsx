@@ -36,6 +36,7 @@ const STEPS = [
 
 export function OnboardingTour({ signedIn, userId }: { signedIn: boolean; userId: string | null }) {
   const [open, setOpen] = useState(false);
+  const slide = useSlideDismiss("bottom", () => setOpen(false));
   const [step, setStep] = useState(0);
 
   const start = useCallback(() => {

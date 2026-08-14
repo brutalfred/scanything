@@ -85,6 +85,7 @@ function HistoryDocumentText({ text, language }: { text: string; language: strin
 }
 
 function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: () => void }) {
+  const slide = useSlideDismiss("bottom", onClose);
   const { t } = useLanguage();
   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${item.name} buy price`)}`;
   const infoUrl = `https://www.google.com/search?q=${encodeURIComponent(item.name)}`;
@@ -334,6 +335,7 @@ function folderOf(mode: string): FolderKey {
 
 
 export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const slide = useSlideDismiss("bottom", onClose);
   const { t } = useLanguage();
   const [entries, setEntries] = useState<ScanHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
