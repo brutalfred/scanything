@@ -33,6 +33,7 @@ export type DetectedItem = {
   currency: string;
   searchUrl: string;
   infoUrl: string;
+  officialUrl?: string;
   confidence: number; // 0..100
   box: { x: number; y: number; w: number; h: number }; // 0..1 normalized (top-left)
   resale?: ResaleInfo;
