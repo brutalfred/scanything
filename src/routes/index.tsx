@@ -1554,7 +1554,7 @@ function Scanner() {
         </div>
       )}
 
-      <main className="mx-auto max-w-4xl px-4 pt-4 pb-20">
+      <main className="mx-auto max-w-4xl px-4 pt-4 pb-6">
         {phase === "camera" && !snapshot && (
           <div className="space-y-3">
             {/* Mode toggle */}
@@ -2527,15 +2527,6 @@ function Scanner() {
           </div>
         </div>
       )}
-
-      {/* Tagline bar */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-full border border-primary/30 bg-background/40 px-4 py-2 text-center backdrop-blur-md gold-glow">
-          <p className="gold-text text-[12px] font-semibold tracking-wide sm:text-sm">
-            Different scanmodes for different tasks with quick results
-          </p>
-        </div>
-      </div>
 
     </div>
 
