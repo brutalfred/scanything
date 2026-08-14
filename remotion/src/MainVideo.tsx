@@ -4,11 +4,14 @@ import { TransitionSeries, springTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { wipe } from "@remotion/transitions/wipe";
 import { Scene1 } from "./scenes/Scene1";
-import { Scene2 } from "./scenes/Scene2";
 import { Scene3 } from "./scenes/Scene3";
-import { Scene4 } from "./scenes/Scene4";
+import { SceneFeatures } from "./scenes/SceneFeatures";
+import { SceneLanguages } from "./scenes/SceneLanguages";
+import { SceneNoAds } from "./scenes/SceneNoAds";
+import { ScenePlatforms } from "./scenes/ScenePlatforms";
 import { Scene5 } from "./scenes/Scene5";
 import { PersistentBackground } from "./components/PersistentBackground";
+
 
 loadFont("normal", { weights: ["400", "600", "800"], subsets: ["latin"] });
 
