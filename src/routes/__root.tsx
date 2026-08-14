@@ -1,4 +1,5 @@
 import { CookieConsent } from "@/components/CookieConsent";
+import { PENDING_REF_KEY } from "@/components/credits/ReferralCard";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -186,6 +187,22 @@ function RootComponent() {
 
   useNativeShell();
   useOAuthCallback();
+
+  // Capture an invite code from a referral link so it can be redeemed after sign-in.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (!ref || !/^[A-Za-z0-9]{4,12}$/.test(ref)) return;
+    try {
+      localStorage.setItem(PENDING_REF_KEY, ref.toUpperCase());
+    } catch {
+      /* ignore */
+    }
+    params.delete("ref");
+    const qs = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, []);
 
 
 

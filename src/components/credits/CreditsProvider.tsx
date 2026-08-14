@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { useCredits, type CreditsApi } from "@/hooks/useCredits";
 import { CreditsSheet } from "./CreditsSheet";
 import { WelcomeInfoModal } from "@/components/WelcomeInfoModal";
+import { OnboardingTour } from "@/components/OnboardingTour";
+import { useWebReminderNudge } from "@/hooks/useDailyReminder";
 import { CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 
 
