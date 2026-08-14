@@ -29,6 +29,9 @@ import { WatchAdButton } from "./WatchAdButton";
 import { isNative } from "@/lib/platform";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PlanBadge } from "@/components/PlanLogo";
+import { ReferralCard } from "./ReferralCard";
+import { openOnboarding } from "@/components/OnboardingTour";
+import { useDailyReminder } from "@/hooks/useDailyReminder";
 
 
 
@@ -176,6 +179,8 @@ export function AccountButton({
               <WatchAdButton signedIn={signedIn} />
             </div>
 
+            <ReferralCard enabled={signedIn && open} />
+
             <div className="mt-3 rounded-xl border border-current/30 bg-current/5 px-3 py-2">
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 font-semibold">
@@ -238,6 +243,58 @@ export function AccountButton({
                   ? `Granted${aiConsent.grantedAt ? " " + new Date(aiConsent.grantedAt).toLocaleDateString() : ""} — scans are sent to our AI provider for analysis.`
                   : "Not granted — the camera stays off and no pictures are sent to the AI provider."}
               </p>
+            </div>
+
+            <div className="mt-3 rounded-xl border border-current/30 bg-current/5 px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 font-semibold">
+                  <Bell className="h-4 w-4" />
+                  Daily reminder
+                </span>
+                <button
+                  type="button"
+                  disabled={reminder.busy || !reminder.supported}
+                  onClick={async () => {
+                    if (reminder.enabled) {
+                      await reminder.disable();
+                      toast.info("Daily reminder turned off");
+                    } else {
+                      const ok = await reminder.enable();
+                      toast[ok ? "success" : "error"](
+                        ok
+                          ? "Daily reminder turned on"
+                          : "Notifications are blocked for Scanything",
+                      );
+                    }
+                  }}
+                  className="rounded-lg border border-current/30 px-2 py-1 text-xs font-semibold transition-colors hover:bg-current/10 disabled:opacity-50"
+                >
+                  {reminder.busy ? "…" : reminder.enabled ? "Turn off" : "Turn on"}
+                </button>
+              </div>
+              <p className="mt-1.5 text-[11px] leading-snug opacity-70">
+                {reminder.supported
+                  ? reminder.enabled
+                    ? `A reminder at ${String(reminder.hour).padStart(2, "0")}:00 that your daily check-in credits are waiting.`
+                    : "Get a daily nudge when your check-in credits are ready."
+                  : "This device doesn't support notifications."}
+              </p>
+              {reminder.enabled && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {[9, 12, 15, 19, 21].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => void reminder.changeHour(h)}
+                      className={`rounded-lg border border-current/30 px-2 py-1 text-[11px] font-semibold transition-colors ${
+                        reminder.hour === h ? "bg-current/15" : "hover:bg-current/10"
+                      }`}
+                    >
+                      {String(h).padStart(2, "0")}:00
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <DailyCheckin enabled={signedIn && open} />
@@ -330,6 +387,18 @@ export function AccountButton({
 
 
 
+
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                openOnboarding();
+              }}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
+            >
+              <GraduationCap className="h-4 w-4" />
+              How Scanything works
+            </button>
 
             {!isNative() && (
             <button
