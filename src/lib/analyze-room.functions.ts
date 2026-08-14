@@ -438,6 +438,7 @@ export type DeepAnalysis = {
   currency: string;
   buyUrl: string;
   infoUrl: string;
+  officialUrl?: string;
 };
 
 export const analyzeFurther = createServerFn({ method: "POST" })
