@@ -242,9 +242,8 @@ export function AccountButton({
 
             <DailyCheckin enabled={signedIn && open} />
 
-            <div className="mt-4">
-              <WatchAdButton signedIn={signedIn} />
-            </div>
+
+
 
 
 
