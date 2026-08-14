@@ -3,7 +3,7 @@ import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Check, ChevronDown, Download, LogIn, LogOut, ShieldCheck, Spade, Trophy, User2, X } from "lucide-react";
+import { Camera, Check, ChevronDown, Download, LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +26,6 @@ import { useAppVersion } from "@/hooks/useAppVersion";
 import { useAndroidApp } from "@/hooks/useAndroidApp";
 import { DailyCheckin } from "./DailyCheckin";
 import { WatchAdButton } from "./WatchAdButton";
-import { GameSheet } from "@/components/game/GameSheet";
 import { isNative } from "@/lib/platform";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PlanBadge } from "@/components/PlanLogo";
@@ -44,7 +43,6 @@ export function AccountButton({
   balance: number;
 }) {
   const [open, setOpen] = useState(false);
-  const [gameOpen, setGameOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -245,24 +243,6 @@ export function AccountButton({
             </div>
 
 
-            <button
-              type="button"
-              onClick={() => setGameOpen(true)}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
-            >
-              <Trophy className="h-4 w-4" />
-              400m hurdles - Beat your best time
-            </button>
-
-            <a
-              href="/poker"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 font-semibold transition-colors hover:bg-current/10"
-            >
-              <Spade className="h-4 w-4" />
-              Texas Hold'em - Play free chips poker
-            </a>
 
 
 
@@ -414,8 +394,6 @@ export function AccountButton({
         </div>,
         document.body,
       )}
-
-      <GameSheet open={gameOpen} onClose={() => setGameOpen(false)} email={email} />
     </>
   );
 }
