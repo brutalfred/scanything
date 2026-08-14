@@ -2826,7 +2826,13 @@ function DetailPanel({
   >(null);
 
   const PANEL_LABELS = useMemo(
-    () => [t("estimatedPriceRange"), t("shopThisItem"), t("learnMore"), t("officialVehicleLookup")],
+    () => [
+      t("estimatedPriceRange"),
+      t("shopThisItem"),
+      t("learnMore"),
+      t("officialVehicleLookup"),
+      t("officialSite"),
+    ],
     [t],
   );
 
