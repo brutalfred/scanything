@@ -3773,6 +3773,21 @@ function DetailPanel({
                       <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   )}
+                  {(deep.officialUrl ||
+                    (deep.brand && !["plate", "document", "text"].includes(enrichment?.category ?? ""))) && (
+                    <a
+                      href={
+                        deep.officialUrl ||
+                        getOfficialSiteSearchUrl([deep.brand, deep.product].filter(Boolean).join(" ") || name)
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      {dl(5)}
+                      <ExternalLink className="h-4 w-4 opacity-60" />
+                    </a>
+                  )}
                   {deep.infoUrl && (
                     <a
                       href={deep.infoUrl}
