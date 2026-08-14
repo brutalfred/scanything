@@ -1554,7 +1554,7 @@ function Scanner() {
         </div>
       )}
 
-      <main className="mx-auto max-w-4xl px-4 py-4">
+      <main className="mx-auto max-w-4xl px-4 pt-4 pb-20">
         {phase === "camera" && !snapshot && (
           <div className="space-y-3">
             {/* Mode toggle */}
