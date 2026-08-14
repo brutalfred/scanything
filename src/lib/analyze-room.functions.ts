@@ -377,6 +377,7 @@ function normalizeFull(it: DetectedItem): DetectedItem {
     infoUrl:
       it.infoUrl ||
       `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(String(it.name ?? ""))}`,
+    officialUrl: cleanOfficialUrl(it.officialUrl),
     confidence: clampPct(it.confidence),
     box: {
       x: clamp01(it.box.x),
