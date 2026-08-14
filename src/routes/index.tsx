@@ -2901,6 +2901,7 @@ function DetailPanel({
       t("bestGuess"),
       t("buyExactProduct"),
       t("reviewsSpecs"),
+      t("officialSite"),
     ],
     [t],
   );
