@@ -176,6 +176,7 @@ export const EN = {
   bestGuess: "Best guess",
   buyExactProduct: "Buy this exact product",
   reviewsSpecs: "Reviews & specs",
+  officialSite: "Official website",
   close: "Close",
 
   // account

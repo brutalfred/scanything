@@ -33,6 +33,7 @@ export type DetectedItem = {
   currency: string;
   searchUrl: string;
   infoUrl: string;
+  officialUrl?: string;
   confidence: number; // 0..100
   box: { x: number; y: number; w: number; h: number }; // 0..1 normalized (top-left)
   resale?: ResaleInfo;
@@ -128,11 +129,16 @@ confidence is an integer 0-100 for how sure you are about the name.
 
 box is normalized image coords (top-left origin). Be tight around the object. No item limit. NO markdown, NO extra text. Be fast.`;
 
+const OFFICIAL_URL_RULE = `
+"officialUrl" must be the brand's / manufacturer's OWN website (their homepage or their product page), e.g. "https://www.brand.com". NEVER a shop, marketplace, reseller, Wikipedia, YouTube, social network or search-engine URL. If you are not confident that the domain really exists and belongs to that brand, return an EMPTY STRING "" — never invent a domain.`;
+
 const ENRICH_SYSTEM = `You are giving quick shopping info for a single item. If the item is a vehicle registration plate, use category="plate", set prices to 0, and describe the issuing country/region and plate format only — NEVER the owner or any personal detail. If it is a vehicle, use category="vehicle" and guess make/model with a used-market price range. Respond ONLY with compact JSON:
-{"category":"furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|vehicle|plate|other","description":"1-2 sentence plain description","priceMin":<usd number>,"priceMax":<usd number>,"currency":"USD","searchUrl":"https://www.google.com/search?q=<url-encoded>","infoUrl":"https://en.wikipedia.org/wiki/<topic> or relevant homepage","confidence":<integer 0-100 certainty of the identification>}`;
+{"category":"furniture|electronics|appliance|decor|plant|book|kitchenware|clothing|toy|instrument|vehicle|plate|other","description":"1-2 sentence plain description","priceMin":<usd number>,"priceMax":<usd number>,"currency":"USD","searchUrl":"https://www.google.com/search?q=<url-encoded>","infoUrl":"https://en.wikipedia.org/wiki/<topic> or relevant homepage","officialUrl":"official brand/product website or empty string","confidence":<integer 0-100 certainty of the identification>}
+${OFFICIAL_URL_RULE}`;
 
 const DEEP_SYSTEM = `You are a product identification expert. Given a photo (or crop) of a single item and a rough name, do your best to identify the EXACT product: guess brand, model, materials, generation/year if possible. Give a refined price range in USD based on that specific guess. Respond ONLY with compact JSON:
-{"brand":"best-guess brand or empty","product":"best-guess specific product name or empty","confidence":<integer 0-100 certainty of this exact product identification>,"description":"2-4 sentences with concrete details (materials, features, distinguishing marks)","priceMin":<usd>,"priceMax":<usd>,"currency":"USD","buyUrl":"https://www.google.com/search?q=<url-encoded specific product query>","infoUrl":"https://www.google.com/search?q=<url-encoded review/spec query>"}`;
+{"brand":"best-guess brand or empty","product":"best-guess specific product name or empty","confidence":<integer 0-100 certainty of this exact product identification>,"description":"2-4 sentences with concrete details (materials, features, distinguishing marks)","priceMin":<usd>,"priceMax":<usd>,"currency":"USD","buyUrl":"https://www.google.com/search?q=<url-encoded specific product query>","infoUrl":"https://www.google.com/search?q=<url-encoded review/spec query>","officialUrl":"official brand/product website or empty string"}
+${OFFICIAL_URL_RULE}`;
 
 const TRANSLATE_SYSTEM = `You translate short pieces of text (signs, logos, labels) into English. Respond ONLY with compact JSON:
 {"language":"detected language name in English (e.g. 'Japanese', 'Arabic') or 'Unknown'","languageCode":"ISO 639-1 code if known, else empty","script":"script name (e.g. 'Han', 'Arabic', 'Cyrillic') or empty","translation":"best English translation, or empty if you truly cannot translate","transliteration":"Latin-alphabet phonetic reading if applicable, else empty","note":"short note on ambiguity if any, else empty"}`;
@@ -327,9 +333,35 @@ export const enrichItem = createServerFn({ method: "POST" })
       infoUrl:
         parsed.infoUrl ||
         `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(data.name)}`,
+      officialUrl: cleanOfficialUrl(parsed.officialUrl),
       confidence: clampPct(parsed.confidence),
     };
   });
+
+/** Keep only plausible official-site URLs; drop shops, wikis and search pages. */
+const OFFICIAL_URL_BLOCKLIST = [
+  "google.", "bing.", "duckduckgo.", "yahoo.", "wikipedia.", "wikimedia.",
+  "amazon.", "ebay.", "etsy.", "aliexpress.", "alibaba.", "walmart.", "target.",
+  "wayfair.", "ikea-", "temu.", "shein.", "mercadolibre.", "rakuten.", "shopee.",
+  "lazada.", "facebook.", "instagram.", "x.com", "twitter.", "tiktok.",
+  "youtube.", "youtu.be", "pinterest.", "reddit.", "example.com",
+];
+
+function cleanOfficialUrl(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  let host = "";
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "https:" && u.protocol !== "http:") return "";
+    host = u.hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+  if (!host.includes(".")) return "";
+  if (OFFICIAL_URL_BLOCKLIST.some((b) => host.includes(b))) return "";
+  return s.slice(0, 500);
+}
 
 function normalizeFull(it: DetectedItem): DetectedItem {
   return {
@@ -345,6 +377,7 @@ function normalizeFull(it: DetectedItem): DetectedItem {
     infoUrl:
       it.infoUrl ||
       `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(String(it.name ?? ""))}`,
+    officialUrl: cleanOfficialUrl(it.officialUrl),
     confidence: clampPct(it.confidence),
     box: {
       x: clamp01(it.box.x),
@@ -405,6 +438,7 @@ export type DeepAnalysis = {
   currency: string;
   buyUrl: string;
   infoUrl: string;
+  officialUrl?: string;
 };
 
 export const analyzeFurther = createServerFn({ method: "POST" })
@@ -468,6 +502,7 @@ export const analyzeFurther = createServerFn({ method: "POST" })
       infoUrl:
         parsed.infoUrl ||
         `https://www.google.com/search?q=${encodeURIComponent(`${q} review specs`)}`,
+      officialUrl: cleanOfficialUrl(parsed.officialUrl),
     };
   });
 

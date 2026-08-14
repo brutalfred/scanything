@@ -60,7 +60,7 @@ import {
   type Translation,
 } from "@/lib/analyze-room.functions";
 import { generateListingDraft, type ListingDraft } from "@/lib/listing.functions";
-import { detectCountry, getMarketplacesForItem, getMarketplaceListingUrl, formatListingForMarketplace, getPriceCompareLinks, getManualSearchUrl, MARKETPLACES } from "@/lib/marketplaces";
+import { detectCountry, getMarketplacesForItem, getMarketplaceListingUrl, formatListingForMarketplace, getPriceCompareLinks, getManualSearchUrl, getOfficialSiteSearchUrl, MARKETPLACES } from "@/lib/marketplaces";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -2588,6 +2588,7 @@ function DetailPanel({
         currency: item.currency,
         searchUrl: item.searchUrl,
         infoUrl: item.infoUrl,
+        officialUrl: item.officialUrl,
         confidence: item.confidence,
         resale: item.resale,
       };
@@ -2826,7 +2827,13 @@ function DetailPanel({
   >(null);
 
   const PANEL_LABELS = useMemo(
-    () => [t("estimatedPriceRange"), t("shopThisItem"), t("learnMore"), t("officialVehicleLookup")],
+    () => [
+      t("estimatedPriceRange"),
+      t("shopThisItem"),
+      t("learnMore"),
+      t("officialVehicleLookup"),
+      t("officialSite"),
+    ],
     [t],
   );
 
@@ -2895,6 +2902,7 @@ function DetailPanel({
       t("bestGuess"),
       t("buyExactProduct"),
       t("reviewsSpecs"),
+      t("officialSite"),
     ],
     [t],
   );
@@ -3441,6 +3449,17 @@ function DetailPanel({
                 {tl(1)}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
+              {!["plate", "document", "text"].includes(enrichment.category) && (
+                <a
+                  href={enrichment.officialUrl || getOfficialSiteSearchUrl(name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  {tl(4)}
+                  <ExternalLink className="h-4 w-4 opacity-60" />
+                </a>
+              )}
               <a
                 href={enrichment.infoUrl}
                 target="_blank"
@@ -3752,6 +3771,21 @@ function DetailPanel({
                       className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
                     >
                       {dl(3)}
+                      <ExternalLink className="h-4 w-4 opacity-60" />
+                    </a>
+                  )}
+                  {(deep.officialUrl ||
+                    (deep.brand && !["plate", "document", "text"].includes(enrichment?.category ?? ""))) && (
+                    <a
+                      href={
+                        deep.officialUrl ||
+                        getOfficialSiteSearchUrl([deep.brand, deep.product].filter(Boolean).join(" ") || name)
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-accent"
+                    >
+                      {dl(5)}
                       <ExternalLink className="h-4 w-4 opacity-60" />
                     </a>
                   )}
