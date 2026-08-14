@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { Camera, Cpu, ShieldCheck, EyeOff } from "lucide-react";
 
 export function AiConsentModal({
@@ -10,11 +11,15 @@ export function AiConsentModal({
   onAccept: () => void;
   onDecline: () => void;
 }) {
+  const slide = useSlideDismiss("bottom", onDecline);
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-primary/40 bg-background p-5 text-foreground shadow-[0_0_40px_-10px_hsl(var(--primary)/0.6)]">
+      <div
+        {...slide}
+        className={`w-full max-w-md rounded-2xl border border-primary/40 bg-background p-5 text-foreground shadow-[0_0_40px_-10px_hsl(var(--primary)/0.6)] ${slide.className}`}
+      >
         <div className="flex items-center gap-2 text-primary">
           <ShieldCheck className="h-5 w-5" />
           <h2 className="text-base font-semibold">Camera &amp; AI consent</h2>

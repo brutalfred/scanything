@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { X, Coins, Video, Sparkles, Aperture, Gift, ShieldCheck, Tag } from "lucide-react";
 
 const KEY = "scanything.welcome.seen";
@@ -45,6 +46,7 @@ const tips = [
 
 export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; userId: string | null }) {
   const [open, setOpen] = useState(false);
+  const slide = useSlideDismiss("bottom", () => setOpen(false));
 
   useEffect(() => {
     if (!signedIn || !userId) return;
@@ -65,7 +67,8 @@ export function WelcomeInfoModal({ signedIn, userId }: { signedIn: boolean; user
       onClick={() => setOpen(false)}
     >
       <div
-        className="gold-glow relative max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-primary/30 bg-card p-7 text-foreground"
+        {...slide}
+        className={`gold-glow relative max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-primary/30 bg-card p-7 text-foreground ${slide.className}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button

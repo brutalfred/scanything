@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { Link } from "@tanstack/react-router";
 import { Coins, Loader2, Send, X, Crown, ExternalLink } from "lucide-react";
 import { WatchAdButton } from "@/components/credits/WatchAdButton";
@@ -44,6 +45,7 @@ function reasonLabel(reason: string) {
 
 export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClose: () => void }) {
   const { openCheckout } = usePaddleCheckout();
+  const slide = useSlideDismiss("right", onClose);
   const { t } = useLanguage();
   const subscription = useSubscription(credits.signedIn);
   const [buying, setBuying] = useState<string | null>(null);
@@ -161,7 +163,8 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
       onClick={onClose}
     >
       <div
-        className="gold-glow max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-primary/70 bg-card p-5 text-foreground"
+        {...slide}
+        className={`gold-glow max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-primary/70 bg-card p-5 text-foreground ${slide.className}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
