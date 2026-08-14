@@ -11,6 +11,7 @@ export type ScanHistoryDeep = {
   currency?: string;
   buyUrl?: string;
   infoUrl?: string;
+  officialUrl?: string;
 };
 
 export type ScanHistoryItem = {
