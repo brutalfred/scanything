@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -137,8 +138,9 @@ export function AccountButton({
           <div
             role="dialog"
             aria-label="Account"
+            {...accountSlide}
             onClick={(e) => e.stopPropagation()}
-            className="theme-panel gold-glow max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-2xl p-5 text-sm shadow-2xl"
+            className={`theme-panel gold-glow max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-2xl p-5 text-sm shadow-2xl ${accountSlide.className}`}
           >
             <div className="flex flex-wrap items-center justify-center gap-2">
               <p className="truncate text-center text-base font-semibold">
