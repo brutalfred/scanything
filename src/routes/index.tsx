@@ -1,3 +1,4 @@
+import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1242,6 +1243,10 @@ function Scanner() {
 
   // Door handling
   const [doorPrompt, setDoorPrompt] = useState<{ item: TrackedItem | DetectedItem } | null>(null);
+  const doorSlide = useSlideDismiss("bottom", () => setDoorPrompt(null));
+  const queueSlide = useSlideDismiss("bottom", () => setQueueOpen(false));
+  const collectionSlide = useSlideDismiss("bottom", () => setCollectionPrompt(false));
+  const videoSlide = useSlideDismiss("bottom", () => setVideoWarningOpen(false));
   const [addressInput, setAddressInput] = useState("");
 
   // List tab (Items / Categories)
@@ -2307,7 +2312,8 @@ function Scanner() {
           onClick={() => setDoorPrompt(null)}
         >
           <div
-            className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
+            {...doorSlide}
+            className={`w-full max-w-md rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow ${doorSlide.className}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
@@ -2373,7 +2379,8 @@ function Scanner() {
           onClick={() => setQueueOpen(false)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 gold-glow sm:rounded-2xl"
+            {...queueSlide}
+            className={`max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 gold-glow sm:rounded-2xl ${queueSlide.className}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center gap-2">
@@ -2443,7 +2450,8 @@ function Scanner() {
           onClick={() => setCollectionPrompt(false)}
         >
           <div
-            className="w-full max-w-xs rounded-2xl border border-primary/40 bg-card p-4 shadow-xl"
+            {...collectionSlide}
+            className={`w-full max-w-xs rounded-2xl border border-primary/40 bg-card p-4 shadow-xl ${collectionSlide.className}`}
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-sm font-semibold text-foreground">Save to collection</p>
@@ -2489,7 +2497,8 @@ function Scanner() {
           onClick={() => setVideoWarningOpen(false)}
         >
           <div
-            className="gold-glow w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-center"
+            {...videoSlide}
+            className={`gold-glow w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-6 text-center ${videoSlide.className}`}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-bold text-primary">{t("warning")}</h2>
@@ -2554,6 +2563,7 @@ function DetailPanel({
   historyId?: string | null;
   onClose: () => void;
 }) {
+  const slide = useSlideDismiss("bottom", onClose);
   /** Documents are text-only follow-ups, so they use the cheaper deep-analysis price. */
   const isDocumentItem =
     ((item as TrackedItem).enrichment?.category ?? (item as DetectedItem).category) === "document";
@@ -2998,7 +3008,8 @@ function DetailPanel({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow"
+        {...slide}
+        className={`w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl sm:rounded-2xl gold-glow ${slide.className}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -4130,6 +4141,7 @@ function DocumentTextBlock({
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [confirmSummary, setConfirmSummary] = useState(false);
+  const summarySlide = useSlideDismiss("bottom", () => setConfirmSummary(false));
   const [summarizing, setSummarizing] = useState(false);
   /** Original (untranslated) text, kept so the user can switch back and forth. */
   const [base, setBase] = useState(text);
@@ -4363,7 +4375,10 @@ function DocumentTextBlock({
 
       {confirmSummary && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-xs rounded-2xl border border-primary/40 bg-card p-4 text-center shadow-xl">
+          <div
+            {...summarySlide}
+            className={`w-full max-w-xs rounded-2xl border border-primary/40 bg-card p-4 text-center shadow-xl ${summarySlide.className}`}
+          >
             <p className="text-sm font-semibold text-foreground">Are you sure?</p>
             <p className="mt-1 text-xs text-muted-foreground">
               The scanned text will be replaced by the summary.
