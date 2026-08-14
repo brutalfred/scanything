@@ -389,9 +389,11 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
     !q ||
     (e.title ?? "").toLowerCase().includes(q) ||
     (e.collection ?? "").toLowerCase().includes(q) ||
+    modeLabel(e.mode).toLowerCase().includes(q) ||
     e.items.some(
       (i) =>
         i.name.toLowerCase().includes(q) ||
+        (i.category ?? "").toLowerCase().includes(q) ||
         (i.description ?? "").toLowerCase().includes(q) ||
         (i.deep?.description ?? "").toLowerCase().includes(q),
     );
@@ -489,7 +491,7 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search all scanned text…"
+                placeholder="Search items, categories, text…"
                 className="w-full rounded-lg border border-border bg-background py-2 pl-8 pr-3 text-xs text-foreground outline-none focus:border-primary"
               />
             </div>

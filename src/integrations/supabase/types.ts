@@ -612,6 +612,51 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          referred_id: string
+          referrer_id: string
+          reward: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          referred_id: string
+          referrer_id: string
+          reward?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          referred_id?: string
+          referrer_id?: string
+          reward?: number
+        }
+        Relationships: []
+      }
       scan_history: {
         Row: {
           collection: string | null
@@ -816,6 +861,16 @@ export type Database = {
           time_ms: number
         }[]
       }
+      get_referral_code_for: { Args: { _user_id: string }; Returns: string }
+      get_referral_stats_for: {
+        Args: { _user_id: string }
+        Returns: {
+          code: string
+          credits_earned: number
+          invited: number
+          redeemed: boolean
+        }[]
+      }
       get_scan_economics: {
         Args: { _days?: number }
         Returns: {
@@ -854,6 +909,13 @@ export type Database = {
         }
         Returns: {
           balance: number
+          status: string
+        }[]
+      }
+      redeem_referral_code_for: {
+        Args: { _code: string; _user_id: string }
+        Returns: {
+          reward: number
           status: string
         }[]
       }
