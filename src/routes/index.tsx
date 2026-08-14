@@ -2588,6 +2588,7 @@ function DetailPanel({
         currency: item.currency,
         searchUrl: item.searchUrl,
         infoUrl: item.infoUrl,
+        officialUrl: item.officialUrl,
         confidence: item.confidence,
         resale: item.resale,
       };
