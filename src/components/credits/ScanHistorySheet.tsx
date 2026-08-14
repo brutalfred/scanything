@@ -164,7 +164,9 @@ function ItemDetailModal({ item, onClose }: { item: ScanHistoryItem; onClose: ()
         className={`max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-xl gold-glow sm:rounded-2xl ${slide.className}`}
         onClick={(e) => e.stopPropagation()}
       >
+        <div data-swipe-handle className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-border sm:hidden" />
         <div className="flex items-start justify-between gap-3">
+
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-semibold gold-text">{item.name}</h2>
@@ -437,7 +439,9 @@ export function ScanHistorySheet({ open, onClose }: { open: boolean; onClose: ()
         {...slide}
         className={`max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-background p-4 shadow-[0_0_40px_-6px_hsl(var(--primary)/0.45)] gold-glow sm:rounded-2xl ${slide.className}`}
       >
+        <div data-swipe-handle className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-border sm:hidden" />
         <div className="mb-3 flex items-center gap-2">
+
           {selected || folder || collection ? (
             <button
               onClick={() =>
