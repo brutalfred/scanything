@@ -23,7 +23,11 @@ export function useSlideDismiss(direction: SlideDirection, onClose: () => void) 
 
   const finish = useCallback(() => {
     setClosing(true);
-    window.setTimeout(onClose, 180);
+    window.setTimeout(() => {
+      onClose();
+      setClosing(false);
+      setOffset(0);
+    }, 180);
   }, [onClose]);
 
   const onPointerDown = useCallback(
