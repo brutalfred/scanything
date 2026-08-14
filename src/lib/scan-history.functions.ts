@@ -41,6 +41,7 @@ function sanitizeDeep(d: unknown): ScanHistoryDeep | undefined {
     currency: str(o.currency, 8),
     buyUrl: str(o.buyUrl, 500),
     infoUrl: str(o.infoUrl, 500),
+    officialUrl: str(o.officialUrl, 500),
   };
 }
 
