@@ -3,7 +3,7 @@ import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Check, ChevronDown, Download, LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
+import { Bell, Camera, Check, ChevronDown, Download, GraduationCap, LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +55,7 @@ export function AccountButton({
   const aiConsent = useAiConsent();
   const appVersion = useAppVersion();
   const androidApp = useAndroidApp();
+  const reminder = useDailyReminder();
   const { plan, subscription } = useSubscription(signedIn && open);
   const renewalDate = subscription?.current_period_end
     ? new Date(subscription.current_period_end)
