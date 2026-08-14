@@ -3448,6 +3448,17 @@ function DetailPanel({
                 {tl(1)}
                 <ExternalLink className="h-4 w-4 opacity-60" />
               </a>
+              {!["plate", "document", "text"].includes(enrichment.category) && (
+                <a
+                  href={enrichment.officialUrl || getOfficialSiteSearchUrl(name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  {tl(4)}
+                  <ExternalLink className="h-4 w-4 opacity-60" />
+                </a>
+              )}
               <a
                 href={enrichment.infoUrl}
                 target="_blank"
