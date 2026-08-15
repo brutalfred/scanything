@@ -1561,12 +1561,6 @@ function Scanner() {
 
           <div className="flex min-w-0 flex-1 basis-0 flex-wrap items-center justify-end gap-2">
 
-            <CreditMeter
-              balance={credits.balance}
-              loading={credits.loading}
-              signedIn={credits.signedIn}
-              onClick={credits.openSheet}
-            />
             {phase === "camera" && torchSupported && (
               <button
                 onClick={toggleTorch}
