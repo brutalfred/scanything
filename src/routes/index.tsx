@@ -53,12 +53,14 @@ import {
   enrichItem,
   analyzeFurther,
   askAboutItem,
+  authenticateItem,
   translateText,
   translateName,
   type DetectedItem,
   type QuickItem,
   type DeepAnalysis,
   type Translation,
+  type AuthReport,
 } from "@/lib/analyze-room.functions";
 import { generateListingDraft, type ListingDraft } from "@/lib/listing.functions";
 import { detectCountry, getMarketplacesForItem, getMarketplaceListingUrl, formatListingForMarketplace, getPriceCompareLinks, getManualSearchUrl, getOfficialSiteSearchUrl, MARKETPLACES } from "@/lib/marketplaces";
