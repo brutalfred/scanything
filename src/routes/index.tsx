@@ -1031,6 +1031,36 @@ function Scanner() {
     toast("Authentication cancelled");
   }, []);
 
+  /** Authenticate mode: captures (or uploads) a photo into either the whole-item slot or a close-up slot. */
+  const captureAuthShot = useCallback(
+    (dataUrl: string, slot: "whole" | "extra") => {
+      if (slot === "whole") {
+        setAuthWhole(dataUrl);
+        setAuthExtras([]);
+        setAuthReport(null);
+      } else {
+        setAuthExtras((prev) => (prev.length >= 3 ? prev : [...prev, dataUrl]));
+      }
+      setUploaded(null);
+    },
+    [],
+  );
+
+  const grabAuthShot = useCallback(
+    (slot: "whole" | "extra") => {
+      const dataUrl = uploaded ?? grabFrame(1024, 0.85);
+      if (!dataUrl) return;
+      captureAuthShot(dataUrl, slot);
+    },
+    [uploaded, grabFrame, captureAuthShot],
+  );
+
+  const removeAuthExtra = useCallback((idx: number) => {
+    setAuthExtras((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
+
+
+
 
 
 
