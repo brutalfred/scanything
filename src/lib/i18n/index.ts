@@ -300,6 +300,36 @@ export const EN = {
   askAiThinking: "Thinking…",
   shareAsImage: "Share as image",
 
+  // authenticate mode
+  authenticateScan: "Authenticate",
+  authenticateScanDescription:
+    "Check a luxury item for authenticity — walks you through the right photos.",
+  authenticate: "Authenticate",
+  authRunAuth: "Run authentication check",
+  authCaptureWhole: "Whole item",
+  authCaptureLogo: "Logo / brand stamp",
+  authCaptureCode: "Date / serial code",
+  authCaptureHardware: "Hardware / stitching close-up",
+  authCaptureHint: "Capture or skip each step. The whole-item photo is required.",
+  authSkip: "Skip",
+  authRetake: "Retake",
+  authAddCloseup: "Add close-up",
+  authLikelihood: "Likelihood",
+  authGreenFlags: "Looks consistent with genuine",
+  authRedFlags: "Inconsistencies / counterfeit signs",
+  authPhysicalChecks: "Verify in person",
+  authOfficialServices: "Professional authentication",
+  authDisclaimer:
+    "Photo analysis cannot authenticate an item. Confirm with an official brand service or a professional authenticator before buying or selling.",
+  authInconclusive: "Inconclusive",
+  authMoreLikelyGenuine: "Appears more likely genuine",
+  authMoreLikelyNotGenuine: "Appears more likely not genuine",
+  authNextStep:
+    "This is an assistant estimate, not authentication. Use a professional service below to confirm.",
+  authAnalyzing: "Analyzing authenticity…",
+  authBrandModel: "Identified",
+  authConfidence: "confidence",
+
   // subscription
   renewsOn: "Renews on",
   lifetimeAccess: "Lifetime access",
