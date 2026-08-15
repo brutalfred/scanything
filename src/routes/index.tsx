@@ -132,7 +132,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video" | "document" | "resale";
+type Mode = "photo" | "video" | "document" | "resale" | "authenticate";
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -357,7 +357,7 @@ function Index() {
 
 function Scanner() {
   const credits = useCreditsContext();
-  const { t } = useLanguage();
+  const { t, language: appLang } = useLanguage();
   const appVersion = useAppVersion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
