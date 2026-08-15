@@ -2,19 +2,27 @@ import { useCallback, useEffect, useState } from "react";
 import { applyTheme, isThemeKey, THEME_STORAGE_KEY, type ThemeKey } from "@/lib/theme";
 
 const THEME_EVENT = "scanything:theme";
+const DEFAULT_THEME: ThemeKey = "cyber";
+/** One-time switch of every existing user over to the new default theme. */
+const THEME_RESET_KEY = "scanything-theme-reset-cyber";
 
 function readStoredTheme(): ThemeKey {
   try {
+    if (!localStorage.getItem(THEME_RESET_KEY)) {
+      localStorage.setItem(THEME_RESET_KEY, "1");
+      localStorage.setItem(THEME_STORAGE_KEY, DEFAULT_THEME);
+      return DEFAULT_THEME;
+    }
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
     if (isThemeKey(stored)) return stored;
   } catch {
     /* ignore */
   }
-  return "gold";
+  return DEFAULT_THEME;
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<ThemeKey>("gold");
+  const [theme, setThemeState] = useState<ThemeKey>(DEFAULT_THEME);
 
   useEffect(() => {
     const sync = () => {
