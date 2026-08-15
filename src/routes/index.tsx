@@ -889,6 +889,7 @@ function Scanner() {
     setRawItemCount(0);
     setError(null);
     setLoadingMore(false);
+    setAuthAnalyzing(false);
     try {
       sessionStorage.removeItem(LAST_SCAN_KEY);
     } catch {
