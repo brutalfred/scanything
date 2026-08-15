@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
-import { THEMES, isPremiumTheme } from "@/lib/theme";
+import { THEMES } from "@/lib/theme";
 import { LANGUAGES, LANGUAGE_NATIVE } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
