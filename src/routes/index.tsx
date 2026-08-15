@@ -2527,7 +2527,7 @@ function Scanner() {
               </div>
             )}
 
-            {phase === "results" && visibleItems.length === 0 && !error && (
+            {phase === "results" && visibleItems.length === 0 && !error && mode !== "authenticate" && (
               <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
                 {items.length > 0
                   ? "All items were hidden by your category filters. Open Filters and turn them back on."
@@ -2536,7 +2536,7 @@ function Scanner() {
                     : "Nothing identified in this shot. Try a closer, sharper photo with a clean lens."}
               </div>
             )}
-            {phase === "results" && snapshot && mode !== "document" && (
+            {phase === "results" && snapshot && mode !== "document" && mode !== "authenticate" && (
               <div className="mt-4 flex flex-col items-center gap-2">
                 <Button
                   data-no-sound
