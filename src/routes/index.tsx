@@ -36,6 +36,7 @@ import {
   FolderPlus,
   MessageCircle,
   Send,
+  ShieldCheck,
 
 
 } from "lucide-react";
