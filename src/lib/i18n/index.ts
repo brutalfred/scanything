@@ -329,6 +329,12 @@ export const EN = {
   authAnalyzing: "Analyzing authenticity…",
   authBrandModel: "Identified",
   authConfidence: "confidence",
+  authStep1: "1. Capture the whole item",
+  authStep2: "2. Add close-ups (optional, up to 3)",
+  authUploadWhole: "Upload whole item",
+  authCloseUpHint: "Logo, date code, stitching, hardware — whatever helps.",
+  authNotePlaceholder: "Brand / model hint (optional)",
+  authAnalyzeButton: "Check authenticity",
 
   // subscription
   renewsOn: "Renews on",
