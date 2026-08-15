@@ -51,8 +51,8 @@ export const SUBSCRIPTION_PRICE_LABELS: Record<PlanType, string> = {
 };
 
 export const SUBSCRIPTION_DESCRIPTIONS: Record<PlanType, string> = {
-  pro: "Unlimited photo scans, document scans, resale scans, Analyze Further, and resale listings.",
-  max: "Everything in Pro plus unlimited live video / quick-scan frames.",
+  pro: "Unlimited photo scans, document scans, resale scans, Analyze Further, and resale listings. Authenticate costs 2 credits.",
+  max: "Everything in Pro plus unlimited live video / quick-scan frames and free Authenticate checks (2 credits on other plans).",
 };
 
 export function inferPlanFromProductId(productId: string): PlanType | null {
