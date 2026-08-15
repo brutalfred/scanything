@@ -384,6 +384,16 @@ function Scanner() {
   /** Pages of a stitched multi-page document scan. */
   const [docPages, setDocPages] = useState<string[]>([]);
   const appendPageRef = useRef(false);
+  /** Authenticate mode: the required whole-item photo. */
+  const [authWhole, setAuthWhole] = useState<string | null>(null);
+  /** Authenticate mode: up to 3 optional close-ups (logo, date code, hardware). */
+  const [authExtras, setAuthExtras] = useState<string[]>([]);
+  /** Authenticate mode: the returned authentication report. */
+  const [authReport, setAuthReport] = useState<AuthReport | null>(null);
+  /** Authenticate mode: in-flight analysis. */
+  const [authAnalyzing, setAuthAnalyzing] = useState(false);
+  /** Authenticate mode: user-typed brand/model hint. */
+  const [authNote, setAuthNote] = useState("");
   /** Scans captured while offline, waiting to be analyzed. */
   const [queued, setQueued] = useState<QueuedScan[]>([]);
   const [queueOpen, setQueueOpen] = useState(false);
