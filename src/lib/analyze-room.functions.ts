@@ -853,3 +853,130 @@ export const askAboutItem = createServerFn({ method: "POST" })
 
     return { answer: content.trim() || "I couldn't answer that. Try rephrasing the question." };
   });
+
+
+// ---------------------------------------------------------------------------
+// Authenticate — luxury-item authentication ASSISTANT (never a bare verdict).
+// ---------------------------------------------------------------------------
+
+const AuthInput = z.object({
+  /** Primary whole-item photo (required). */
+  imageBase64: z.string().min(100),
+  /** Up to 3 additional close-ups: logo, date/serial code, hardware/stitching. */
+  extraImages: z.array(z.string().min(100)).max(3).optional(),
+  /** Optional free-text hint (e.g. "Chanel Classic Flap, lambskin"). */
+  userNote: z.string().trim().max(300).optional(),
+  /** Answer language — follows the per-box language, not the account-tab one. */
+  language: z.string().trim().max(40).optional(),
+}).merge(EnvironmentSchema);
+
+export type AuthReport = {
+  brand: string;
+  model: string;
+  category: string;
+  likelihood: "appears_more_likely_genuine" | "appears_more_likely_not_genuine" | "inconclusive";
+  confidence: number; // 0..100, caveated
+  summary: string;
+  greenFlags: string[];
+  redFlags: string[];
+  physicalChecks: string[];
+  officialServices: { name: string; url: string }[];
+  disclaimer: string;
+};
+
+const AUTH_DISCLAIMER =
+  "Photo analysis cannot authenticate an item. Confirm with an official brand service or a professional authenticator before buying or selling.";
+
+const AUTH_SYSTEM = `You are Scanything's authentication ASSISTANT for luxury goods (handbags, watches, sneakers, jewelry, sunglasses, etc.). You help a user SPOT likely red flags and decide what to verify in person. You do NOT authenticate items.
+
+ABSOLUTE RULES:
+- You NEVER print a bare verdict like "This is genuine" or "This is fake". Likelihood is always phrased as an estimate, never a guarantee.
+- You can only reason from what is VISIBLE in the photos. Most counterfeits require physical inspection (RFID/NFC chips, UV-reactive threads, microstitching, weight, serial-number registry) — say so.
+- Never invent model numbers, serial numbers, production dates or prices you cannot read. Say "unknown" rather than guess.
+- officialServices must list recognized professional/official authentication routes (brand's own authentication/repair service, Entrupy, Real Authentication, etc.). URLs must be real, well-known domains only — never invent a domain. If unsure of a URL, return the service name with an empty url "".
+- Keep every text field in the requested answer language. Brand names stay in Latin script.
+
+Respond ONLY with compact JSON, no markdown:
+{"brand":"best-guess brand or empty","model":"best-guess model/line or empty","category":"handbag|watch|sneakers|jewelry|eyewear|wallet|clothing|other","likelihood":"appears_more_likely_genuine" | "appears_more_likely_not_genuine" | "inconclusive","confidence":<integer 0-100, how much the visible evidence supports the likelihood>,"summary":"2-4 sentence honest summary of what the photos show","greenFlags":["visible hallmarks CONSISTENT with genuine — short bullet each, or empty array"],"redFlags":["visible inconsistencies or known counterfeit indicators — short bullet each, or empty array"],"physicalChecks":["what to verify in person before buying/selling — short bullet each"],"officialServices":[{"name":"service name","url":"https://..."}],"disclaimer":"${AUTH_DISCLAIMER}"}`;
+
+export const authenticateItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => AuthInput.parse(data))
+  .handler(async ({ data, context }): Promise<AuthReport> => {
+    const { withCredits } = await import("./credits.server");
+    const language = data.language && data.language !== "English" ? data.language : "English";
+
+    const extras = (data.extraImages ?? []).slice(0, 3);
+    const total = 1 + extras.length;
+    const note = (data.userNote ?? "").trim();
+    const notePart = note
+      ? ` The user added this context — treat it as a hint to reconcile with the photos: "${note}".`
+      : "";
+
+    const userContent: Array<Record<string, unknown>> = [
+      {
+        type: "text",
+        text: `There ${total > 1 ? `are ${total} photos of the SAME item` : "is 1 photo of the item"} (whole item${extras.length ? ", plus close-ups" : ""}). Identify the brand/model from visible hallmarks, list green/red flags you can see, estimate likelihood as an ASSISTANT (never a bare verdict), and list physical checks. Answer every text field in ${language}.${notePart} JSON only.`,
+      },
+      { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
+      ...extras.map((img) => ({
+        type: "image_url" as const,
+        image_url: { url: toDataUrl(img) },
+      })),
+    ];
+
+    const content = await withCredits(
+      "authenticate",
+      context.userId,
+      () =>
+        callGateway(
+          "authenticate",
+          {
+            model: "google/gemini-2.5-pro",
+            response_format: { type: "json_object" },
+            temperature: 0,
+            max_tokens: 2048,
+            messages: [
+              { role: "system", content: AUTH_SYSTEM },
+              { role: "user", content: userContent },
+            ],
+          },
+          context.userId,
+        ),
+      data.environment as "sandbox" | "live",
+    );
+
+    const parsed = safeParse<Partial<AuthReport>>(content, {});
+    const services = Array.isArray(parsed.officialServices)
+      ? parsed.officialServices
+          .map((s) => ({
+            name: String(s?.name ?? "").trim(),
+            url: cleanOfficialUrl(s?.url),
+          }))
+          .filter((s) => s.name)
+          .slice(0, 6)
+      : [];
+
+    const likelihood =
+      parsed.likelihood === "appears_more_likely_genuine" ||
+      parsed.likelihood === "appears_more_likely_not_genuine"
+        ? parsed.likelihood
+        : "inconclusive";
+
+    const arr = (v: unknown) =>
+      Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean).slice(0, 12) : [];
+
+    return {
+      brand: String(parsed.brand ?? "").trim(),
+      model: String(parsed.model ?? "").trim(),
+      category: String(parsed.category ?? "other").trim(),
+      likelihood,
+      confidence: clampPct(parsed.confidence),
+      summary: String(parsed.summary ?? "").trim(),
+      greenFlags: arr(parsed.greenFlags),
+      redFlags: arr(parsed.redFlags),
+      physicalChecks: arr(parsed.physicalChecks),
+      officialServices: services,
+      disclaimer: AUTH_DISCLAIMER,
+    };
+  });
