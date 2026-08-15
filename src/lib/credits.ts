@@ -16,6 +16,8 @@ export const CREDIT_COSTS = {
   ask_ai: 1,
   /** Second pass over the same photo ("Load more"). */
   load_more: 1,
+  /** Luxury-item authentication assistant pass (multimodal). */
+  authenticate: 2,
 } as const;
 
 export type CreditReason = keyof typeof CREDIT_COSTS;
@@ -32,6 +34,7 @@ export const CREDIT_LABELS: Record<CreditReason, string> = {
   resale_listing: "Resale listing",
   ask_ai: "Ask AI question",
   load_more: "Load more items",
+  authenticate: "Authenticate",
 };
 
 

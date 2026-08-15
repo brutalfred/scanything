@@ -36,6 +36,7 @@ import {
   FolderPlus,
   MessageCircle,
   Send,
+  ShieldCheck,
 
 
 } from "lucide-react";
@@ -52,12 +53,14 @@ import {
   enrichItem,
   analyzeFurther,
   askAboutItem,
+  authenticateItem,
   translateText,
   translateName,
   type DetectedItem,
   type QuickItem,
   type DeepAnalysis,
   type Translation,
+  type AuthReport,
 } from "@/lib/analyze-room.functions";
 import { generateListingDraft, type ListingDraft } from "@/lib/listing.functions";
 import { detectCountry, getMarketplacesForItem, getMarketplaceListingUrl, formatListingForMarketplace, getPriceCompareLinks, getManualSearchUrl, getOfficialSiteSearchUrl, MARKETPLACES } from "@/lib/marketplaces";
@@ -129,7 +132,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video" | "document" | "resale";
+type Mode = "photo" | "video" | "document" | "resale" | "authenticate";
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -354,7 +357,7 @@ function Index() {
 
 function Scanner() {
   const credits = useCreditsContext();
-  const { t } = useLanguage();
+  const { t, language: appLang } = useLanguage();
   const appVersion = useAppVersion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -381,6 +384,16 @@ function Scanner() {
   /** Pages of a stitched multi-page document scan. */
   const [docPages, setDocPages] = useState<string[]>([]);
   const appendPageRef = useRef(false);
+  /** Authenticate mode: the required whole-item photo. */
+  const [authWhole, setAuthWhole] = useState<string | null>(null);
+  /** Authenticate mode: up to 3 optional close-ups (logo, date code, hardware). */
+  const [authExtras, setAuthExtras] = useState<string[]>([]);
+  /** Authenticate mode: the returned authentication report. */
+  const [authReport, setAuthReport] = useState<AuthReport | null>(null);
+  /** Authenticate mode: in-flight analysis. */
+  const [authAnalyzing, setAuthAnalyzing] = useState(false);
+  /** Authenticate mode: user-typed brand/model hint. */
+  const [authNote, setAuthNote] = useState("");
   /** Scans captured while offline, waiting to be analyzed. */
   const [queued, setQueued] = useState<QueuedScan[]>([]);
   const [queueOpen, setQueueOpen] = useState(false);
@@ -876,6 +889,7 @@ function Scanner() {
     setRawItemCount(0);
     setError(null);
     setLoadingMore(false);
+    setAuthAnalyzing(false);
     try {
       sessionStorage.removeItem(LAST_SCAN_KEY);
     } catch {
@@ -958,6 +972,97 @@ function Scanner() {
       setLoadingMore(false);
     }
   }, [snapshot, loadingMore, credits, environment, items, isBlocked, addScanSpend, mode]);
+
+  /** Authenticate mode: runs the multimodal authentication pass on the captured photos. */
+  const runAuthentication = useCallback(async () => {
+    const whole = authWhole;
+    if (!whole || authAnalyzing) return;
+    if (!credits.spend("authenticate")) return;
+    cancelScanRef.current = false;
+    setSnapshot(whole);
+    stopCamera();
+    setPhase("analyzing");
+    setAuthAnalyzing(true);
+    setError(null);
+    setAuthReport(null);
+    try {
+      const report = await authenticateItem({
+        data: {
+          imageBase64: whole,
+          extraImages: authExtras.slice(0, 3),
+          userNote: authNote.trim() || undefined,
+          language: appLang,
+          environment,
+        },
+      });
+      if (cancelScanRef.current) return;
+      credits.refresh();
+      setAuthReport(report);
+      setPhase("results");
+      // Save to scan history so the result is recoverable from the history sheet.
+      void saveScanHistory({
+        data: {
+          mode: "authenticate",
+          items: [
+            {
+              name: [report.brand, report.model].filter(Boolean).join(" ") || "Item",
+              category: report.category,
+              description: report.summary,
+              confidence: report.confidence,
+            },
+          ],
+        },
+      }).catch(() => {});
+    } catch (e) {
+      if (cancelScanRef.current) return;
+      setError(e instanceof Error ? e.message : "Authentication analysis failed.");
+      setPhase("results");
+      credits.refresh();
+    } finally {
+      setAuthAnalyzing(false);
+    }
+  }, [authWhole, authExtras, authNote, authAnalyzing, appLang, environment, credits, stopCamera]);
+
+  const cancelAuth = useCallback(() => {
+    cancelScanRef.current = true;
+    setAuthAnalyzing(false);
+    setPhase("camera");
+    setSnapshot(null);
+    setError(null);
+    toast("Authentication cancelled");
+  }, []);
+
+  /** Authenticate mode: captures (or uploads) a photo into either the whole-item slot or a close-up slot. */
+  const captureAuthShot = useCallback(
+    (dataUrl: string, slot: "whole" | "extra") => {
+      if (slot === "whole") {
+        setAuthWhole(dataUrl);
+        setAuthExtras([]);
+        setAuthReport(null);
+      } else {
+        setAuthExtras((prev) => (prev.length >= 3 ? prev : [...prev, dataUrl]));
+      }
+      setUploaded(null);
+    },
+    [],
+  );
+
+  const grabAuthShot = useCallback(
+    (slot: "whole" | "extra") => {
+      const dataUrl = uploaded ?? grabFrame(1024, 0.85);
+      if (!dataUrl) return;
+      captureAuthShot(dataUrl, slot);
+    },
+    [uploaded, grabFrame, captureAuthShot],
+  );
+
+  const removeAuthExtra = useCallback((idx: number) => {
+    setAuthExtras((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
+
+
+
+
 
 
 
@@ -1135,6 +1240,11 @@ function Scanner() {
     setVideoPaused(false);
     setDocPages([]);
     appendPageRef.current = false;
+    setAuthWhole(null);
+    setAuthExtras([]);
+    setAuthReport(null);
+    setAuthAnalyzing(false);
+    setAuthNote("");
     setPhase("camera");
   }, []);
 
@@ -1239,6 +1349,11 @@ function Scanner() {
     setUploaded(null);
     setVideoPaused(false);
     setError(null);
+    setAuthWhole(null);
+    setAuthExtras([]);
+    setAuthReport(null);
+    setAuthAnalyzing(false);
+    setAuthNote("");
   }, []);
 
   // Door handling
@@ -1569,11 +1684,13 @@ function Scanner() {
                     {mode === "video" && <Video className="h-4 w-4" />}
                     {mode === "resale" && <Tag className="h-4 w-4" />}
                     {mode === "document" && <FileText className="h-4 w-4" />}
+                    {mode === "authenticate" && <ShieldCheck className="h-4 w-4" />}
                     <span>
                       {mode === "photo" && t("photoScan")}
                       {mode === "video" && t("videoScan")}
                       {mode === "resale" && t("resaleScan")}
                       {mode === "document" && t("documentScan")}
+                      {mode === "authenticate" && t("authenticateScan")}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
@@ -1613,6 +1730,13 @@ function Scanner() {
                     <FileText className="h-4 w-4" />
                     {t("documentScan")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("authenticate")}
+                    className="flex items-center gap-2"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    {t("authenticateScan")}
+                  </DropdownMenuItem>
                   {credits.signedIn && (
                     <DropdownMenuItem
                       onClick={() => setHistoryOpen(true)}
@@ -1640,11 +1764,12 @@ function Scanner() {
             </div>
 
 
-            {(mode === "photo" || mode === "resale" || mode === "document") && (
+            {(mode === "photo" || mode === "resale" || mode === "document" || mode === "authenticate") && (
               <p className="text-center text-[11px] text-muted-foreground">
                 {mode === "photo" && t("photoScanDescription")}
                 {mode === "resale" && t("resaleScanDescription")}
                 {mode === "document" && t("documentScanDescription")}
+                {mode === "authenticate" && t("authenticateScanDescription")}
               </p>
             )}
 
@@ -1777,7 +1902,140 @@ function Scanner() {
 
             </div>
 
-            {mode === "video" ? (
+            {mode === "authenticate" ? (
+              !isGuest && (
+                <div className="flex flex-col items-center gap-3 px-1 pb-2">
+                  {/* Whole-item capture */}
+                  <div className="w-full max-w-md rounded-2xl border border-border bg-card p-3">
+                    <p className="mb-2 text-xs font-semibold text-foreground">
+                      {t("authStep1")}
+                    </p>
+                    {authWhole ? (
+                      <div className="relative">
+                        <img
+                          src={authWhole}
+                          alt="Whole item"
+                          className="h-40 w-full rounded-lg object-contain bg-black/40"
+                        />
+                        <button
+                          onClick={() => {
+                            setAuthWhole(null);
+                            setAuthReport(null);
+                          }}
+                          className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 text-foreground hover:bg-background"
+                          aria-label="Retake"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => grabAuthShot("whole")}
+                          className="w-full"
+                        >
+                          <Camera className="mr-2 h-4 w-4" />
+                          {t("authCaptureWhole")}
+                        </Button>
+                        <input
+                          ref={uploadInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file) return;
+                            const url = await fileToCompressedDataUrl(file, 1280, 0.85);
+                            if (url) captureAuthShot(url, "whole");
+                          }}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => uploadInputRef.current?.click()}
+                          className="w-full"
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          {t("authUploadWhole")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Optional close-ups */}
+                  {authWhole && (
+                    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-3">
+                      <p className="mb-2 text-xs font-semibold text-foreground">
+                        {t("authStep2")}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {authExtras.map((src, i) => (
+                          <div key={i} className="relative">
+                            <img
+                              src={src}
+                              alt={`Close-up ${i + 1}`}
+                              className="h-20 w-full rounded-lg object-cover bg-black/40"
+                            />
+                            <button
+                              onClick={() => removeAuthExtra(i)}
+                              className="absolute right-1 top-1 rounded-full bg-background/80 p-1 text-foreground hover:bg-background"
+                              aria-label="Remove"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                        {authExtras.length < 3 && (
+                          <button
+                            onClick={() => grabAuthShot("extra")}
+                            className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:bg-accent"
+                          >
+                            <Plus className="h-5 w-5" />
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        {t("authCloseUpHint")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Optional note */}
+                  {authWhole && (
+                    <div className="w-full max-w-md">
+                      <input
+                        type="text"
+                        value={authNote}
+                        onChange={(e) => setAuthNote(e.target.value)}
+                        placeholder={t("authNotePlaceholder")}
+                        className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+                      />
+                    </div>
+                  )}
+
+                  {/* Analyze button */}
+                  {authWhole && (
+                    <Button
+                      size="lg"
+                      onClick={runAuthentication}
+                      disabled={authAnalyzing || !credits.canAfford("authenticate")}
+                      className="w-full max-w-md"
+                    >
+                      <ShieldCheck className="mr-2 h-5 w-5" />
+                      {authAnalyzing
+                        ? t("authAnalyzing")
+                        : `${t("authAnalyzeButton")} · ${CREDIT_COSTS.authenticate}`}
+                    </Button>
+                  )}
+
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    {t("authCaptureHint")}
+                  </p>
+                </div>
+              )
+            ) : mode === "video" ? (
               <>
                 {!isGuest && (
                   <div className="flex flex-col items-center gap-2">
@@ -2076,6 +2334,116 @@ function Scanner() {
               </div>
             )}
 
+            {phase === "results" && mode === "authenticate" && authReport && (
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {t("authBrandModel")}
+                      </p>
+                      <p className="text-lg font-bold text-foreground">
+                        {[authReport.brand, authReport.model].filter(Boolean).join(" ") || "—"}
+                      </p>
+                      {authReport.category && (
+                        <p className="text-xs text-muted-foreground">{authReport.category}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {t("authLikelihood")}
+                      </p>
+                      <p
+                        className={`text-sm font-bold ${
+                          authReport.likelihood === "appears_more_likely_genuine"
+                            ? "text-emerald-500"
+                            : authReport.likelihood === "appears_more_likely_not_genuine"
+                              ? "text-red-500"
+                              : "text-muted-foreground"
+                        }`}
+                      >
+                        {authReport.likelihood === "appears_more_likely_genuine"
+                          ? t("authMoreLikelyGenuine")
+                          : authReport.likelihood === "appears_more_likely_not_genuine"
+                            ? t("authMoreLikelyNotGenuine")
+                            : t("authInconclusive")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {Math.round(authReport.confidence * 100)}% {t("authConfidence")}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm text-foreground/90">{authReport.summary}</p>
+                </div>
+
+                {authReport.greenFlags.length > 0 && (
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-500">
+                      ✓ {t("authGreenFlags")}
+                    </p>
+                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-foreground/90">
+                      {authReport.greenFlags.map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {authReport.redFlags.length > 0 && (
+                  <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-red-500">
+                      ⚠ {t("authRedFlags")}
+                    </p>
+                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-foreground/90">
+                      {authReport.redFlags.map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {authReport.physicalChecks.length > 0 && (
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("authPhysicalChecks")}
+                    </p>
+                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-foreground/90">
+                      {authReport.physicalChecks.map((c, i) => (
+                        <li key={i}>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {authReport.officialServices.length > 0 && (
+                  <div className="rounded-xl border border-primary/40 bg-primary/5 p-3">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                      {t("authOfficialServices")}
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      {authReport.officialServices.map((s, i) => (
+                        <a
+                          key={i}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          {s.name} ↗
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/5 p-3">
+                  <p className="text-[11px] text-yellow-600 dark:text-yellow-500">
+                    ⚠ {t("authDisclaimer")}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {phase === "results" && visibleItems.length > 0 && (
               <div>
                 {(() => {
@@ -2160,7 +2528,7 @@ function Scanner() {
               </div>
             )}
 
-            {phase === "results" && visibleItems.length === 0 && !error && (
+            {phase === "results" && visibleItems.length === 0 && !error && mode !== "authenticate" && (
               <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
                 {items.length > 0
                   ? "All items were hidden by your category filters. Open Filters and turn them back on."
@@ -2169,7 +2537,7 @@ function Scanner() {
                     : "Nothing identified in this shot. Try a closer, sharper photo with a clean lens."}
               </div>
             )}
-            {phase === "results" && snapshot && mode !== "document" && (
+            {phase === "results" && snapshot && mode !== "document" && mode !== "authenticate" && (
               <div className="mt-4 flex flex-col items-center gap-2">
                 <Button
                   data-no-sound
