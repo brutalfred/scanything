@@ -1683,11 +1683,13 @@ function Scanner() {
                     {mode === "video" && <Video className="h-4 w-4" />}
                     {mode === "resale" && <Tag className="h-4 w-4" />}
                     {mode === "document" && <FileText className="h-4 w-4" />}
+                    {mode === "authenticate" && <ShieldCheck className="h-4 w-4" />}
                     <span>
                       {mode === "photo" && t("photoScan")}
                       {mode === "video" && t("videoScan")}
                       {mode === "resale" && t("resaleScan")}
                       {mode === "document" && t("documentScan")}
+                      {mode === "authenticate" && t("authenticateScan")}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
@@ -1727,6 +1729,13 @@ function Scanner() {
                     <FileText className="h-4 w-4" />
                     {t("documentScan")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("authenticate")}
+                    className="flex items-center gap-2"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    {t("authenticateScan")}
+                  </DropdownMenuItem>
                   {credits.signedIn && (
                     <DropdownMenuItem
                       onClick={() => setHistoryOpen(true)}
@@ -1754,11 +1763,12 @@ function Scanner() {
             </div>
 
 
-            {(mode === "photo" || mode === "resale" || mode === "document") && (
+            {(mode === "photo" || mode === "resale" || mode === "document" || mode === "authenticate") && (
               <p className="text-center text-[11px] text-muted-foreground">
                 {mode === "photo" && t("photoScanDescription")}
                 {mode === "resale" && t("resaleScanDescription")}
                 {mode === "document" && t("documentScanDescription")}
+                {mode === "authenticate" && t("authenticateScanDescription")}
               </p>
             )}
 
