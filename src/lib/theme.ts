@@ -62,7 +62,6 @@ export const THEMES = [
     label: "Cyber",
     className: "theme-cyber",
     swatch: ["#0d0518", "#ff2fa8", "#25e5ff", "#2a0f3d"],
-    premium: true,
   },
   {
     key: "emerald",
