@@ -331,33 +331,19 @@ export function AccountButton({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="z-[60] max-h-64 w-56 overflow-y-auto">
-                  {THEMES.map((th) => {
-                    const locked = isPremiumTheme(th.key) && !plan;
-                    return (
-                      <DropdownMenuItem
-                        key={th.key}
-                        disabled={locked}
-                        onSelect={() => setTheme(th.key)}
-                        className="gap-2"
-                      >
-                        <span className="flex h-4 w-10 shrink-0 overflow-hidden rounded">
-                          {th.swatch.map((c) => (
-                            <span key={c} className="flex-1" style={{ backgroundColor: c }} />
-                          ))}
-                        </span>
-                        <span className="flex-1 truncate text-xs">
-                          {locked ? "🔒 " : ""}
-                          {th.label}
-                        </span>
-                        {theme === th.key && <Check className="h-3.5 w-3.5" />}
-                      </DropdownMenuItem>
-                    );
-                  })}
+                  {THEMES.map((th) => (
+                    <DropdownMenuItem key={th.key} onSelect={() => setTheme(th.key)} className="gap-2">
+                      <span className="flex h-4 w-10 shrink-0 overflow-hidden rounded">
+                        {th.swatch.map((c) => (
+                          <span key={c} className="flex-1" style={{ backgroundColor: c }} />
+                        ))}
+                      </span>
+                      <span className="flex-1 truncate text-xs">{th.label}</span>
+                      {theme === th.key && <Check className="h-3.5 w-3.5" />}
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              {!plan && (
-                <p className="mt-2 text-[10px] opacity-70">{t("premiumThemesLocked")}</p>
-              )}
             </div>
 
             <div className="mt-5">
