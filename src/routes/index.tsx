@@ -1148,6 +1148,11 @@ function Scanner() {
     setVideoPaused(false);
     setDocPages([]);
     appendPageRef.current = false;
+    setAuthWhole(null);
+    setAuthExtras([]);
+    setAuthReport(null);
+    setAuthAnalyzing(false);
+    setAuthNote("");
     setPhase("camera");
   }, []);
 
@@ -1252,6 +1257,11 @@ function Scanner() {
     setUploaded(null);
     setVideoPaused(false);
     setError(null);
+    setAuthWhole(null);
+    setAuthExtras([]);
+    setAuthReport(null);
+    setAuthAnalyzing(false);
+    setAuthNote("");
   }, []);
 
   // Door handling
