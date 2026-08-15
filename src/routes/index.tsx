@@ -1901,7 +1901,140 @@ function Scanner() {
 
             </div>
 
-            {mode === "video" ? (
+            {mode === "authenticate" ? (
+              !isGuest && (
+                <div className="flex flex-col items-center gap-3 px-1 pb-2">
+                  {/* Whole-item capture */}
+                  <div className="w-full max-w-md rounded-2xl border border-border bg-card p-3">
+                    <p className="mb-2 text-xs font-semibold text-foreground">
+                      {t("authStep1")}
+                    </p>
+                    {authWhole ? (
+                      <div className="relative">
+                        <img
+                          src={authWhole}
+                          alt="Whole item"
+                          className="h-40 w-full rounded-lg object-contain bg-black/40"
+                        />
+                        <button
+                          onClick={() => {
+                            setAuthWhole(null);
+                            setAuthReport(null);
+                          }}
+                          className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 text-foreground hover:bg-background"
+                          aria-label="Retake"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => grabAuthShot("whole")}
+                          className="w-full"
+                        >
+                          <Camera className="mr-2 h-4 w-4" />
+                          {t("authCaptureWhole")}
+                        </Button>
+                        <input
+                          ref={uploadInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file) return;
+                            const url = await fileToCompressedDataUrl(file, 1280, 0.85);
+                            if (url) captureAuthShot(url, "whole");
+                          }}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => uploadInputRef.current?.click()}
+                          className="w-full"
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          {t("authUploadWhole")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Optional close-ups */}
+                  {authWhole && (
+                    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-3">
+                      <p className="mb-2 text-xs font-semibold text-foreground">
+                        {t("authStep2")}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {authExtras.map((src, i) => (
+                          <div key={i} className="relative">
+                            <img
+                              src={src}
+                              alt={`Close-up ${i + 1}`}
+                              className="h-20 w-full rounded-lg object-cover bg-black/40"
+                            />
+                            <button
+                              onClick={() => removeAuthExtra(i)}
+                              className="absolute right-1 top-1 rounded-full bg-background/80 p-1 text-foreground hover:bg-background"
+                              aria-label="Remove"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                        {authExtras.length < 3 && (
+                          <button
+                            onClick={() => grabAuthShot("extra")}
+                            className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:bg-accent"
+                          >
+                            <Plus className="h-5 w-5" />
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        {t("authCloseUpHint")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Optional note */}
+                  {authWhole && (
+                    <div className="w-full max-w-md">
+                      <input
+                        type="text"
+                        value={authNote}
+                        onChange={(e) => setAuthNote(e.target.value)}
+                        placeholder={t("authNotePlaceholder")}
+                        className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+                      />
+                    </div>
+                  )}
+
+                  {/* Analyze button */}
+                  {authWhole && (
+                    <Button
+                      size="lg"
+                      onClick={runAuthentication}
+                      disabled={authAnalyzing || !credits.canAfford("authenticate")}
+                      className="w-full max-w-md"
+                    >
+                      <ShieldCheck className="mr-2 h-5 w-5" />
+                      {authAnalyzing
+                        ? t("authAnalyzing")
+                        : `${t("authAnalyzeButton")} · ${CREDIT_COSTS.authenticate}`}
+                    </Button>
+                  )}
+
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    {t("authCaptureHint")}
+                  </p>
+                </div>
+              )
+            ) : mode === "video" ? (
               <>
                 {!isGuest && (
                   <div className="flex flex-col items-center gap-2">
