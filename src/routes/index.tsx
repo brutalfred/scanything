@@ -972,6 +972,67 @@ function Scanner() {
     }
   }, [snapshot, loadingMore, credits, environment, items, isBlocked, addScanSpend, mode]);
 
+  /** Authenticate mode: runs the multimodal authentication pass on the captured photos. */
+  const runAuthentication = useCallback(async () => {
+    const whole = authWhole;
+    if (!whole || authAnalyzing) return;
+    if (!credits.spend("authenticate")) return;
+    cancelScanRef.current = false;
+    setSnapshot(whole);
+    stopCamera();
+    setPhase("analyzing");
+    setAuthAnalyzing(true);
+    setError(null);
+    setAuthReport(null);
+    try {
+      const report = await authenticateItem({
+        data: {
+          imageBase64: whole,
+          extraImages: authExtras.slice(0, 3),
+          userNote: authNote.trim() || undefined,
+          language: appLang,
+          environment,
+        },
+      });
+      if (cancelScanRef.current) return;
+      credits.refresh();
+      setAuthReport(report);
+      setPhase("results");
+      // Save to scan history so the result is recoverable from the history sheet.
+      void saveScanHistory({
+        data: {
+          mode: "authenticate",
+          items: [
+            {
+              name: [report.brand, report.model].filter(Boolean).join(" ") || "Item",
+              category: report.category,
+              description: report.summary,
+              confidence: report.confidence,
+            },
+          ],
+        },
+      }).catch(() => {});
+    } catch (e) {
+      if (cancelScanRef.current) return;
+      setError(e instanceof Error ? e.message : "Authentication analysis failed.");
+      setPhase("results");
+      credits.refresh();
+    } finally {
+      setAuthAnalyzing(false);
+    }
+  }, [authWhole, authExtras, authNote, authAnalyzing, appLang, environment, credits, stopCamera]);
+
+  const cancelAuth = useCallback(() => {
+    cancelScanRef.current = true;
+    setAuthAnalyzing(false);
+    setPhase("camera");
+    setSnapshot(null);
+    setError(null);
+    toast("Authentication cancelled");
+  }, []);
+
+
+
 
 
 
