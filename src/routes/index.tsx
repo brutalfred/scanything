@@ -2333,6 +2333,116 @@ function Scanner() {
               </div>
             )}
 
+            {phase === "results" && mode === "authenticate" && authReport && (
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {t("authBrandModel")}
+                      </p>
+                      <p className="text-lg font-bold text-foreground">
+                        {[authReport.brand, authReport.model].filter(Boolean).join(" ") || "—"}
+                      </p>
+                      {authReport.category && (
+                        <p className="text-xs text-muted-foreground">{authReport.category}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {t("authLikelihood")}
+                      </p>
+                      <p
+                        className={`text-sm font-bold ${
+                          authReport.likelihood === "appears_more_likely_genuine"
+                            ? "text-emerald-500"
+                            : authReport.likelihood === "appears_more_likely_not_genuine"
+                              ? "text-red-500"
+                              : "text-muted-foreground"
+                        }`}
+                      >
+                        {authReport.likelihood === "appears_more_likely_genuine"
+                          ? t("authMoreLikelyGenuine")
+                          : authReport.likelihood === "appears_more_likely_not_genuine"
+                            ? t("authMoreLikelyNotGenuine")
+                            : t("authInconclusive")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {Math.round(authReport.confidence * 100)}% {t("authConfidence")}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm text-foreground/90">{authReport.summary}</p>
+                </div>
+
+                {authReport.greenFlags.length > 0 && (
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-500">
+                      ✓ {t("authGreenFlags")}
+                    </p>
+                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-foreground/90">
+                      {authReport.greenFlags.map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {authReport.redFlags.length > 0 && (
+                  <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-red-500">
+                      ⚠ {t("authRedFlags")}
+                    </p>
+                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-foreground/90">
+                      {authReport.redFlags.map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {authReport.physicalChecks.length > 0 && (
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("authPhysicalChecks")}
+                    </p>
+                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-foreground/90">
+                      {authReport.physicalChecks.map((c, i) => (
+                        <li key={i}>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {authReport.officialServices.length > 0 && (
+                  <div className="rounded-xl border border-primary/40 bg-primary/5 p-3">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                      {t("authOfficialServices")}
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      {authReport.officialServices.map((s, i) => (
+                        <a
+                          key={i}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          {s.name} ↗
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/5 p-3">
+                  <p className="text-[11px] text-yellow-600 dark:text-yellow-500">
+                    ⚠ {t("authDisclaimer")}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {phase === "results" && visibleItems.length > 0 && (
               <div>
                 {(() => {
