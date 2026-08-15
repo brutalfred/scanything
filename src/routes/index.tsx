@@ -1742,6 +1742,12 @@ function Scanner() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <CreditMeter
+                balance={credits.balance}
+                loading={credits.loading}
+                signedIn={credits.signedIn}
+                onClick={credits.openSheet}
+              />
               {!isGuest && (
                 <button
                   onClick={() => setFilterOpen((o) => !o)}
