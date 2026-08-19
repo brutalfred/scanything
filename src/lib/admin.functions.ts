@@ -15,6 +15,7 @@ export type AdminGrantEntry = {
 };
 
 export type AdminUsageStats = {
+  totalAccounts: number;
   visitorsToday: number;
   visitorsWeek: number;
   visitorsMonth: number;
