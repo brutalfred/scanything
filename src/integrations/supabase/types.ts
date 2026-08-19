@@ -677,6 +677,7 @@ export type Database = {
           total_cost_micro_usd: number
         }[]
       }
+      get_total_user_count: { Args: never; Returns: number }
       grant_credits: {
         Args: { _amount: number; _reason: string; _user_id: string }
         Returns: number
