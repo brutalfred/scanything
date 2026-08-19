@@ -42,6 +42,14 @@ export const getAdminUsageStats = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const row = (Array.isArray(data) ? data[0] : data) ?? {};
 
+    const { data: countData, error: countError } = await supabaseAdmin.rpc(
+      "get_total_user_count",
+    );
+    if (countError) throw new Error(countError.message);
+    const totalAccounts = Array.isArray(countData)
+      ? Number(countData[0] ?? 0)
+      : Number(countData ?? 0);
+
     const revenueCents = Number(row.revenue_month_cents ?? 0);
     const purchases = Number(row.purchases_month ?? 0);
     const revenueMonthUsd = revenueCents / 100;
