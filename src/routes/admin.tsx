@@ -113,6 +113,17 @@ function AdminPage() {
             <p className="text-xs opacity-70">Loading…</p>
           ) : stats.data ? (
             <div className="space-y-4">
+              <div className="rounded-xl border border-current/20 p-3">
+                <p className="text-[11px] uppercase tracking-wide opacity-70">
+                  Total accounts
+                </p>
+                <p className="text-xl font-bold text-primary">
+                  {stats.data.totalAccounts}
+                </p>
+                <p className="text-[11px] opacity-70">
+                  Accounts that have signed in at least once.
+                </p>
+              </div>
               <StatRow
                 label="Signed-in visitors"
                 today={stats.data.visitorsToday}
