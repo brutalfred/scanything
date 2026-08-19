@@ -63,6 +63,7 @@ export const getAdminUsageStats = createServerFn({ method: "POST" })
           : revenueMonthUsd * 0.05 + purchases * 0.5;
 
     return {
+      totalAccounts,
       visitorsToday: Number(row.visitors_today ?? 0),
       visitorsWeek: Number(row.visitors_week ?? 0),
       visitorsMonth: Number(row.visitors_month ?? 0),
