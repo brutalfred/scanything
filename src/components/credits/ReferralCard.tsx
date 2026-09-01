@@ -92,6 +92,27 @@ export function ReferralCard({ enabled }: { enabled: boolean }) {
     void copy();
   }
 
+  /** Pi Browser link always points at the public site so Pioneers can open it. */
+  async function sharePi() {
+    const url = `https://scanything.app/?ref=${code}`;
+    const text = `Scan anything with your camera. Sign in with Pi using my invite code ${code} — we both get ${REFERRAL_REWARD} credits.`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "Scanything", text, url });
+        return;
+      } catch {
+        return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Pi invite link copied");
+    } catch {
+      toast.error("Could not copy the link");
+    }
+  }
+
+
   return (
     <div className="mt-3 rounded-xl border border-current/30 bg-current/5 px-3 py-2">
       <div className="flex items-center justify-between gap-3">
