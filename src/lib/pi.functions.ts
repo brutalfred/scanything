@@ -65,11 +65,15 @@ export const piSignIn = createServerFn({ method: "POST" })
 
     let email: string;
     let created = false;
+    let userId: string;
+    let creditsGranted = 0;
+    let referralStatus: PiSignInResult["referralStatus"] = "none";
 
     if (existing?.user_id) {
       const { data: user, error } = await supabaseAdmin.auth.admin.getUserById(existing.user_id);
       if (error || !user?.user?.email) throw new Error("Linked account is unavailable");
       email = user.user.email;
+      userId = existing.user_id;
       if (profile.username && profile.username !== existing.pi_username) {
         await supabaseAdmin
           .from("pi_identities")
@@ -87,6 +91,7 @@ export const piSignIn = createServerFn({ method: "POST" })
         throw new Error(createError?.message ?? "Could not create Pi account");
       }
       created = true;
+      userId = newUser.user.id;
       const { error: linkError } = await supabaseAdmin.from("pi_identities").insert({
         pi_uid: profile.uid,
         user_id: newUser.user.id,
@@ -96,6 +101,27 @@ export const piSignIn = createServerFn({ method: "POST" })
         await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
         throw new Error("Could not link Pi account");
       }
+
+      // Pi accounts have no device fingerprint flow, so the welcome grant is
+      // issued here — the ledger reason keeps it to once per account.
+      const { data: balance } = await supabaseAdmin.rpc("grant_credits", {
+        _user_id: userId,
+        _amount: PI_SIGNUP_GRANT,
+        _reason: "signup_grant",
+      });
+      if (balance != null) creditsGranted += PI_SIGNUP_GRANT;
+    }
+
+    // Referral invites work the same for Pi users as for everyone else.
+    if (data.referralCode) {
+      const { data: refData } = await supabaseAdmin.rpc("redeem_referral_code_for", {
+        _user_id: userId,
+        _code: data.referralCode,
+      });
+      const row = Array.isArray(refData) ? refData[0] : refData;
+      const status = String(row?.status ?? "invalid_code");
+      referralStatus = status as PiSignInResult["referralStatus"];
+      if (status === "redeemed") creditsGranted += Number(row?.reward ?? 0);
     }
 
     const { data: link, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
@@ -105,7 +131,8 @@ export const piSignIn = createServerFn({ method: "POST" })
     const tokenHash = link?.properties?.hashed_token;
     if (linkErr || !tokenHash) throw new Error("Could not start the Pi session");
 
-    return { tokenHash, username: profile.username, created };
+    return { tokenHash, username: profile.username, created, creditsGranted, referralStatus };
+
   });
 
 /** Links a Pi identity to the account that is already signed in. */
