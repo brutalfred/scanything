@@ -63,13 +63,13 @@ export function usePiAuth() {
 
   const signInWithPi = useCallback(() => run(false), [run]);
 
-  return { available, busy, signInWithPi };
+  return { available, busy, signInWithPi, runPiAuth: run };
 }
 
 /** Auto-triggers Pi sign-in once, only inside the Pi Browser. */
 export function usePiAutoSignIn() {
   const started = useRef(false);
-  const { available, signInWithPi } = usePiAuth();
+  const { available, runPiAuth } = usePiAuth();
 
   useEffect(() => {
     if (!available || started.current) return;
@@ -78,10 +78,10 @@ export function usePiAutoSignIn() {
     (async () => {
       const { data } = await supabase.auth.getSession();
       if (cancelled || data.session) return;
-      void signInWithPi();
+      void runPiAuth(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [available, signInWithPi]);
+  }, [available, runPiAuth]);
 }
