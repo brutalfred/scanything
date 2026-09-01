@@ -332,6 +332,27 @@ export type Database = {
         }
         Relationships: []
       }
+      pi_identities: {
+        Row: {
+          created_at: string
+          pi_uid: string
+          pi_username: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          pi_uid: string
+          pi_username?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          pi_uid?: string
+          pi_username?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       play_purchases: {
         Row: {
           created_at: string
