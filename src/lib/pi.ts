@@ -109,19 +109,35 @@ export function setIncompletePaymentHandler(handler: IncompleteHandler) {
   incompleteHandler = handler;
 }
 
+/** True once this page session has authenticated with the payments scope. */
+let paymentsAuthed = false;
+
 /** Runs the Pi authentication flow with the `username` and `payments` scopes. */
 export async function piAuthenticate(): Promise<PiAuthResult> {
   const Pi = await loadPiSdk();
-  return Pi.authenticate(["username", "payments"], (payment) => {
+  const result = await Pi.authenticate(["username", "payments"], (payment) => {
     incompleteHandler(payment);
   });
+  paymentsAuthed = true;
+  return result;
 }
 
-/** Starts a User-to-App payment. `Pi.init` is always awaited first. */
+/**
+ * Ensures the wallet has granted the payments scope in this page session.
+ * A user already signed into the app (saved session) never re-runs Pi auth,
+ * so payments must trigger it themselves or the wallet rejects them.
+ */
+export async function ensurePaymentsAuth(): Promise<void> {
+  await loadPiSdk();
+  if (paymentsAuthed) return;
+  await piAuthenticate();
+}
+
+/** Starts a User-to-App payment. Auth (payments scope) is always ensured first. */
 export async function piCreatePayment(
   data: PiPaymentData,
   callbacks: PiPaymentCallbacks,
 ): Promise<void> {
-  const Pi = await loadPiSdk();
+  const Pi = await ensurePaymentsAuth().then(() => loadPiSdk());
   Pi.createPayment(data, callbacks);
 }
