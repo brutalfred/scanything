@@ -412,6 +412,8 @@ export function AccountButton({
               </Link>
             )}
 
+            <PiAccountRow enabled={signedIn && open} />
+
             <button
               type="button"
               onClick={signOut}
