@@ -3,6 +3,22 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { isPiBrowser, piAuthenticate } from "@/lib/pi";
 import { piLink, piSignIn } from "@/lib/pi.functions";
+import { PENDING_REF_KEY } from "@/components/credits/ReferralCard";
+
+/** Invite code captured from a Pi referral link, if there is one. */
+function pendingReferralCode(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  let code: string | null = null;
+  try {
+    code = new URLSearchParams(window.location.search).get("ref");
+    if (!code) code = localStorage.getItem(PENDING_REF_KEY);
+  } catch {
+    /* ignore */
+  }
+  const clean = (code ?? "").trim().toUpperCase();
+  return /^[A-Z0-9]{4,12}$/.test(clean) ? clean : undefined;
+}
+
 
 /**
  * Pi Network sign-in.
