@@ -25,7 +25,12 @@ export type AdminUsageStats = {
   revenueMonthUsd: number;
   purchasesMonth: number;
   netPayoutMonthUsd: number;
+  /** Accounts signed in through Pi Network. */
+  piAccounts: number;
+  /** Combined credit balance held by Pi accounts. */
+  piCreditBalance: number;
 };
+
 
 /** Admin-only: visitors, scans and estimated net payout. */
 export const getAdminUsageStats = createServerFn({ method: "POST" })
