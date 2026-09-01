@@ -357,6 +357,10 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           ))}
         </div>
 
+        <PiCreditPacks signedIn={credits.signedIn} />
+
+
+
         <div className="mb-5 text-right">
           <Link
             to="/pricing"
