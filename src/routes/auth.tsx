@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { PiSignInButton } from "@/components/PiAuthButton";
+import { usePiMode } from "@/hooks/usePiMode";
 import { SIGNUP_GRANT } from "@/lib/credits";
 import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "@/lib/email-domains";
 
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const piMode = usePiMode();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -96,26 +98,37 @@ function AuthPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-5">
       <div className="gold-glow gold-line w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-white p-6 text-black">
-        {mode !== "forgot" && (
+        {piMode ? (
           <>
             <PiSignInButton />
-            <button
-              type="button"
-              onClick={google}
-              className="mb-4 w-full rounded-lg border border-black/30 px-4 py-2.5 text-sm font-semibold text-black hover:bg-black/5"
-            >
-              Continue with Google
-            </button>
+            <p className="mb-2 text-xs text-black/70">
+              You're browsing Scanything in the Pi Browser. Sign in with your Pi
+              account — no email, password or third-party login needed.
+            </p>
           </>
+        ) : (
+          mode !== "forgot" && (
+            <>
+              <PiSignInButton />
+              <button
+                type="button"
+                onClick={google}
+                className="mb-4 w-full rounded-lg border border-black/30 px-4 py-2.5 text-sm font-semibold text-black hover:bg-black/5"
+              >
+                Continue with Google
+              </button>
+            </>
+          )
         )}
 
-        {notice && (
+        {!piMode && notice && (
           <p className="mb-4 rounded-lg bg-black/10 px-3 py-2 text-xs text-black">
             {notice}
           </p>
         )}
 
-        <form onSubmit={submit} className="space-y-3">
+        {!piMode && (
+        <><form onSubmit={submit} className="space-y-3">
           <input
             type="email"
             required
@@ -169,6 +182,8 @@ function AuthPage() {
         >
           {mode === "forgot" ? "Back to sign in" : "Forgot your password?"}
         </button>
+        </>
+        )}
 
         <Link
           to="/"

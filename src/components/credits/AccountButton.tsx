@@ -27,6 +27,7 @@ import { useAppVersion } from "@/hooks/useAppVersion";
 import { useAndroidApp } from "@/hooks/useAndroidApp";
 import { DailyCheckin } from "./DailyCheckin";
 import { WatchAdButton } from "./WatchAdButton";
+import { usePiMode } from "@/hooks/usePiMode";
 import { isNative } from "@/lib/platform";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PlanBadge } from "@/components/PlanLogo";
@@ -48,6 +49,7 @@ export function AccountButton({
   balance: number;
 }) {
   const [open, setOpen] = useState(false);
+  const piMode = usePiMode();
   const accountSlide = useSlideDismiss("left", () => setOpen(false));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -180,9 +182,11 @@ export function AccountButton({
               </div>
             </dl>
 
-            <div className="mt-4">
-              <WatchAdButton signedIn={signedIn} />
-            </div>
+            {!piMode && (
+              <div className="mt-4">
+                <WatchAdButton signedIn={signedIn} />
+              </div>
+            )}
 
             <ReferralCard enabled={signedIn && open} />
 
