@@ -19,6 +19,11 @@ function inviteLink(code: string) {
 export function ReferralCard({ enabled }: { enabled: boolean }) {
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [piBrowser, setPiBrowser] = useState(false);
+  useEffect(() => {
+    void import("@/lib/pi").then((m) => setPiBrowser(m.isPiBrowser()));
+  }, []);
+
   const [input, setInput] = useState("");
 
   const stats = useQuery({
