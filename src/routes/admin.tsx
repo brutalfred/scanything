@@ -133,8 +133,9 @@ function AdminPage() {
                   Holding {stats.data.piCreditBalance} credits in total.
                 </p>
               </div>
-
+              <StatRow
                 label="Signed-in visitors"
+
                 today={stats.data.visitorsToday}
                 week={stats.data.visitorsWeek}
                 month={stats.data.visitorsMonth}
