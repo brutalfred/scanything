@@ -33,6 +33,7 @@ import { PlanBadge } from "@/components/PlanLogo";
 import { ReferralCard } from "./ReferralCard";
 import { openOnboarding } from "@/components/OnboardingTour";
 import { useDailyReminder } from "@/hooks/useDailyReminder";
+import { PiAccountRow } from "@/components/PiAuthButton";
 
 
 
