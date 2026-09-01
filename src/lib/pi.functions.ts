@@ -34,17 +34,25 @@ export type PiSignInResult = {
   tokenHash: string;
   username: string | null;
   created: boolean;
+  /** Credits granted to a brand-new Pi account (signup grant + referral bonus). */
+  creditsGranted: number;
+  referralStatus: "none" | "redeemed" | "invalid_code" | "already_redeemed" | "self_referral";
 };
+
+const PI_SIGNUP_GRANT = 10;
 
 /**
  * Signs a Pi Browser user into their Pi-backed Scanything account,
  * creating it on first use.
  */
 export const piSignIn = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) => {
+  .inputValidator((input: { accessToken: string; referralCode?: string }) => {
     if (typeof input?.accessToken !== "string") throw new Error("Invalid request");
-    return { accessToken: input.accessToken };
+    const raw = String(input?.referralCode ?? "").trim().toUpperCase();
+    const referralCode = /^[A-Z0-9]{4,12}$/.test(raw) ? raw : undefined;
+    return { accessToken: input.accessToken, referralCode };
   })
+
   .handler(async ({ data }): Promise<PiSignInResult> => {
     const profile = await verifyPiToken(data.accessToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
