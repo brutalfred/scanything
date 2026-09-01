@@ -353,6 +353,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pi_payments: {
+        Row: {
+          amount_pi: number
+          created_at: string
+          credits: number
+          pack_id: string
+          payment_id: string
+          status: string
+          txid: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_pi: number
+          created_at?: string
+          credits: number
+          pack_id: string
+          payment_id: string
+          status?: string
+          txid?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_pi?: number
+          created_at?: string
+          credits?: number
+          pack_id?: string
+          payment_id?: string
+          status?: string
+          txid?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pi_rate: {
+        Row: {
+          id: boolean
+          updated_at: string
+          usd_per_pi: number
+        }
+        Insert: {
+          id?: boolean
+          updated_at?: string
+          usd_per_pi: number
+        }
+        Update: {
+          id?: boolean
+          updated_at?: string
+          usd_per_pi?: number
+        }
+        Relationships: []
+      }
       play_purchases: {
         Row: {
           created_at: string
@@ -715,6 +769,14 @@ export type Database = {
         Returns: boolean
       }
       record_account_visit: { Args: { _user_id: string }; Returns: undefined }
+      redeem_pi_payment: {
+        Args: { _payment_id: string; _txid: string }
+        Returns: {
+          balance: number
+          credits: number
+          status: string
+        }[]
+      }
       redeem_play_purchase: {
         Args: {
           _credits: number
