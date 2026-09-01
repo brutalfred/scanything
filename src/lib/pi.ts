@@ -10,12 +10,32 @@ export type PiAuthResult = {
   user: { uid: string; username?: string };
 };
 
+export type PiPaymentData = {
+  amount: number;
+  memo: string;
+  metadata: Record<string, unknown>;
+};
+
+export type PiPaymentCallbacks = {
+  onReadyForServerApproval: (paymentId: string) => void;
+  onReadyForServerCompletion: (paymentId: string, txid: string) => void;
+  onCancel: (paymentId: string) => void;
+  onError: (error: Error, payment?: unknown) => void;
+};
+
+/** Shape of the payment object handed to `onIncompletePaymentFound`. */
+export type PiIncompletePayment = {
+  identifier: string;
+  transaction?: { txid?: string } | null;
+};
+
 type PiSdk = {
   init: (opts: { version: string; sandbox?: boolean }) => Promise<void> | void;
   authenticate: (
     scopes: string[],
-    onIncompletePaymentFound: (payment: unknown) => void,
+    onIncompletePaymentFound: (payment: PiIncompletePayment) => void,
   ) => Promise<PiAuthResult>;
+  createPayment: (data: PiPaymentData, callbacks: PiPaymentCallbacks) => void;
 };
 
 const SDK_URL = "https://sdk.minepi.com/pi-sdk.js";
@@ -75,10 +95,33 @@ export function loadPiSdk(): Promise<PiSdk> {
   return sdkPromise;
 }
 
-/** Runs the Pi authentication flow with the `username` scope. */
+/**
+ * Recovers a payment the Pi wallet reports as still in flight.
+ * Registered as the `onIncompletePaymentFound` callback everywhere, so a
+ * purchase interrupted mid-flow is always finished instead of being dropped.
+ */
+export type IncompleteHandler = (payment: PiIncompletePayment) => void;
+
+let incompleteHandler: IncompleteHandler = () => {};
+
+/** Registers the app-wide recovery handler for interrupted Pi payments. */
+export function setIncompletePaymentHandler(handler: IncompleteHandler) {
+  incompleteHandler = handler;
+}
+
+/** Runs the Pi authentication flow with the `username` and `payments` scopes. */
 export async function piAuthenticate(): Promise<PiAuthResult> {
   const Pi = await loadPiSdk();
-  return Pi.authenticate(["username"], () => {
-    // Auth-only integration: nothing to recover for incomplete payments yet.
+  return Pi.authenticate(["username", "payments"], (payment) => {
+    incompleteHandler(payment);
   });
+}
+
+/** Starts a User-to-App payment. `Pi.init` is always awaited first. */
+export async function piCreatePayment(
+  data: PiPaymentData,
+  callbacks: PiPaymentCallbacks,
+): Promise<void> {
+  const Pi = await loadPiSdk();
+  Pi.createPayment(data, callbacks);
 }
