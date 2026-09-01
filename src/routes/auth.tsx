@@ -96,13 +96,16 @@ function AuthPage() {
     <main className="flex min-h-screen items-center justify-center bg-background p-5">
       <div className="gold-glow gold-line w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-white p-6 text-black">
         {mode !== "forgot" && (
-          <button
-            type="button"
-            onClick={google}
-            className="mb-4 w-full rounded-lg border border-black/30 px-4 py-2.5 text-sm font-semibold text-black hover:bg-black/5"
-          >
-            Continue with Google
-          </button>
+          <>
+            <PiSignInButton />
+            <button
+              type="button"
+              onClick={google}
+              className="mb-4 w-full rounded-lg border border-black/30 px-4 py-2.5 text-sm font-semibold text-black hover:bg-black/5"
+            >
+              Continue with Google
+            </button>
+          </>
         )}
 
         {notice && (
