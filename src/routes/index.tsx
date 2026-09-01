@@ -77,6 +77,8 @@ import { CreditMeter } from "@/components/credits/CreditMeter";
 
 import { AccountButton } from "@/components/credits/AccountButton";
 import { PlanLogo } from "@/components/PlanLogo";
+import { PiSignInButton } from "@/components/PiAuthButton";
+
 import { useSubscription } from "@/hooks/useSubscription";
 import { CREDIT_COSTS, SIGNUP_GRANT, type CreditReason } from "@/lib/credits";
 import {
