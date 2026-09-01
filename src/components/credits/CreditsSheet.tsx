@@ -9,6 +9,8 @@ import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { toast } from "sonner";
 import { CREDIT_COSTS, CREDIT_LABELS, type CreditReason } from "@/lib/credits";
 import { CREDIT_PACKS } from "@/lib/credit-packs";
+import { PiCreditPacks } from "@/components/credits/PiCreditPacks";
+
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { isNativeAndroid } from "@/lib/platform";
@@ -356,6 +358,10 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
             </button>
           ))}
         </div>
+
+        <PiCreditPacks signedIn={credits.signedIn} />
+
+
 
         <div className="mb-5 text-right">
           <Link
