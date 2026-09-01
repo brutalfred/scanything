@@ -67,6 +67,18 @@ export const getAdminUsageStats = createServerFn({ method: "POST" })
           ? revenueMonthUsd * 0.1
           : revenueMonthUsd * 0.05 + purchases * 0.5;
 
+    // Pi Network accounts and the credits they hold.
+    const { data: piRows } = await supabaseAdmin.from("pi_identities").select("user_id");
+    const piIds = (piRows ?? []).map((r) => r.user_id);
+    let piCreditBalance = 0;
+    if (piIds.length > 0) {
+      const { data: accounts } = await supabaseAdmin
+        .from("credit_accounts")
+        .select("balance")
+        .in("user_id", piIds);
+      piCreditBalance = (accounts ?? []).reduce((sum, a) => sum + Number(a.balance ?? 0), 0);
+    }
+
     return {
       totalAccounts,
       visitorsToday: Number(row.visitors_today ?? 0),
@@ -78,7 +90,10 @@ export const getAdminUsageStats = createServerFn({ method: "POST" })
       revenueMonthUsd,
       purchasesMonth: purchases,
       netPayoutMonthUsd: Math.max(0, revenueMonthUsd - fees),
+      piAccounts: piIds.length,
+      piCreditBalance,
     };
+
   });
 
 
