@@ -3,6 +3,22 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { isPiBrowser, piAuthenticate } from "@/lib/pi";
 import { piLink, piSignIn } from "@/lib/pi.functions";
+import { PENDING_REF_KEY } from "@/components/credits/ReferralCard";
+
+/** Invite code captured from a Pi referral link, if there is one. */
+function pendingReferralCode(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  let code: string | null = null;
+  try {
+    code = new URLSearchParams(window.location.search).get("ref");
+    if (!code) code = localStorage.getItem(PENDING_REF_KEY);
+  } catch {
+    /* ignore */
+  }
+  const clean = (code ?? "").trim().toUpperCase();
+  return /^[A-Z0-9]{4,12}$/.test(clean) ? clean : undefined;
+}
+
 
 /**
  * Pi Network sign-in.
@@ -40,15 +56,29 @@ export function usePiAuth() {
         return;
       }
 
-      const result = await piSignIn({ data: { accessToken: auth.accessToken } });
+      const referralCode = pendingReferralCode();
+      const result = await piSignIn({
+        data: { accessToken: auth.accessToken, referralCode },
+      });
       const { error } = await supabase.auth.verifyOtp({
         type: "magiclink",
         token_hash: result.tokenHash,
       });
       if (error) throw error;
+      if (result.referralStatus === "redeemed") {
+        try {
+          localStorage.removeItem(PENDING_REF_KEY);
+        } catch {
+          /* ignore */
+        }
+      }
       toast.success(
         result.username ? `Signed in as @${result.username}` : "Signed in with Pi",
       );
+      if (result.creditsGranted > 0) {
+        toast.success(`${result.creditsGranted} credits added to your Pi account`);
+      }
+
     } catch (err) {
       if (!silent) {
         toast.error(err instanceof Error ? err.message : "Pi sign-in failed");

@@ -19,6 +19,11 @@ function inviteLink(code: string) {
 export function ReferralCard({ enabled }: { enabled: boolean }) {
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [piBrowser, setPiBrowser] = useState(false);
+  useEffect(() => {
+    void import("@/lib/pi").then((m) => setPiBrowser(m.isPiBrowser()));
+  }, []);
+
   const [input, setInput] = useState("");
 
   const stats = useQuery({
@@ -92,6 +97,27 @@ export function ReferralCard({ enabled }: { enabled: boolean }) {
     void copy();
   }
 
+  /** Pi Browser link always points at the public site so Pioneers can open it. */
+  async function sharePi() {
+    const url = `https://scanything.app/?ref=${code}`;
+    const text = `Scan anything with your camera. Sign in with Pi using my invite code ${code} — we both get ${REFERRAL_REWARD} credits.`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "Scanything", text, url });
+        return;
+      } catch {
+        return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Pi invite link copied");
+    } catch {
+      toast.error("Could not copy the link");
+    }
+  }
+
+
   return (
     <div className="mt-3 rounded-xl border border-current/30 bg-current/5 px-3 py-2">
       <div className="flex items-center justify-between gap-3">
@@ -131,6 +157,18 @@ export function ReferralCard({ enabled }: { enabled: boolean }) {
           <Share2 className="h-4 w-4" />
         </button>
       </div>
+
+      {piBrowser && (
+        <button
+          type="button"
+          disabled={!code}
+          onClick={() => void sharePi()}
+          className="mt-2 w-full rounded-lg border border-current/30 px-2.5 py-1.5 text-xs font-semibold transition-colors hover:bg-current/10 disabled:opacity-50"
+        >
+          Share Pi invite link
+        </button>
+      )}
+
 
       {stats.data && !stats.data.redeemed && (
         <form
