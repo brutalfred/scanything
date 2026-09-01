@@ -132,6 +132,18 @@ export function ReferralCard({ enabled }: { enabled: boolean }) {
         </button>
       </div>
 
+      {piBrowser && (
+        <button
+          type="button"
+          disabled={!code}
+          onClick={() => void sharePi()}
+          className="mt-2 w-full rounded-lg border border-current/30 px-2.5 py-1.5 text-xs font-semibold transition-colors hover:bg-current/10 disabled:opacity-50"
+        >
+          Share Pi invite link
+        </button>
+      )}
+
+
       {stats.data && !stats.data.redeemed && (
         <form
           className="mt-2 flex items-center gap-2"
