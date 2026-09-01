@@ -4,6 +4,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { PiSignInButton } from "@/components/PiAuthButton";
 import { SIGNUP_GRANT } from "@/lib/credits";
 import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "@/lib/email-domains";
 
