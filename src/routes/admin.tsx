@@ -124,7 +124,16 @@ function AdminPage() {
                   Accounts that have signed in at least once.
                 </p>
               </div>
-              <StatRow
+              <div className="rounded-xl border border-current/20 p-3">
+                <p className="text-[11px] uppercase tracking-wide opacity-70">
+                  Pi Network accounts
+                </p>
+                <p className="text-xl font-bold text-primary">{stats.data.piAccounts}</p>
+                <p className="text-[11px] opacity-70">
+                  Holding {stats.data.piCreditBalance} credits in total.
+                </p>
+              </div>
+
                 label="Signed-in visitors"
                 today={stats.data.visitorsToday}
                 week={stats.data.visitorsWeek}
