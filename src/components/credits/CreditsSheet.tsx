@@ -12,6 +12,7 @@ import { CREDIT_PACKS } from "@/lib/credit-packs";
 import { PiCreditPacks } from "@/components/credits/PiCreditPacks";
 
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { usePiMode } from "@/hooks/usePiMode";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { isNativeAndroid } from "@/lib/platform";
 import { buyWithPlay, buyPlaySubscription, playBillingAvailable } from "@/lib/play-billing";
@@ -47,6 +48,7 @@ function reasonLabel(reason: string) {
 
 export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClose: () => void }) {
   const { openCheckout } = usePaddleCheckout();
+  const piMode = usePiMode();
   const slide = useSlideDismiss("right", onClose);
   const { t } = useLanguage();
   const subscription = useSubscription(credits.signedIn);
@@ -247,7 +249,7 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           </Link>
         )}
 
-        {credits.signedIn && (
+        {credits.signedIn && !piMode && (
           <>
             <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
               <Crown className="h-4 w-4" />
@@ -320,14 +322,17 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
 
         <h3 className="mb-2 text-sm font-semibold text-primary">{t("topUp")}</h3>
 
+        {!piMode && (
         <div className="mb-3">
           <WatchAdButton
             signedIn={credits.signedIn}
             onRewarded={() => void credits.refresh?.()}
           />
         </div>
+        )}
 
 
+        {!piMode && (
         <div className="mb-4 grid grid-cols-2 gap-2">
           {CREDIT_PACKS.map((pack) => (
             <button
@@ -358,11 +363,13 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
             </button>
           ))}
         </div>
+        )}
 
         <PiCreditPacks signedIn={credits.signedIn} />
 
 
 
+        {!piMode && (
         <div className="mb-5 text-right">
           <Link
             to="/pricing"
@@ -371,6 +378,7 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
             View full pricing page
           </Link>
         </div>
+        )}
 
         {credits.signedIn && (
           <p className="mb-5 text-xs text-muted-foreground">
@@ -406,7 +414,7 @@ export function CreditsSheet({ credits, onClose }: { credits: CreditsApi; onClos
           </>
         )}
 
-        {getPaddleEnvironment() === "sandbox" && (
+        {!piMode && getPaddleEnvironment() === "sandbox" && (
           <p className="mt-4 rounded-lg bg-secondary/40 px-3 py-2 text-[11px] text-muted-foreground">
             Payments are in test mode in the preview — no real money is charged.
           </p>
