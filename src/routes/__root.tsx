@@ -17,6 +17,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useNativeShell } from "@/hooks/useNativeShell";
 import { useOAuthCallback } from "@/hooks/useOAuthCallback";
+import { usePiAutoSignIn } from "@/hooks/usePiAuth";
 
 
 import appCss from "../styles.css?url";
