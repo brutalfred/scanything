@@ -188,6 +188,7 @@ function RootComponent() {
 
   useNativeShell();
   useOAuthCallback();
+  usePiAutoSignIn();
 
   // Capture an invite code from a referral link so it can be redeemed after sign-in.
   useEffect(() => {
