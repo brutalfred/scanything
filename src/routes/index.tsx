@@ -1071,6 +1071,7 @@ function Scanner() {
 
 
   const isGuest = !credits.signedIn;
+  const piMode = usePiMode();
   const { plan: headerPlan } = useSubscription(credits.signedIn);
 
 
