@@ -179,7 +179,7 @@ export const piApprovePayment = createServerFn({ method: "POST" })
       .select("pi_uid")
       .eq("user_id", context.userId)
       .maybeSingle();
-    const sameUser = !!identity?.pi_uid && identity.pi_uid === payment.user_uid;
+    const sameUser = !!identity?.pi_uid && identity.pi_uid === payment?.user_uid;
 
     let creditable = false;
     if (pack && sameUser) {
