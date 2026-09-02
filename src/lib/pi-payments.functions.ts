@@ -130,14 +130,21 @@ async function piFetch(path: string, init: RequestInit = {}): Promise<Response> 
   }
 }
 
-async function fetchPiPayment(paymentId: string): Promise<PiPaymentDto> {
-  const res = await piFetch(`/payments/${paymentId}`);
-  if (!res.ok) {
-    console.error("[pi] read payment failed", paymentId, res.status, await res.text());
-    throw new Error("Could not read this Pi payment");
+/** Reads a payment. Returns null instead of throwing when Pi can't serve it. */
+async function fetchPiPayment(paymentId: string): Promise<PiPaymentDto | null> {
+  try {
+    const res = await piFetch(`/payments/${paymentId}`);
+    if (!res.ok) {
+      console.error("[pi] read payment failed", paymentId, res.status, await res.text());
+      return null;
+    }
+    return (await res.json()) as PiPaymentDto;
+  } catch (err) {
+    console.error("[pi] read payment error", paymentId, err);
+    return null;
   }
-  return (await res.json()) as PiPaymentDto;
 }
+
 
 
 export type PiApproveResult = { approved: true; credits: number; pi: number };
