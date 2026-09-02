@@ -98,8 +98,8 @@ export function PiAccountRow({ enabled }: { enabled: boolean }) {
         </button>
       )}
       <p className="mt-1 text-[10px] opacity-60">
-        Pi accounts sign in through the Pi Browser — email login and password reset
-        don't apply to them.
+        Pi accounts sign in with the Pi Browser or the "Continue with Pi" button —
+        email login and password reset don't apply to them.
       </p>
     </div>
   );
