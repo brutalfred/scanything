@@ -165,9 +165,10 @@ export const piApprovePayment = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const payment = await fetchPiPayment(data.paymentId);
-    const packId = payment.metadata?.packId ?? "";
+    const packId = payment?.metadata?.packId ?? "";
     const pack = CREDIT_PACKS.find((p) => p.priceId === packId);
-    const amount = Number(payment.amount ?? 0);
+    const amount = Number(payment?.amount ?? 0);
+
 
     // The payer must be the Pi identity linked to the signed-in account for
     // credits to be granted later. A mismatch (or a portal test payment with
