@@ -85,7 +85,8 @@ export function loadPiSdk(): Promise<PiSdk> {
     if (!Pi) throw new Error("Pi SDK unavailable");
 
     // Pi.init returns a promise in current SDK versions; await it either way.
-    await Promise.resolve(Pi.init({ version: "2.0" }));
+    // sandbox: true runs against the Pi Testnet — remove for mainnet.
+    await Promise.resolve(Pi.init({ version: "2.0", sandbox: true }));
     return Pi;
   })().catch((err) => {
     sdkPromise = null;
