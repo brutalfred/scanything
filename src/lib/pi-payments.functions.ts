@@ -257,7 +257,7 @@ export const piCompletePayment = createServerFn({ method: "POST" })
     let txid = data.txid;
     if (!txid) {
       const payment = await fetchPiPayment(data.paymentId);
-      txid = payment.transaction?.txid ?? undefined;
+      txid = payment?.transaction?.txid ?? undefined;
     }
     if (!txid) throw new Error("This Pi payment has no transaction yet");
 
