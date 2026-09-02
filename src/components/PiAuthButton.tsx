@@ -91,7 +91,7 @@ export function PiAccountRow({ enabled }: { enabled: boolean }) {
         <button
           type="button"
           disabled={busy}
-          onClick={() => void signInWithPi()}
+          onClick={connect}
           className="w-full text-center font-semibold disabled:opacity-50"
         >
           {busy ? "Connecting to Pi…" : "Connect Pi account"}
