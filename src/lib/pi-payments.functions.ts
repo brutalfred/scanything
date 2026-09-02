@@ -112,11 +112,33 @@ type PiPaymentDto = {
   transaction?: { txid?: string } | null;
 };
 
+/** Pi's API can hang; never let a payment sit in "preparing" forever. */
+async function piFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12_000);
+  try {
+    return await fetch(`${PI_API}${path}`, {
+      ...init,
+      headers: piHeaders(),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    console.error("[pi] request failed", path, err);
+    throw new Error("Pi Network did not respond in time");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchPiPayment(paymentId: string): Promise<PiPaymentDto> {
-  const res = await fetch(`${PI_API}/payments/${paymentId}`, { headers: piHeaders() });
-  if (!res.ok) throw new Error("Could not read this Pi payment");
+  const res = await piFetch(`/payments/${paymentId}`);
+  if (!res.ok) {
+    console.error("[pi] read payment failed", paymentId, res.status, await res.text());
+    throw new Error("Could not read this Pi payment");
+  }
   return (await res.json()) as PiPaymentDto;
 }
+
 
 export type PiApproveResult = { approved: true; credits: number; pi: number };
 
