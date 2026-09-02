@@ -130,14 +130,21 @@ async function piFetch(path: string, init: RequestInit = {}): Promise<Response> 
   }
 }
 
-async function fetchPiPayment(paymentId: string): Promise<PiPaymentDto> {
-  const res = await piFetch(`/payments/${paymentId}`);
-  if (!res.ok) {
-    console.error("[pi] read payment failed", paymentId, res.status, await res.text());
-    throw new Error("Could not read this Pi payment");
+/** Reads a payment. Returns null instead of throwing when Pi can't serve it. */
+async function fetchPiPayment(paymentId: string): Promise<PiPaymentDto | null> {
+  try {
+    const res = await piFetch(`/payments/${paymentId}`);
+    if (!res.ok) {
+      console.error("[pi] read payment failed", paymentId, res.status, await res.text());
+      return null;
+    }
+    return (await res.json()) as PiPaymentDto;
+  } catch (err) {
+    console.error("[pi] read payment error", paymentId, err);
+    return null;
   }
-  return (await res.json()) as PiPaymentDto;
 }
+
 
 
 export type PiApproveResult = { approved: true; credits: number; pi: number };
@@ -158,9 +165,10 @@ export const piApprovePayment = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const payment = await fetchPiPayment(data.paymentId);
-    const packId = payment.metadata?.packId ?? "";
+    const packId = payment?.metadata?.packId ?? "";
     const pack = CREDIT_PACKS.find((p) => p.priceId === packId);
-    const amount = Number(payment.amount ?? 0);
+    const amount = Number(payment?.amount ?? 0);
+
 
     // The payer must be the Pi identity linked to the signed-in account for
     // credits to be granted later. A mismatch (or a portal test payment with
@@ -171,7 +179,7 @@ export const piApprovePayment = createServerFn({ method: "POST" })
       .select("pi_uid")
       .eq("user_id", context.userId)
       .maybeSingle();
-    const sameUser = !!identity?.pi_uid && identity.pi_uid === payment.user_uid;
+    const sameUser = !!identity?.pi_uid && identity.pi_uid === payment?.user_uid;
 
     let creditable = false;
     if (pack && sameUser) {
@@ -207,9 +215,16 @@ export const piApprovePayment = createServerFn({ method: "POST" })
 
     const res = await piFetch(`/payments/${data.paymentId}/approve`, { method: "POST" });
     if (!res.ok && res.status !== 400) {
-      console.error("[pi] approve failed", data.paymentId, res.status, await res.text());
-      throw new Error("Pi could not approve this payment");
+      const body = await res.text();
+      console.error("[pi] approve failed", data.paymentId, res.status, body);
+      if (res.status === 404) {
+        throw new Error(
+          "Pi does not recognise this payment for this app key. Check that the server Pi API key belongs to the same app and network (sandbox vs mainnet) as the wallet.",
+        );
+      }
+      throw new Error(`Pi could not approve this payment (${res.status})`);
     }
+
 
     return { approved: true, credits: creditable && pack ? pack.credits : 0, pi: amount };
 
@@ -249,7 +264,7 @@ export const piCompletePayment = createServerFn({ method: "POST" })
     let txid = data.txid;
     if (!txid) {
       const payment = await fetchPiPayment(data.paymentId);
-      txid = payment.transaction?.txid ?? undefined;
+      txid = payment?.transaction?.txid ?? undefined;
     }
     if (!txid) throw new Error("This Pi payment has no transaction yet");
 
