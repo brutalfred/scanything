@@ -160,49 +160,59 @@ export const piApprovePayment = createServerFn({ method: "POST" })
     const payment = await fetchPiPayment(data.paymentId);
     const packId = payment.metadata?.packId ?? "";
     const pack = CREDIT_PACKS.find((p) => p.priceId === packId);
-    if (!pack) throw new Error("Unknown credit pack");
+    const amount = Number(payment.amount ?? 0);
 
-    // The payer must be the Pi identity linked to the signed-in account.
+    // The payer must be the Pi identity linked to the signed-in account for
+    // credits to be granted later. A mismatch (or a portal test payment with
+    // no pack metadata) must NOT block approval — otherwise the Pi wallet is
+    // left spinning on "transaction is preparing" forever.
     const { data: identity } = await supabaseAdmin
       .from("pi_identities")
       .select("pi_uid")
       .eq("user_id", context.userId)
       .maybeSingle();
-    if (!identity?.pi_uid || identity.pi_uid !== payment.user_uid) {
-      throw new Error("This payment belongs to a different Pi account");
+    const sameUser = !!identity?.pi_uid && identity.pi_uid === payment.user_uid;
+
+    let creditable = false;
+    if (pack && sameUser) {
+      // Re-price server-side; never trust the amount the browser asked for.
+      const { usdPerPi } = await currentRate();
+      const expected = roundPi(usdOf(pack.priceLabel) / usdPerPi);
+      // Allow a small tolerance for rate drift between quote and approval.
+      creditable = amount > 0 && amount >= expected * 0.85;
+      if (!creditable) {
+        console.error("[pi] amount mismatch", data.paymentId, { amount, expected });
+      }
+    } else {
+      console.error("[pi] approving non-creditable payment", data.paymentId, {
+        packId,
+        sameUser,
+      });
     }
 
-    // Re-price server-side; never trust the amount the browser asked for.
-    const { usdPerPi } = await currentRate();
-    const expected = roundPi(usdOf(pack.priceLabel) / usdPerPi);
-    const amount = Number(payment.amount ?? 0);
-    // Allow a small tolerance for rate drift between quote and approval.
-    if (!(amount > 0) || amount < expected * 0.85) {
-      throw new Error("Payment amount does not match this pack");
+    if (creditable && pack) {
+      const { error: insertError } = await supabaseAdmin.from("pi_payments").upsert(
+        {
+          payment_id: data.paymentId,
+          user_id: context.userId,
+          pack_id: pack.priceId,
+          credits: pack.credits,
+          amount_pi: amount,
+          status: "approved",
+        },
+        { onConflict: "payment_id" },
+      );
+      if (insertError) console.error("[pi] record failed", data.paymentId, insertError);
     }
 
-    const { error: insertError } = await supabaseAdmin.from("pi_payments").upsert(
-      {
-        payment_id: data.paymentId,
-        user_id: context.userId,
-        pack_id: pack.priceId,
-        credits: pack.credits,
-        amount_pi: amount,
-        status: "approved",
-      },
-      { onConflict: "payment_id" },
-    );
-    if (insertError) throw new Error("Could not record this Pi payment");
-
-    const res = await fetch(`${PI_API}/payments/${data.paymentId}/approve`, {
-      method: "POST",
-      headers: piHeaders(),
-    });
+    const res = await piFetch(`/payments/${data.paymentId}/approve`, { method: "POST" });
     if (!res.ok && res.status !== 400) {
+      console.error("[pi] approve failed", data.paymentId, res.status, await res.text());
       throw new Error("Pi could not approve this payment");
     }
 
-    return { approved: true, credits: pack.credits, pi: amount };
+    return { approved: true, credits: creditable && pack ? pack.credits : 0, pi: amount };
+
   });
 
 export type PiCompleteResult = {
