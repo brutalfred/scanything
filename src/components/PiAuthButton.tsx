@@ -2,11 +2,29 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usePiAuth } from "@/hooks/usePiAuth";
 import { getPiIdentity, piUnlink } from "@/lib/pi.functions";
+import { startPiOAuthSignIn } from "@/lib/pi-signin";
 
-/** "Continue with Pi" — only rendered inside the Pi Browser. */
+/**
+ * "Continue with Pi" — uses the Pi SDK inside the Pi Browser and the Pi
+ * Sign-In OAuth flow (hosted consent page) in every other browser.
+ */
 export function PiSignInButton({ className }: { className?: string }) {
   const { available, busy, signInWithPi } = usePiAuth();
-  if (!available) return null;
+
+  if (!available) {
+    return (
+      <button
+        type="button"
+        onClick={() => startPiOAuthSignIn("/")}
+        className={
+          className ??
+          "mb-4 w-full rounded-lg border border-black/30 px-4 py-2.5 text-sm font-semibold text-black hover:bg-black/5"
+        }
+      >
+        Continue with Pi
+      </button>
+    );
+  }
 
   return (
     <button
@@ -37,6 +55,11 @@ export function PiAccountRow({ enabled }: { enabled: boolean }) {
   });
 
   if (!available && !identity.data) return null;
+
+  const connect = () => {
+    if (available) void signInWithPi();
+    else startPiOAuthSignIn("/");
+  };
 
   async function unlink() {
     try {
