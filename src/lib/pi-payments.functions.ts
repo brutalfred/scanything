@@ -215,9 +215,16 @@ export const piApprovePayment = createServerFn({ method: "POST" })
 
     const res = await piFetch(`/payments/${data.paymentId}/approve`, { method: "POST" });
     if (!res.ok && res.status !== 400) {
-      console.error("[pi] approve failed", data.paymentId, res.status, await res.text());
-      throw new Error("Pi could not approve this payment");
+      const body = await res.text();
+      console.error("[pi] approve failed", data.paymentId, res.status, body);
+      if (res.status === 404) {
+        throw new Error(
+          "Pi does not recognise this payment for this app key. Check that the server Pi API key belongs to the same app and network (sandbox vs mainnet) as the wallet.",
+        );
+      }
+      throw new Error(`Pi could not approve this payment (${res.status})`);
     }
+
 
     return { approved: true, credits: creditable && pack ? pack.credits : 0, pi: amount };
 
