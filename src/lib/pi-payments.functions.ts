@@ -242,8 +242,9 @@ export const piCompletePayment = createServerFn({ method: "POST" })
       .select("user_id")
       .eq("payment_id", data.paymentId)
       .maybeSingle();
-    if (!row) throw new Error("Unknown Pi payment");
-    if (row.user_id !== context.userId) throw new Error("Not your payment");
+    // A payment with no creditable record (portal test payment, mismatched
+    // account) still has to be completed on Pi's side, it just grants nothing.
+    const creditable = !!row && row.user_id === context.userId;
 
     let txid = data.txid;
     if (!txid) {
@@ -252,13 +253,18 @@ export const piCompletePayment = createServerFn({ method: "POST" })
     }
     if (!txid) throw new Error("This Pi payment has no transaction yet");
 
-    const res = await fetch(`${PI_API}/payments/${data.paymentId}/complete`, {
+    const res = await piFetch(`/payments/${data.paymentId}/complete`, {
       method: "POST",
-      headers: piHeaders(),
       body: JSON.stringify({ txid }),
     });
     if (!res.ok && res.status !== 400) {
+      console.error("[pi] complete failed", data.paymentId, res.status, await res.text());
       throw new Error("Pi could not complete this payment");
+    }
+
+    if (!creditable) {
+      console.error("[pi] completed non-creditable payment", data.paymentId);
+      return { status: "already_completed", credits: 0, balance: 0 };
     }
 
     const { data: redeemed, error } = await supabaseAdmin.rpc("redeem_pi_payment", {
@@ -273,6 +279,7 @@ export const piCompletePayment = createServerFn({ method: "POST" })
       credits: Number(result?.credits ?? 0),
       balance: Number(result?.balance ?? 0),
     };
+
   });
 
 /** Marks a payment the Pioneer cancelled, so it stops being retried. */
