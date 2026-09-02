@@ -20,6 +20,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogResaleGuideRouteImport } from './routes/blog.resale-guide'
+import { Route as AuthPiCallbackRouteImport } from './routes/auth.pi-callback'
 import { Route as AccountDeleteRouteImport } from './routes/account.delete'
 import { Route as AccountDataRouteImport } from './routes/account.data'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -79,6 +80,11 @@ const BlogResaleGuideRoute = BlogResaleGuideRouteImport.update({
   path: '/blog/resale-guide',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthPiCallbackRoute = AuthPiCallbackRouteImport.update({
+  id: '/pi-callback',
+  path: '/pi-callback',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AccountDeleteRoute = AccountDeleteRouteImport.update({
   id: '/account/delete',
   path: '/account/delete',
@@ -99,7 +105,7 @@ const ApiPublicPaymentsWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/economics': typeof EconomicsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -109,13 +115,14 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/account/data': typeof AccountDataRoute
   '/account/delete': typeof AccountDeleteRoute
+  '/auth/pi-callback': typeof AuthPiCallbackRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/economics': typeof EconomicsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account/data': typeof AccountDataRoute
   '/account/delete': typeof AccountDeleteRoute
+  '/auth/pi-callback': typeof AuthPiCallbackRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -132,7 +140,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/economics': typeof EconomicsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/account/data': typeof AccountDataRoute
   '/account/delete': typeof AccountDeleteRoute
+  '/auth/pi-callback': typeof AuthPiCallbackRoute
   '/blog/resale-guide': typeof BlogResaleGuideRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account/data'
     | '/account/delete'
+    | '/auth/pi-callback'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account/data'
     | '/account/delete'
+    | '/auth/pi-callback'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
   id:
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account/data'
     | '/account/delete'
+    | '/auth/pi-callback'
     | '/blog/resale-guide'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -199,7 +211,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   EconomicsRoute: typeof EconomicsRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -292,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogResaleGuideRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/pi-callback': {
+      id: '/auth/pi-callback'
+      path: '/pi-callback'
+      fullPath: '/auth/pi-callback'
+      preLoaderRoute: typeof AuthPiCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/account/delete': {
       id: '/account/delete'
       path: '/account/delete'
@@ -316,10 +335,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteChildren {
+  AuthPiCallbackRoute: typeof AuthPiCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthPiCallbackRoute: AuthPiCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   EconomicsRoute: EconomicsRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
