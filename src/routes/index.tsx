@@ -814,7 +814,11 @@ function Scanner() {
           const append = appendPageRef.current;
           appendPageRef.current = false;
           setDocPages((prev) => (append ? [...prev, pageText] : [pageText]));
+          if (!pageText.trim()) {
+            setError("No readable text found — try again with more light and the page filling the frame.");
+          }
         }
+
         historyIdRef.current = null;
         if (detected.length) {
           void saveScanHistory({

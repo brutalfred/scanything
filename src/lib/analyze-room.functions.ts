@@ -589,12 +589,58 @@ export const analyzeDocument = createServerFn({ method: "POST" })
 
 
     const parsed = safeParse<AnalyzeResult>(content, { items: [] });
-    const items = (parsed.items ?? [])
+    let items = (parsed.items ?? [])
       .filter(Boolean)
       // A page transcription has no meaningful bounding box — default to full frame.
       .map((it) => normalizeFull({ ...it, box: it.box ?? { x: 0, y: 0, w: 1, h: 1 } }));
+
+    // Long or dense pages can blow the JSON budget and come back truncated or
+    // unparseable, which used to surface as a blank result. Retry once in plain
+    // text mode — no JSON envelope to truncate — and wrap the transcription.
+    if (!items.some((it) => (it.description ?? "").trim())) {
+      const raw = await callGateway(
+        "document_scan",
+        {
+          model: "google/gemini-3-flash-preview",
+          temperature: 0,
+          top_p: 1,
+          max_tokens: 8192,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a high-accuracy OCR engine. Transcribe ALL text in the image verbatim, one output line per printed line, preserving layout and original language. Output ONLY the transcribed text — no JSON, no commentary. If there is no text, output nothing.",
+            },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Transcribe every word of text in this image." },
+                { type: "image_url", image_url: { url: toDataUrl(data.imageBase64) } },
+              ],
+            },
+          ],
+        },
+        context.userId,
+      );
+      const text = raw.replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
+      if (text) {
+        items = [
+          normalizeFull({
+            name: "Document page",
+            category: "document",
+            description: text,
+            priceMin: 0,
+            priceMax: 0,
+            currency: "USD",
+            confidence: 80,
+            box: { x: 0, y: 0, w: 1, h: 1 },
+          } as never),
+        ];
+      }
+    }
     return { items };
   });
+
 
 const SUMMARY_SYSTEM = `You summarize scanned documents.
 Write a short but detailed, easy-to-understand summary of the document text the user provides.
