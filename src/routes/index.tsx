@@ -2949,6 +2949,7 @@ function Scanner() {
               }}
               maxLength={60}
               placeholder="Collection name"
+              aria-label="Collection name"
               className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
             />
             <div className="mt-4 flex gap-2">
