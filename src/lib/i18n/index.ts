@@ -148,7 +148,7 @@ export const EN = {
   translating: "Translating…",
   estimatedPriceRange: "Estimated price range",
   shopThisItem: "Shop this item",
-  learnMore: "Learn more",
+  learnMore: "View item details & specs",
   officialVehicleLookup: "Official vehicle lookup",
   analyzeFurther: "Analyze further",
   addPhotoOfItem: "Add photo of this item",
