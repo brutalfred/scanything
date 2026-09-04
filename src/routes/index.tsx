@@ -161,11 +161,12 @@ type Mode =
   | "resale"
   | "authenticate"
   | "camera"
+  | "record"
   | "barcode"
   | "magnifier";
 
 /** Free utility modes that never call the AI and never cost credits. */
-const TOOL_MODES: Mode[] = ["camera", "barcode", "magnifier"];
+const TOOL_MODES: Mode[] = ["camera", "record", "barcode", "magnifier"];
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -1011,10 +1012,10 @@ function Scanner() {
     }
   }, []);
 
-  // Leaving the camera tool stops any in-flight recording.
+  // Leaving the video tool stops any in-flight recording.
   useEffect(() => {
-    if (mode !== "camera" && recorderRef.current) stopRecording();
-    if (mode !== "camera" && clip) {
+    if (mode !== "record" && recorderRef.current) stopRecording();
+    if (mode !== "record" && clip) {
       URL.revokeObjectURL(clip.url);
       setClip(null);
     }
