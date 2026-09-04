@@ -161,22 +161,39 @@ function AuthPage() {
 
         {!piMode && (
         <><form onSubmit={submit} className="space-y-3">
+          <h1 className="sr-only">
+            {mode === "signup"
+              ? "Create your Scanything account"
+              : mode === "forgot"
+                ? "Reset your Scanything password"
+                : "Sign in to Scanything"}
+          </h1>
+          <label htmlFor="auth-email" className="sr-only">Email address</label>
           <input
+            id="auth-email"
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
+            autoComplete="email"
+            aria-label="Email address"
             className="w-full rounded-lg border border-black/20 bg-black px-3 py-2.5 text-sm text-white placeholder:text-white/60"
           />
           {mode !== "forgot" && (
+            <label htmlFor="auth-password" className="sr-only">Password</label>
+          )}
+          {mode !== "forgot" && (
             <input
+              id="auth-password"
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              aria-label="Password"
               className="w-full rounded-lg border border-black/20 bg-black px-3 py-2.5 text-sm text-white placeholder:text-white/60"
             />
           )}
