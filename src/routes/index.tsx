@@ -863,7 +863,35 @@ function Scanner() {
     [stopCamera, credits, environment, startScanSpend],
   );
 
+  // --- Plain camera mode ("Take photo") — no AI, no credits ------------
+  const [photoGrid, setPhotoGrid] = useState(false);
+  const [photoTimer, setPhotoTimer] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  const takePhoto = useCallback(async () => {
+    if (countdown !== null) return;
+    if (photoTimer) {
+      for (const n of [3, 2, 1]) {
+        setCountdown(n);
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      setCountdown(null);
+    }
+    // Full resolution — this photo is for keeping, not for a quick AI pass.
+    const dataUrl = grabFrame(2200, 0.92);
+    if (!dataUrl) {
+      toast.error("Camera not ready yet — try again.");
+      return;
+    }
+    setError(null);
+    setSnapshot(dataUrl);
+  }, [countdown, photoTimer, grabFrame]);
+
   const capture = useCallback(async () => {
+    if (mode === "camera") {
+      await takePhoto();
+      return;
+    }
     const isDoc = mode === "document";
     const isResale = mode === "resale";
     // Documents need every glyph, so capture at a much higher resolution.
