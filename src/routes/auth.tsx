@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { applyTheme, isThemeKey, THEME_STORAGE_KEY } from "@/lib/theme";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,20 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // The auth page always uses the cyber theme; restore the user's theme on leave.
+  useEffect(() => {
+    let restore: string | null = null;
+    try {
+      restore = localStorage.getItem(THEME_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    applyTheme("cyber");
+    return () => {
+      applyTheme(isThemeKey(restore) ? restore : "cyber");
+    };
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,13 +112,19 @@ function AuthPage() {
 
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-5">
-      <div className="w-full max-w-sm">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-5">
+      {/* Starlike splash that radiates out from the artwork across the page */}
+      <div className="auth-splash" aria-hidden="true">
+        <div className="auth-stars auth-stars-a" />
+        <div className="auth-stars auth-stars-b" />
+      </div>
+      <div className="relative w-full max-w-sm">
         <div className="relative mb-5 w-full">
+          <div className="auth-splash-halo" aria-hidden="true" />
           <img
             src={authLogoAsset.url}
             alt="Scanything — Scan anything, know everything"
-            className="block w-full rounded-2xl"
+            className="relative block w-full rounded-2xl"
           />
           {/* Flash on the camera lens in the artwork, every 3 seconds */}
           <div className="camera-flash" aria-hidden="true" />
