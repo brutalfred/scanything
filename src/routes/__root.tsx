@@ -13,7 +13,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
-
+import { useTheme } from "@/hooks/useTheme";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useNativeShell } from "@/hooks/useNativeShell";
 import { useOAuthCallback } from "@/hooks/useOAuthCallback";
@@ -121,7 +121,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Bebas+Neue&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap",
       },
       {
         rel: "stylesheet",
@@ -183,6 +183,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  useTheme();
   useLanguage();
 
   useNativeShell();

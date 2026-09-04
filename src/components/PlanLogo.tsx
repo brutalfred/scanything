@@ -1,28 +1,40 @@
-import logoUrl from "@/assets/dolphin-logo.png";
+import logoAsset from "@/assets/scanything-logo.png.asset.json";
 import type { PlanType } from "@/lib/plan-mapping";
 
 /**
- * App logo. Pro and Max subscribers get a glowing variant
- * (gold glow for Pro, diamond glow for Max).
+ * App logo. Pro and Max subscribers get a glowing variant with a stylish
+ * wordmark underneath (gold shine for Pro, diamond shine for Max).
  */
 export function PlanLogo({ plan, className }: { plan: PlanType | null; className?: string }) {
   const img = (
     <img
-      src={logoUrl}
-      alt="Scanything dolphin logo"
-      className={className ?? "h-20 w-auto max-w-full rounded-2xl object-contain sm:h-[100px]"}
+      src={logoAsset.url}
+      alt="Scanything logo"
+      className={className ?? "h-20 w-auto max-w-full object-contain sm:h-[100px]"}
       width={1024}
-      height={1024}
+      height={512}
     />
   );
 
-  if (!plan) return img;
+  // The scan-line overlay wraps the image so the sweeping line stays clipped
+  // to the logo's bounding box.
+  const withScanLine = (
+    <span className="logo-scan-wrap relative isolate inline-flex overflow-hidden">
+      {img}
+      <span aria-hidden className="logo-scan-line" />
+    </span>
+  );
+
+  if (!plan) return withScanLine;
 
   return (
-    <span
-      className={`relative isolate inline-flex ${plan === "max" ? "plan-glow-max" : "plan-glow-pro"}`}
-    >
-      {img}
+    <span className="flex flex-col items-center">
+      <span
+        className={`relative isolate inline-flex ${plan === "max" ? "plan-glow-max" : "plan-glow-pro"}`}
+      >
+        {withScanLine}
+      </span>
+      <PlanWordmark plan={plan} />
     </span>
   );
 }

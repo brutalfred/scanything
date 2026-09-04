@@ -1,5 +1,5 @@
 import { useSlideDismiss } from "@/hooks/useSlideDismiss";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -70,11 +70,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { CreditsProvider, useCreditsContext } from "@/components/credits/CreditsProvider";
 import { CreditMeter } from "@/components/credits/CreditMeter";
 
@@ -363,24 +360,15 @@ function Index() {
 
 function Scanner() {
   const credits = useCreditsContext();
-  const navigate = useNavigate();
   const { t, language: appLang } = useLanguage();
   const appVersion = useAppVersion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // The auth page is the app's welcoming/landing page for guests.
-  // Send unauthenticated visitors there instead of the scanner.
-  useEffect(() => {
-    if (credits.sessionReady && !credits.signedIn) {
-      navigate({ to: "/auth" });
-    }
-  }, [credits.sessionReady, credits.signedIn, navigate]);
-
 
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
-  const [mode, setMode] = useState<Mode>("resale");
+  const [mode, setMode] = useState<Mode>("photo");
   const [phase, setPhase] = useState<Phase>("camera");
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
@@ -1688,20 +1676,80 @@ function Scanner() {
           <div className="space-y-3">
             {/* Mode toggle */}
             <div className="flex items-center justify-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/15 px-5 py-2 text-sm font-semibold text-foreground shadow-sm">
-                <Tag className="h-4 w-4 text-primary" />
-                {t("resaleScan")}
-              </span>
-              {credits.signedIn && (
-                <button
-                  onClick={() => setHistoryOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-accent gold-glow"
-                  aria-label={t("scanHistory")}
-                  title={t("scanHistory")}
-                >
-                  <History className="h-3.5 w-3.5" />
-                </button>
-              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-secondary/80"
+                    aria-label="Choose scan mode"
+                  >
+                    {mode === "photo" && <ImageIcon className="h-4 w-4" />}
+                    {mode === "video" && <Video className="h-4 w-4" />}
+                    {mode === "resale" && <Tag className="h-4 w-4" />}
+                    {mode === "document" && <FileText className="h-4 w-4" />}
+                    {mode === "authenticate" && <ShieldCheck className="h-4 w-4" />}
+                    <span>
+                      {mode === "photo" && t("photoScan")}
+                      {mode === "video" && t("videoScan")}
+                      {mode === "resale" && t("resaleScan")}
+                      {mode === "document" && t("documentScan")}
+                      {mode === "authenticate" && t("authenticateScan")}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="min-w-[10rem]">
+                  <DropdownMenuItem
+                    onClick={() => switchMode("photo")}
+                    className="flex items-center gap-2"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    {t("photoScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (credits.signedIn) {
+                        setVideoWarningOpen(true);
+                      } else {
+                        switchMode("video");
+                      }
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Video className="h-4 w-4" />
+                    {t("videoScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("resale")}
+                    className="flex items-center gap-2"
+                  >
+                    <Tag className="h-4 w-4" />
+                    {t("resaleScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("document")}
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    {t("documentScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("authenticate")}
+                    className="flex items-center gap-2"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    {t("authenticateScan")}
+                  </DropdownMenuItem>
+                  {credits.signedIn && (
+                    <DropdownMenuItem
+                      onClick={() => setHistoryOpen(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <History className="h-4 w-4" />
+                      {t("scanHistory")}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <CreditMeter
                 balance={credits.balance}
                 loading={credits.loading}
@@ -2428,36 +2476,7 @@ function Scanner() {
                         {sellable.length} of {resaleItems.length} items worth listing · ~$
                         {sellTotal} from those
                       </p>
-                      {sellable.length > 0 && (
-                        <div className="mt-3 border-t border-primary/20 pt-2">
-                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                            Best flips
-                          </div>
-                          <ul className="mt-1 space-y-1">
-                            {[...sellable]
-                              .sort((a, b) => (b.resale?.typical ?? 0) - (a.resale?.typical ?? 0))
-                              .slice(0, 3)
-                              .map((it, i) => (
-                                <li key={i}>
-                                  <button
-                                    type="button"
-                                    onClick={() => openItem(it)}
-                                    className="flex w-full items-center justify-between gap-3 rounded-md px-1 py-1 text-left text-xs hover:bg-primary/10"
-                                  >
-                                    <span className="truncate text-foreground">
-                                      {i + 1}. {it.name}
-                                    </span>
-                                    <span className="shrink-0 font-semibold tabular-nums text-primary">
-                                      ${it.resale?.typical}
-                                    </span>
-                                  </button>
-                                </li>
-                              ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
-
                   );
                 })()}
                 <div className="mb-2 flex items-center justify-between gap-2">
@@ -2983,10 +3002,6 @@ function DetailPanel({
   const [listingEdited, setListingEdited] = useState(false);
   const [listingError, setListingError] = useState<string | null>(null);
 
-  /** What the flipper paid (or expects to pay) for this item — drives profit math. */
-  const [buyPrice, setBuyPrice] = useState<string>("");
-
-
 
 
   const detectedCountry = useMemo(() => detectCountry(), []);
@@ -3507,94 +3522,6 @@ function DetailPanel({
                 {item.resale.reason && (
                   <p className="mt-1.5 text-xs text-muted-foreground">{item.resale.reason}</p>
                 )}
-
-                {/* Buy price → profit, and fee-adjusted net payout per marketplace */}
-                {(() => {
-                  const typical = item.resale.typical;
-                  const buy = Number.parseFloat(buyPrice.replace(",", "."));
-                  const hasBuy = Number.isFinite(buy) && buy >= 0;
-                  const fees: { label: string; fee: number }[] = [
-                    { label: "eBay", fee: 0.13 },
-                    { label: "Mercari", fee: 0.1 },
-                    { label: "Depop", fee: 0.1 },
-                    { label: "Poshmark", fee: 0.2 },
-                    { label: "Facebook Marketplace", fee: 0 },
-                  ];
-                  const best = Math.round(typical * (1 - fees[4].fee));
-                  const bestProfit = hasBuy ? best - buy : null;
-                  return (
-                    <div className="mt-3 rounded-lg border border-border/60 bg-background/60 p-3">
-                      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                        What did you pay?
-                      </label>
-                      <div className="mt-1 flex items-center gap-2">
-                        <div className="relative flex-1">
-                          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                            $
-                          </span>
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min="0"
-                            step="0.5"
-                            value={buyPrice}
-                            onChange={(e) => setBuyPrice(e.target.value)}
-                            placeholder="0"
-                            className="w-full rounded-md border border-border bg-background py-1.5 pl-5 pr-2 text-sm tabular-nums outline-none focus:border-primary"
-                          />
-                        </div>
-                        {hasBuy && (
-                          <div className="text-right">
-                            <div
-                              className={`text-lg font-bold tabular-nums ${
-                                (bestProfit ?? 0) > 0 ? "text-primary" : "text-destructive"
-                              }`}
-                            >
-                              {(bestProfit ?? 0) >= 0 ? "+" : "−"}$
-                              {Math.abs(Math.round(bestProfit ?? 0))}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground">
-                              profit at ${typical}
-                              {buy > 0
-                                ? ` · ${Math.round(((best - buy) / Math.max(buy, 1)) * 100)}% ROI`
-                                : ""}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-3 space-y-1">
-                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          Net after typical fees
-                        </div>
-                        {fees.map((f) => {
-                          const net = Math.round(typical * (1 - f.fee));
-                          return (
-                            <div
-                              key={f.label}
-                              className="flex items-center justify-between text-xs"
-                            >
-                              <span className="text-muted-foreground">
-                                {f.label}
-                                {f.fee > 0 ? ` · ${Math.round(f.fee * 100)}%` : " · no fee"}
-                              </span>
-                              <span className="font-medium tabular-nums text-foreground">
-                                ${net}
-                                {hasBuy && (
-                                  <span
-                                    className={`ml-2 ${net - buy >= 0 ? "text-primary" : "text-destructive"}`}
-                                  >
-                                    {net - buy >= 0 ? "+" : "−"}${Math.abs(Math.round(net - buy))}
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-
                 <div className="mt-3">
                   <h4 className="text-xs font-medium text-primary">{t("whereToSell")}</h4>
                   <DropdownMenu>
