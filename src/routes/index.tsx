@@ -37,8 +37,8 @@ import {
   MessageCircle,
   Send,
   ShieldCheck,
-
-
+  Grid3x3,
+  Timer,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -135,7 +135,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video" | "document" | "resale" | "authenticate";
+type Mode = "photo" | "video" | "document" | "resale" | "authenticate" | "camera";
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -863,7 +863,35 @@ function Scanner() {
     [stopCamera, credits, environment, startScanSpend],
   );
 
+  // --- Plain camera mode ("Take photo") — no AI, no credits ------------
+  const [photoGrid, setPhotoGrid] = useState(false);
+  const [photoTimer, setPhotoTimer] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  const takePhoto = useCallback(async () => {
+    if (countdown !== null) return;
+    if (photoTimer) {
+      for (const n of [3, 2, 1]) {
+        setCountdown(n);
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      setCountdown(null);
+    }
+    // Full resolution — this photo is for keeping, not for a quick AI pass.
+    const dataUrl = grabFrame(2200, 0.92);
+    if (!dataUrl) {
+      toast.error("Camera not ready yet — try again.");
+      return;
+    }
+    setError(null);
+    setSnapshot(dataUrl);
+  }, [countdown, photoTimer, grabFrame]);
+
   const capture = useCallback(async () => {
+    if (mode === "camera") {
+      await takePhoto();
+      return;
+    }
     const isDoc = mode === "document";
     const isResale = mode === "resale";
     // Documents need every glyph, so capture at a much higher resolution.
@@ -886,7 +914,7 @@ function Scanner() {
 
     setUploaded(null);
     await runScan(dataUrl, mode);
-  }, [grabFrame, mode, uploaded, runScan, refreshQueue]);
+  }, [grabFrame, mode, uploaded, runScan, refreshQueue, takePhoto]);
 
   const cancelScan = useCallback(() => {
     cancelScanRef.current = true;
@@ -1687,12 +1715,14 @@ function Scanner() {
                     {mode === "resale" && <Tag className="h-4 w-4" />}
                     {mode === "document" && <FileText className="h-4 w-4" />}
                     {mode === "authenticate" && <ShieldCheck className="h-4 w-4" />}
+                    {mode === "camera" && <Camera className="h-4 w-4" />}
                     <span>
                       {mode === "photo" && t("photoScan")}
                       {mode === "video" && t("videoScan")}
                       {mode === "resale" && t("resaleScan")}
                       {mode === "document" && t("documentScan")}
                       {mode === "authenticate" && t("authenticateScan")}
+                      {mode === "camera" && t("takePhoto")}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
@@ -1739,6 +1769,13 @@ function Scanner() {
                     <ShieldCheck className="h-4 w-4" />
                     {t("authenticateScan")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("camera")}
+                    className="flex items-center gap-2"
+                  >
+                    <Camera className="h-4 w-4" />
+                    {t("takePhoto")}
+                  </DropdownMenuItem>
                   {credits.signedIn && (
                     <DropdownMenuItem
                       onClick={() => setHistoryOpen(true)}
@@ -1756,7 +1793,7 @@ function Scanner() {
                 signedIn={credits.signedIn}
                 onClick={credits.openSheet}
               />
-              {!isGuest && (
+              {!isGuest && mode !== "camera" && (
                 <button
                   onClick={() => setFilterOpen((o) => !o)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-accent gold-glow"
@@ -1772,18 +1809,63 @@ function Scanner() {
             </div>
 
 
-            {(mode === "photo" || mode === "resale" || mode === "document" || mode === "authenticate") && (
+            {(mode === "photo" || mode === "resale" || mode === "document" || mode === "authenticate" || mode === "camera") && (
               <p className="text-center text-[11px] text-muted-foreground">
                 {mode === "photo" && t("photoScanDescription")}
                 {mode === "resale" && t("resaleScanDescription")}
                 {mode === "document" && t("documentScanDescription")}
                 {mode === "authenticate" && t("authenticateScanDescription")}
+                {mode === "camera" && t("takePhotoDescription")}
               </p>
+            )}
+
+            {mode === "camera" && (
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPhotoGrid((g) => !g)}
+                  aria-pressed={photoGrid}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    photoGrid
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border/70 bg-card text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <Grid3x3 className="h-3.5 w-3.5" />
+                  Grid
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhotoTimer((v) => !v)}
+                  aria-pressed={photoTimer}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    photoTimer
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border/70 bg-card text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <Timer className="h-3.5 w-3.5" />
+                  3s
+                </button>
+              </div>
             )}
 
 
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
+              {mode === "camera" && photoGrid && (
+                <div className="pointer-events-none absolute inset-0 z-10">
+                  <div className="absolute inset-y-0 left-1/3 w-px bg-white/40" />
+                  <div className="absolute inset-y-0 left-2/3 w-px bg-white/40" />
+                  <div className="absolute inset-x-0 top-1/3 h-px bg-white/40" />
+                  <div className="absolute inset-x-0 top-2/3 h-px bg-white/40" />
+                </div>
+              )}
+              {mode === "camera" && countdown !== null && (
+                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+                  <span className="text-7xl font-bold text-white drop-shadow-lg">{countdown}</span>
+                </div>
+              )}
               <div {...cameraZoom.handlers} className="absolute inset-0">
                 <div style={cameraZoom.transformStyle}>
                   <video
@@ -1890,7 +1972,7 @@ function Scanner() {
                 </button>
               )}
 
-              {isGuest && (
+              {isGuest && mode !== "camera" && (
                 <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/85 p-3 text-center text-xs text-white">
                   <p className="mb-2">Sign in for your {SIGNUP_GRANT} free credits and get started.</p>
                   <PiSignInButton className="mb-2 w-full rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50" />
@@ -2143,6 +2225,22 @@ function Scanner() {
                   )}
                 </div>
               </>
+            ) : mode === "camera" ? (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  size="lg"
+                  data-no-sound
+                  onClick={capture}
+                  disabled={countdown !== null}
+                  className="w-full max-w-xs"
+                >
+                  <Camera className="mr-2 h-5 w-5" />
+                  {countdown !== null ? `${countdown}…` : t("takePhoto")}
+                </Button>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Free — no AI, no credits. Photos stay on your device.
+                </p>
+              </div>
             ) : (
               !isGuest && (
                 <div className="flex flex-col items-center gap-2">
@@ -2250,7 +2348,7 @@ function Scanner() {
             <div className="flex justify-center">
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                {t("newScan")}
+                {mode === "camera" ? t("newPhoto") : t("newScan")}
               </Button>
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
