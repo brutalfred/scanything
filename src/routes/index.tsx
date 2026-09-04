@@ -4031,6 +4031,7 @@ function DetailPanel({
                   accept="image/*"
                   capture="environment"
                   className="hidden"
+                  aria-label="Replace this photo"
                   onChange={(e) => {
                     void replaceExtraShot(e.target.files);
                     e.target.value = "";
