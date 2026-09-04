@@ -27,7 +27,7 @@ export function AdRewardModal({
       if (result.status === "limit_reached") {
         toast.error(`Daily limit reached — ${result.dailyLimit} ads per day.`);
       } else {
-        toast.success("+2 credits added — thanks for watching!");
+        toast.success("+5 credits added — thanks for watching!");
         setDone(true);
       }
       onRewarded();
@@ -43,7 +43,7 @@ export function AdRewardModal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4">
       <div className="gold-glow w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-card p-5 text-foreground">
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-lg font-bold text-primary">Watch an ad for 2 credits</h2>
+          <h2 className="text-lg font-bold text-primary">Watch an ad for 5 credits</h2>
           <button onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-primary">
             <X className="h-5 w-5" />
           </button>
@@ -54,7 +54,7 @@ export function AdRewardModal({
             <Play className="mx-auto mb-2 h-8 w-8 text-primary" />
             <p className="text-sm text-muted-foreground">
               {adsAvailable()
-                ? "Watch the full video to earn 2 credits."
+                ? "Watch the full video to earn 5 credits."
                 : "Rewarded ads are only available in the Scanything Android app."}
             </p>
           </div>

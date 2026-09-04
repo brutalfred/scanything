@@ -29,7 +29,7 @@ export const getAdRewardStatus = createServerFn({ method: "POST" })
     };
   });
 
-/** Grants 2 credits after a commercial has been watched, capped at 5 ads per day. */
+/** Grants 5 credits after a commercial has been watched, capped at 5 ads per day. */
 export const claimAdReward = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdRewardResult> => {
