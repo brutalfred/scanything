@@ -1972,7 +1972,7 @@ function Scanner() {
                 </button>
               )}
 
-              {isGuest && (
+              {isGuest && mode !== "camera" && (
                 <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/85 p-3 text-center text-xs text-white">
                   <p className="mb-2">Sign in for your {SIGNUP_GRANT} free credits and get started.</p>
                   <PiSignInButton className="mb-2 w-full rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50" />
