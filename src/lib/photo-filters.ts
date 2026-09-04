@@ -17,7 +17,7 @@ export type PhotoFilter = {
 };
 
 export const PHOTO_FILTERS: PhotoFilter[] = [
-  { id: "none", label: "None", css: "" },
+  { id: "none", label: "No filter", css: "" },
   { id: "vivid", label: "Vivid", css: "saturate(1.6) contrast(1.1)" },
   { id: "warm", label: "Warm", css: "sepia(0.25) saturate(1.35) hue-rotate(-10deg)" },
   { id: "cool", label: "Cool", css: "saturate(1.15) hue-rotate(15deg) brightness(1.05)" },
