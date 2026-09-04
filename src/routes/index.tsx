@@ -743,6 +743,9 @@ function Scanner() {
   }, [phase, snapshot, aiConsent.granted]);
 
 
+  // When selfie mirror is on, captures are flipped so they match the preview.
+  const mirrorRef = useRef(false);
+
   const grabFrame = useCallback((maxDim = 1024, quality = 0.8): string | null => {
     const video = videoRef.current;
     if (!video) return null;
