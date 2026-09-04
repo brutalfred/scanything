@@ -7,11 +7,13 @@
 - Photo editor: rotate, crop presets, brightness/contrast/saturation, watermark.
 - Magnifier mode (1–6× live zoom, grid, freeze/capture).
 - Scan-to-PDF export for documents and captures.
+- Video recording in the camera tool (MediaRecorder, save/share clip).
+- Burst mode (8 rapid frames straight to the gallery).
+- Selfie mirror toggle (mirrored preview + mirrored capture).
 
 ## Next up
-- Video recording + burst mode in the camera tool.
 - Receipt / business-card / plant / wine label recognizers built on the scan pipeline.
 - Barcode-driven resale sourcing (sold-comps lookup, keep list, price alerts).
 - Cloud sync of gallery for signed-in users.
-- Panorama, portrait blur, selfie mirror.
+- Panorama, portrait blur.
 - Offline/on-device fallback model for basic identification.

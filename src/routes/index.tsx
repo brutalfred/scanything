@@ -45,6 +45,9 @@ import {
   FileDown,
   Wrench,
   ScanLine,
+  Zap,
+  FlipHorizontal2,
+  Square,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -740,6 +743,9 @@ function Scanner() {
   }, [phase, snapshot, aiConsent.granted]);
 
 
+  // When selfie mirror is on, captures are flipped so they match the preview.
+  const mirrorRef = useRef(false);
+
   const grabFrame = useCallback((maxDim = 1024, quality = 0.8): string | null => {
     const video = videoRef.current;
     if (!video) return null;
@@ -786,6 +792,10 @@ function Scanner() {
     canvas.height = Math.round(sh * scale);
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
+    if (mirrorRef.current) {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", quality);
   }, []);
@@ -895,8 +905,16 @@ function Scanner() {
   const [photoTimer, setPhotoTimer] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 
+  const [burst, setBurst] = useState(false);
+  const [burstBusy, setBurstBusy] = useState(false);
+  const [selfieMirror, setSelfieMirror] = useState(false);
+
+  useEffect(() => {
+    mirrorRef.current = selfieMirror;
+  }, [selfieMirror]);
+
   const takePhoto = useCallback(async () => {
-    if (countdown !== null) return;
+    if (countdown !== null || burstBusy) return;
     if (photoTimer) {
       for (const n of [3, 2, 1]) {
         setCountdown(n);
@@ -905,6 +923,26 @@ function Scanner() {
       setCountdown(null);
     }
     // Full resolution — this photo is for keeping, not for a quick AI pass.
+    if (burst) {
+      // Burst: rapid-fire 8 frames and keep them all in the gallery.
+      setBurstBusy(true);
+      const shots: string[] = [];
+      for (let i = 0; i < 8; i++) {
+        const frame = grabFrame(2200, 0.92);
+        if (frame) shots.push(frame);
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      setBurstBusy(false);
+      if (!shots.length) {
+        toast.error("Camera not ready yet — try again.");
+        return;
+      }
+      setError(null);
+      setSnapshot(shots[shots.length - 1]);
+      for (const s of shots) void saveGalleryPhoto(s);
+      toast.success(`Burst saved — ${shots.length} photos in your gallery.`);
+      return;
+    }
     const dataUrl = grabFrame(2200, 0.92);
     if (!dataUrl) {
       toast.error("Camera not ready yet — try again.");
@@ -914,7 +952,99 @@ function Scanner() {
     setSnapshot(dataUrl);
     // Every plain photo is kept in the in-app gallery.
     void saveGalleryPhoto(dataUrl);
-  }, [countdown, photoTimer, grabFrame]);
+  }, [countdown, burstBusy, photoTimer, burst, grabFrame]);
+
+  // --- Video recording (camera tool) -----------------------------------
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recChunksRef = useRef<Blob[]>([]);
+  const recStartRef = useRef(0);
+  const [recording, setRecording] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
+  const [clip, setClip] = useState<{ url: string; blob: Blob } | null>(null);
+
+  useEffect(() => {
+    if (!recording) return;
+    const id = window.setInterval(
+      () => setRecSeconds(Math.floor((Date.now() - recStartRef.current) / 1000)),
+      500,
+    );
+    return () => window.clearInterval(id);
+  }, [recording]);
+
+  const stopRecording = useCallback(() => {
+    const rec = recorderRef.current;
+    recorderRef.current = null;
+    setRecording(false);
+    if (rec && rec.state !== "inactive") rec.stop();
+  }, []);
+
+  const startRecording = useCallback(() => {
+    const stream = streamRef.current;
+    if (!stream || recorderRef.current) return;
+    const mime = ["video/webm;codecs=vp9", "video/webm", "video/mp4"].find((m) =>
+      typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m),
+    );
+    if (!mime) {
+      toast.error("Video recording is not supported on this device.");
+      return;
+    }
+    try {
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      recChunksRef.current = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) recChunksRef.current.push(e.data);
+      };
+      rec.onstop = () => {
+        const blob = new Blob(recChunksRef.current, { type: mime });
+        recChunksRef.current = [];
+        if (blob.size > 0) {
+          setClip({ url: URL.createObjectURL(blob), blob });
+        }
+      };
+      rec.start(250);
+      recorderRef.current = rec;
+      recStartRef.current = Date.now();
+      setRecSeconds(0);
+      setRecording(true);
+    } catch {
+      toast.error("Could not start video recording.");
+    }
+  }, []);
+
+  // Leaving the camera tool stops any in-flight recording.
+  useEffect(() => {
+    if (mode !== "camera" && recorderRef.current) stopRecording();
+    if (mode !== "camera" && clip) {
+      URL.revokeObjectURL(clip.url);
+      setClip(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  const saveClip = useCallback(() => {
+    if (!clip) return;
+    const ext = clip.blob.type.includes("mp4") ? "mp4" : "webm";
+    const a = document.createElement("a");
+    a.href = clip.url;
+    a.download = `scanything-${Date.now()}.${ext}`;
+    a.click();
+    toast.success("Video saved");
+  }, [clip]);
+
+  const shareClip = useCallback(async () => {
+    if (!clip) return;
+    const ext = clip.blob.type.includes("mp4") ? "mp4" : "webm";
+    const file = new File([clip.blob], `scanything.${ext}`, { type: clip.blob.type });
+    try {
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        saveClip();
+      }
+    } catch {
+      /* user cancelled */
+    }
+  }, [clip, saveClip]);
 
   // --- Tools: gallery, editor, barcode reader, magnifier ---------------
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -2034,6 +2164,36 @@ function Scanner() {
                   <Timer className="h-3.5 w-3.5" />
                   3s
                 </button>
+                {mode === "camera" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setBurst((b) => !b)}
+                      aria-pressed={burst}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        burst
+                          ? "border-primary bg-primary/15 text-primary"
+                          : "border-border/70 bg-card text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <Zap className="h-3.5 w-3.5" />
+                      Burst
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelfieMirror((m) => !m)}
+                      aria-pressed={selfieMirror}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        selfieMirror
+                          ? "border-primary bg-primary/15 text-primary"
+                          : "border-border/70 bg-card text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <FlipHorizontal2 className="h-3.5 w-3.5" />
+                      Mirror
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={() => setGalleryOpen(true)}
@@ -2144,9 +2304,14 @@ function Scanner() {
                     playsInline
                     muted
                     className="absolute inset-0 h-full w-full object-cover"
-                    style={
-                      mode === "magnifier" ? { transform: `scale(${magnify})` } : undefined
-                    }
+                    style={{
+                      transform: [
+                        mode === "magnifier" ? `scale(${magnify})` : "",
+                        mode === "camera" && selfieMirror ? "scaleX(-1)" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ") || undefined,
+                    }}
                   />
 
 
@@ -2245,6 +2410,51 @@ function Scanner() {
                 >
                   {cameraZoom.scale.toFixed(1)}× · reset
                 </button>
+              )}
+
+              {recording && (
+                <div className="absolute left-2 top-2 z-30 flex items-center gap-1.5 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                  REC {Math.floor(recSeconds / 60)}:{String(recSeconds % 60).padStart(2, "0")}
+                </div>
+              )}
+
+              {clip && (
+                <div className="absolute inset-0 z-40 flex flex-col bg-black">
+                  <video
+                    src={clip.url}
+                    controls
+                    playsInline
+                    className="min-h-0 w-full flex-1 object-contain"
+                  />
+                  <div className="flex items-center justify-center gap-2 p-2">
+                    <button
+                      type="button"
+                      onClick={saveClip}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void shareClip()}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+                    >
+                      <Share2 className="h-3.5 w-3.5" /> Share
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        URL.revokeObjectURL(clip.url);
+                        setClip(null);
+                      }}
+                      aria-label="Discard video"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Discard
+                    </button>
+                  </div>
+                </div>
               )}
 
               {isGuest && !TOOL_MODES.includes(mode) && (
@@ -2520,18 +2730,41 @@ function Scanner() {
               </div>
             ) : mode === "camera" || mode === "magnifier" ? (
               <div className="flex flex-col items-center gap-2">
-                <Button
-                  size="lg"
-                  data-no-sound
-                  onClick={capture}
-                  disabled={countdown !== null}
-                  className="w-full max-w-xs"
-                >
-                  <Camera className="mr-2 h-5 w-5" />
-                  {countdown !== null ? `${countdown}…` : t("takePhoto")}
-                </Button>
+                <div className="flex w-full max-w-xs items-center gap-2">
+                  <Button
+                    size="lg"
+                    data-no-sound
+                    onClick={capture}
+                    disabled={countdown !== null || burstBusy || recording}
+                    className="flex-1"
+                  >
+                    <Camera className="mr-2 h-5 w-5" />
+                    {countdown !== null
+                      ? `${countdown}…`
+                      : burstBusy
+                        ? "Burst…"
+                        : t("takePhoto")}
+                  </Button>
+                  {mode === "camera" && (
+                    <Button
+                      size="lg"
+                      data-no-sound
+                      variant={recording ? "destructive" : "outline"}
+                      onClick={recording ? stopRecording : startRecording}
+                      aria-label={recording ? "Stop recording" : "Record video"}
+                      title={recording ? "Stop recording" : "Record video"}
+                      className="shrink-0 px-4"
+                    >
+                      {recording ? (
+                        <Square className="h-5 w-5 fill-current" />
+                      ) : (
+                        <Video className="h-5 w-5" />
+                      )}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-center text-[11px] text-muted-foreground">
-                  Free — no AI, no credits. Photos stay on your device.
+                  Free — no AI, no credits. Photos and videos stay on your device.
                 </p>
               </div>
             ) : (
