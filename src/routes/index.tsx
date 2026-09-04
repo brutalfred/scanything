@@ -1,5 +1,5 @@
 import { useSlideDismiss } from "@/hooks/useSlideDismiss";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -363,10 +363,19 @@ function Index() {
 
 function Scanner() {
   const credits = useCreditsContext();
+  const navigate = useNavigate();
   const { t, language: appLang } = useLanguage();
   const appVersion = useAppVersion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // The auth page is the app's welcoming/landing page for guests.
+  // Send unauthenticated visitors there instead of the scanner.
+  useEffect(() => {
+    if (credits.sessionReady && !credits.signedIn) {
+      navigate({ to: "/auth" });
+    }
+  }, [credits.sessionReady, credits.signedIn, navigate]);
 
 
   const [torchOn, setTorchOn] = useState(false);
