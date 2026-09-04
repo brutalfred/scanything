@@ -833,3 +833,70 @@
   mix-blend-mode: screen;
   animation: camera-flash 3s ease-in-out infinite;
 }
+
+/* ---- Auth page: cyber star splash radiating from the artwork ---- */
+.auth-splash {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 50% 32%, rgba(255, 47, 168, 0.22), transparent 70%),
+    radial-gradient(55% 45% at 50% 40%, rgba(37, 229, 255, 0.16), transparent 70%),
+    radial-gradient(80% 70% at 50% 30%, rgba(124, 77, 255, 0.18), transparent 75%);
+}
+
+/* Two layers of tiny star dots, twinkling out of phase */
+.auth-stars {
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background-repeat: repeat;
+}
+
+.auth-stars-a {
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px, rgba(255, 255, 255, 0.9), transparent 60%),
+    radial-gradient(1px 1px at 130px 80px, rgba(37, 229, 255, 0.8), transparent 60%),
+    radial-gradient(1.2px 1.2px at 70px 150px, rgba(255, 47, 168, 0.8), transparent 60%),
+    radial-gradient(1px 1px at 190px 190px, rgba(255, 255, 255, 0.7), transparent 60%),
+    radial-gradient(1.4px 1.4px at 240px 60px, rgba(200, 170, 255, 0.8), transparent 60%);
+  background-size: 280px 280px;
+  animation: auth-twinkle 4s ease-in-out infinite;
+}
+
+.auth-stars-b {
+  background-image:
+    radial-gradient(1px 1px at 60px 110px, rgba(255, 255, 255, 0.8), transparent 60%),
+    radial-gradient(1.6px 1.6px at 170px 40px, rgba(37, 229, 255, 0.9), transparent 60%),
+    radial-gradient(1px 1px at 100px 220px, rgba(255, 255, 255, 0.6), transparent 60%),
+    radial-gradient(1.3px 1.3px at 250px 160px, rgba(255, 47, 168, 0.7), transparent 60%);
+  background-size: 340px 340px;
+  animation: auth-twinkle 5.5s ease-in-out 1.2s infinite;
+}
+
+@keyframes auth-twinkle {
+  0%, 100% { opacity: 0.35; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-8px); }
+}
+
+/* Neon halo spilling past the edges of the logo artwork */
+.auth-splash-halo {
+  position: absolute;
+  inset: -18%;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 32px;
+  background:
+    radial-gradient(55% 55% at 50% 45%, rgba(255, 47, 168, 0.35), transparent 70%),
+    radial-gradient(65% 60% at 50% 55%, rgba(37, 229, 255, 0.25), transparent 75%),
+    radial-gradient(75% 75% at 50% 50%, rgba(124, 77, 255, 0.28), transparent 80%);
+  filter: blur(18px);
+  animation: auth-halo-breathe 6s ease-in-out infinite;
+}
+
+@keyframes auth-halo-breathe {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
