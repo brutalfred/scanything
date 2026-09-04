@@ -914,7 +914,7 @@ function Scanner() {
 
     setUploaded(null);
     await runScan(dataUrl, mode);
-  }, [grabFrame, mode, uploaded, runScan, refreshQueue]);
+  }, [grabFrame, mode, uploaded, runScan, refreshQueue, takePhoto]);
 
   const cancelScan = useCallback(() => {
     cancelScanRef.current = true;
