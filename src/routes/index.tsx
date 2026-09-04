@@ -1809,13 +1809,45 @@ function Scanner() {
             </div>
 
 
-            {(mode === "photo" || mode === "resale" || mode === "document" || mode === "authenticate") && (
+            {(mode === "photo" || mode === "resale" || mode === "document" || mode === "authenticate" || mode === "camera") && (
               <p className="text-center text-[11px] text-muted-foreground">
                 {mode === "photo" && t("photoScanDescription")}
                 {mode === "resale" && t("resaleScanDescription")}
                 {mode === "document" && t("documentScanDescription")}
                 {mode === "authenticate" && t("authenticateScanDescription")}
+                {mode === "camera" && t("takePhotoDescription")}
               </p>
+            )}
+
+            {mode === "camera" && (
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPhotoGrid((g) => !g)}
+                  aria-pressed={photoGrid}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    photoGrid
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border/70 bg-card text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <Grid3x3 className="h-3.5 w-3.5" />
+                  Grid
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhotoTimer((v) => !v)}
+                  aria-pressed={photoTimer}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    photoTimer
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border/70 bg-card text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <Timer className="h-3.5 w-3.5" />
+                  3s
+                </button>
+              </div>
             )}
 
 
