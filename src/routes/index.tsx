@@ -115,7 +115,6 @@ import { PanoramaStitcher } from "@/lib/panorama";
 import { applyPortraitBlur } from "@/lib/portrait-blur";
 import {
   classifyOffline,
-  loadOfflineModel,
   offlineModelDownloaded,
   type OfflinePrediction,
 } from "@/lib/offline-model";
