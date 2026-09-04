@@ -2348,7 +2348,7 @@ function Scanner() {
             <div className="flex justify-center">
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                {t("newScan")}
+                {mode === "camera" ? t("newPhoto") : t("newScan")}
               </Button>
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
