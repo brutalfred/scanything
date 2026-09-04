@@ -48,6 +48,11 @@ import {
   Zap,
   FlipHorizontal2,
   Square,
+  SwitchCamera,
+  Palette,
+  Aperture,
+  MoveHorizontal,
+  WifiOff,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -104,6 +109,16 @@ import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
 import { GallerySheet } from "@/components/GallerySheet";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import { savePhoto as saveGalleryPhoto } from "@/lib/gallery";
+import { PHOTO_FILTERS, filterCss } from "@/lib/photo-filters";
+import { PhotoFilterDefs } from "@/components/PhotoFilterDefs";
+import { PanoramaStitcher } from "@/lib/panorama";
+import { applyPortraitBlur } from "@/lib/portrait-blur";
+import {
+  classifyOffline,
+  loadOfflineModel,
+  offlineModelDownloaded,
+  type OfflinePrediction,
+} from "@/lib/offline-model";
 import {
   classifyBarcode,
   decodeFromDataUrl,
@@ -163,10 +178,19 @@ type Mode =
   | "camera"
   | "record"
   | "barcode"
-  | "magnifier";
+  | "magnifier"
+  | "panorama"
+  | "portrait";
 
 /** Free utility modes that never call the AI and never cost credits. */
-const TOOL_MODES: Mode[] = ["camera", "record", "barcode", "magnifier"];
+const TOOL_MODES: Mode[] = [
+  "camera",
+  "record",
+  "barcode",
+  "magnifier",
+  "panorama",
+  "portrait",
+];
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -395,6 +419,12 @@ function Scanner() {
   const appVersion = useAppVersion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  /** Which physical camera is live — back by default, front for selfies. */
+  const [facing, setFacing] = useState<"environment" | "user">("environment");
+  const facingRef = useRef<"environment" | "user">("environment");
+  /** Selected photo filter (live preview + baked into the capture). */
+  const [photoFilter, setPhotoFilter] = useState("none");
+  const photoFilterRef = useRef("");
 
 
   const [torchOn, setTorchOn] = useState(false);
@@ -654,7 +684,7 @@ function Scanner() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: { ideal: "environment" },
+            facingMode: { ideal: facingRef.current },
             width: { ideal: 1280 },
             height: { ideal: 1280 },
           },
@@ -797,6 +827,14 @@ function Scanner() {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
     }
+    // Bake the selected look into the saved photo so it matches the preview.
+    if (photoFilterRef.current) {
+      try {
+        ctx.filter = photoFilterRef.current;
+      } catch {
+        /* filter unsupported — save the untouched frame */
+      }
+    }
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", quality);
   }, []);
@@ -913,6 +951,149 @@ function Scanner() {
   useEffect(() => {
     mirrorRef.current = selfieMirror;
   }, [selfieMirror]);
+
+  // Filters only apply to the free photo tools, never to an AI scan frame.
+  const filterModes: Mode[] = ["camera", "record", "portrait", "panorama"];
+  const filterActive = filterModes.includes(mode);
+  useEffect(() => {
+    photoFilterRef.current = filterActive ? filterCss(photoFilter) : "";
+  }, [photoFilter, filterActive]);
+
+  // Flipping between the back and the selfie camera restarts the stream.
+  const flipCamera = useCallback(() => {
+    setFacing((f) => {
+      const next = f === "environment" ? "user" : "environment";
+      facingRef.current = next;
+      // Selfies read naturally when mirrored.
+      setSelfieMirror(next === "user");
+      return next;
+    });
+  }, []);
+
+  const restartCamera = useCallback(async () => {
+    if (phase !== "camera" || snapshot) return;
+    stopCamera();
+    await startCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, snapshot, stopCamera, startCamera]);
+
+  const firstFacing = useRef(true);
+  useEffect(() => {
+    if (firstFacing.current) {
+      firstFacing.current = false;
+      return;
+    }
+    void restartCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facing]);
+
+  // --- Portrait mode (on-device depth blur) ----------------------------
+  const [portraitStrength, setPortraitStrength] = useState(12);
+  const [portraitBusy, setPortraitBusy] = useState(false);
+
+  const takePortrait = useCallback(async () => {
+    const frame = grabFrame(2000, 0.92);
+    if (!frame) {
+      toast.error("Camera not ready yet — try again.");
+      return;
+    }
+    setPortraitBusy(true);
+    try {
+      const blurred = await applyPortraitBlur(frame, { strength: portraitStrength });
+      setError(null);
+      setSnapshot(blurred);
+      void saveGalleryPhoto(blurred);
+      toast.success("Portrait saved to your gallery.");
+    } catch {
+      toast.error("Could not apply the portrait blur.");
+    } finally {
+      setPortraitBusy(false);
+    }
+  }, [grabFrame, portraitStrength]);
+
+  // --- Panorama mode (sweep stitching) ---------------------------------
+  const panoRef = useRef<PanoramaStitcher | null>(null);
+  const [panoActive, setPanoActive] = useState(false);
+  const [panoProgress, setPanoProgress] = useState(0);
+
+  const finishPanorama = useCallback(() => {
+    const stitcher = panoRef.current;
+    panoRef.current = null;
+    setPanoActive(false);
+    setPanoProgress(0);
+    if (!stitcher) return;
+    const out = stitcher.finish();
+    if (!out) {
+      toast.error("Pan a little further next time — that sweep was too short.");
+      return;
+    }
+    setError(null);
+    setSnapshot(out);
+    void saveGalleryPhoto(out);
+    toast.success("Panorama saved to your gallery.");
+  }, []);
+
+  const startPanorama = useCallback(() => {
+    panoRef.current = new PanoramaStitcher(720, 26);
+    setPanoProgress(0);
+    setPanoActive(true);
+  }, []);
+
+  useEffect(() => {
+    if (!panoActive) return;
+    const id = window.setInterval(() => {
+      const stitcher = panoRef.current;
+      const video = videoRef.current;
+      if (!stitcher || !video) return;
+      stitcher.push(video);
+      setPanoProgress(Math.min(1, stitcher.width / 6000));
+      if (stitcher.full) finishPanorama();
+    }, 120);
+    return () => window.clearInterval(id);
+  }, [panoActive, finishPanorama]);
+
+  useEffect(() => {
+    if (mode !== "panorama" && panoRef.current) {
+      panoRef.current = null;
+      setPanoActive(false);
+      setPanoProgress(0);
+    }
+  }, [mode]);
+
+  // --- Offline / on-device identification ------------------------------
+  const [offlinePreds, setOfflinePreds] = useState<OfflinePrediction[] | null>(null);
+  const [offlineBusy, setOfflineBusy] = useState(false);
+  const [offlineReady, setOfflineReady] = useState(false);
+
+  useEffect(() => {
+    setOfflineReady(offlineModelDownloaded());
+  }, []);
+
+  const prepareOfflineModel = useCallback(async () => {
+    setOfflineBusy(true);
+    try {
+      await loadOfflineModel();
+      setOfflineReady(true);
+      toast.success("Offline recognition is ready — it now works with no connection.");
+    } catch {
+      toast.error("Could not download the offline model. Check your connection.");
+    } finally {
+      setOfflineBusy(false);
+    }
+  }, []);
+
+  const identifyOffline = useCallback(async (dataUrl: string) => {
+    setOfflineBusy(true);
+    try {
+      const preds = await classifyOffline(dataUrl);
+      setOfflinePreds(preds.length ? preds : []);
+      setOfflineReady(true);
+    } catch {
+      setOfflinePreds(null);
+    } finally {
+      setOfflineBusy(false);
+    }
+  }, []);
 
   const takePhoto = useCallback(async () => {
     if (countdown !== null || burstBusy) return;
@@ -1147,6 +1328,15 @@ function Scanner() {
       await takePhoto();
       return;
     }
+    if (mode === "portrait") {
+      await takePortrait();
+      return;
+    }
+    if (mode === "panorama") {
+      if (panoActive) finishPanorama();
+      else startPanorama();
+      return;
+    }
     if (mode === "record") return;
     if (mode === "barcode") {
       const frame = uploaded ?? grabFrame(1600, 0.9);
@@ -1164,13 +1354,17 @@ function Scanner() {
     if (!dataUrl) return;
 
     // Offline: park the shot in the queue instead of burning a credit on a
-    // request that cannot reach the server.
+    // request that cannot reach the server — and, when the on-device model
+    // has been downloaded, give a free basic identification right away.
     if (isOffline()) {
       try {
         await queueScan({ mode: isDoc ? "document" : isResale ? "resale" : "photo", dataUrl });
         setUploaded(null);
+        setSnapshot(dataUrl);
+        setOfflinePreds(null);
         await refreshQueue();
         toast.success("You're offline — scan saved to the queue.");
+        if (!isDoc && offlineModelDownloaded()) void identifyOffline(dataUrl);
       } catch {
         toast.error("Could not save this scan offline.");
       }
@@ -1179,7 +1373,20 @@ function Scanner() {
 
     setUploaded(null);
     await runScan(dataUrl, mode);
-  }, [grabFrame, mode, uploaded, runScan, refreshQueue, takePhoto, scanBarcodeFromImage]);
+  }, [
+    grabFrame,
+    mode,
+    uploaded,
+    runScan,
+    refreshQueue,
+    takePhoto,
+    takePortrait,
+    panoActive,
+    startPanorama,
+    finishPanorama,
+    identifyOffline,
+    scanBarcodeFromImage,
+  ]);
 
   const cancelScan = useCallback(() => {
     cancelScanRef.current = true;
@@ -1547,6 +1754,7 @@ function Scanner() {
     setAuthAnalyzing(false);
     setAuthNote("");
     setBarcodeHit(null);
+    setOfflinePreds(null);
     setPhase("camera");
   }, []);
 
@@ -1649,6 +1857,7 @@ function Scanner() {
     });
     setMode(m);
     setUploaded(null);
+    setOfflinePreds(null);
     setVideoPaused(false);
     setError(null);
     setAuthWhole(null);
@@ -1897,6 +2106,18 @@ function Scanner() {
               </button>
             )}
 
+            {!offlineReady && (
+              <button
+                onClick={() => void prepareOfflineModel()}
+                disabled={offlineBusy}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-60"
+                title="Download the on-device model so scans still give a best guess offline"
+              >
+                <WifiOff className="h-3.5 w-3.5" />
+                {offlineBusy ? "Preparing…" : "Offline mode"}
+              </button>
+            )}
+
 
 
 
@@ -2068,7 +2289,11 @@ function Scanner() {
                             ? "QR / Barcode"
                             : mode === "magnifier"
                               ? "Magnifier"
-                              : "Tools"}
+                              : mode === "portrait"
+                                ? "Portrait"
+                                : mode === "panorama"
+                                  ? "Panorama"
+                                  : "Tools"}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
@@ -2101,6 +2326,20 @@ function Scanner() {
                   >
                     <ZoomIn className="h-4 w-4" />
                     Magnifier
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("portrait")}
+                    className="flex items-center gap-2"
+                  >
+                    <Aperture className="h-4 w-4" />
+                    Portrait
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("panorama")}
+                    className="flex items-center gap-2"
+                  >
+                    <MoveHorizontal className="h-4 w-4" />
+                    Panorama
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setGalleryOpen(true)}
@@ -2146,10 +2385,18 @@ function Scanner() {
                   "Point at any QR code or product barcode — free, instant, no credits."}
                 {mode === "magnifier" &&
                   "Use the camera as a magnifying glass for small print and serial numbers."}
+                {mode === "portrait" &&
+                  "Portrait shots with a soft depth-of-field blur — processed on your device, free."}
+                {mode === "panorama" &&
+                  "Hold Start, pan slowly from left to right, then Finish — stitched on your device."}
               </p>
             )}
 
-            {(mode === "camera" || mode === "record" || mode === "magnifier") && (
+            {(mode === "camera" ||
+              mode === "record" ||
+              mode === "magnifier" ||
+              mode === "portrait" ||
+              mode === "panorama") && (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
@@ -2192,7 +2439,7 @@ function Scanner() {
                     Burst
                   </button>
                 )}
-                {(mode === "camera" || mode === "record") && (
+                {(mode === "camera" || mode === "record" || mode === "portrait") && (
                   <button
                     type="button"
                     onClick={() => setSelfieMirror((m) => !m)}
@@ -2206,6 +2453,55 @@ function Scanner() {
                     <FlipHorizontal2 className="h-3.5 w-3.5" />
                     Mirror
                   </button>
+                )}
+                {/* Front / back camera switch — selfies flip automatically */}
+                <button
+                  type="button"
+                  onClick={flipCamera}
+                  aria-pressed={facing === "user"}
+                  aria-label="Switch between the back and front camera"
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    facing === "user"
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border/70 bg-card text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <SwitchCamera className="h-3.5 w-3.5" />
+                  {facing === "user" ? "Selfie" : "Flip"}
+                </button>
+                {filterActive && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Choose a photo filter"
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          photoFilter !== "none"
+                            ? "border-primary bg-primary/15 text-primary"
+                            : "border-border/70 bg-card text-foreground hover:bg-accent"
+                        }`}
+                      >
+                        <Palette className="h-3.5 w-3.5" />
+                        {PHOTO_FILTERS.find((f) => f.id === photoFilter)?.label ?? "Filter"}
+                        <ChevronDown className="h-3 w-3 opacity-70" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="center"
+                      className="max-h-72 min-w-[10rem] overflow-y-auto"
+                    >
+                      {PHOTO_FILTERS.map((f) => (
+                        <DropdownMenuItem
+                          key={f.id}
+                          onClick={() => setPhotoFilter(f.id)}
+                          className="flex items-center justify-between gap-3"
+                        >
+                          <span>{f.label}</span>
+                          {photoFilter === f.id && <Check className="h-3.5 w-3.5 text-primary" />}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 <button
                   type="button"
@@ -2233,6 +2529,37 @@ function Scanner() {
                 />
                 <span className="w-10 text-right">{magnify.toFixed(1)}×</span>
               </label>
+            )}
+
+            {mode === "portrait" && (
+              <label className="mx-auto flex max-w-xs items-center gap-3 text-[11px] font-medium text-muted-foreground">
+                <Aperture className="h-3.5 w-3.5" />
+                <input
+                  type="range"
+                  min={4}
+                  max={28}
+                  step={1}
+                  value={portraitStrength}
+                  aria-label="Background blur strength"
+                  onChange={(e) => setPortraitStrength(Number(e.target.value))}
+                  className="w-full accent-[hsl(var(--primary))]"
+                />
+                <span className="w-14 text-right">f/{(28 - portraitStrength / 2).toFixed(1)}</span>
+              </label>
+            )}
+
+            {mode === "panorama" && panoActive && (
+              <div className="mx-auto max-w-xs space-y-1">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-150"
+                    style={{ width: `${Math.round(panoProgress * 100)}%` }}
+                  />
+                </div>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Pan slowly — tap Finish when you're done.
+                </p>
+              </div>
             )}
 
             {mode === "barcode" && barcodeHit && (
@@ -2292,12 +2619,23 @@ function Scanner() {
 
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
-              {(mode === "camera" || mode === "record" || mode === "magnifier") && photoGrid && (
-                <div className="pointer-events-none absolute inset-0 z-10">
-                  <div className="absolute inset-y-0 left-1/3 w-px bg-white/40" />
-                  <div className="absolute inset-y-0 left-2/3 w-px bg-white/40" />
-                  <div className="absolute inset-x-0 top-1/3 h-px bg-white/40" />
-                  <div className="absolute inset-x-0 top-2/3 h-px bg-white/40" />
+              <PhotoFilterDefs />
+              {(mode === "camera" ||
+                mode === "record" ||
+                mode === "magnifier" ||
+                mode === "portrait" ||
+                mode === "panorama") &&
+                photoGrid && (
+                  <div className="pointer-events-none absolute inset-0 z-10">
+                    <div className="absolute inset-y-0 left-1/3 w-px bg-white/40" />
+                    <div className="absolute inset-y-0 left-2/3 w-px bg-white/40" />
+                    <div className="absolute inset-x-0 top-1/3 h-px bg-white/40" />
+                    <div className="absolute inset-x-0 top-2/3 h-px bg-white/40" />
+                  </div>
+                )}
+              {mode === "portrait" && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                  <div className="h-3/5 w-2/3 rounded-[50%] border-2 border-dashed border-white/40" />
                 </div>
               )}
               {mode === "barcode" && (
@@ -2305,11 +2643,17 @@ function Scanner() {
                   <div className="h-40 w-64 rounded-xl border-2 border-primary/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
                 </div>
               )}
-              {(mode === "camera" || mode === "record" || mode === "magnifier") && countdown !== null && (
-                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/30">
-                  <span className="text-7xl font-bold text-white drop-shadow-lg">{countdown}</span>
-                </div>
-              )}
+              {(mode === "camera" ||
+                mode === "record" ||
+                mode === "magnifier" ||
+                mode === "portrait") &&
+                countdown !== null && (
+                  <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+                    <span className="text-7xl font-bold text-white drop-shadow-lg">
+                      {countdown}
+                    </span>
+                  </div>
+                )}
               <div {...cameraZoom.handlers} className="absolute inset-0">
                 <div style={cameraZoom.transformStyle}>
                   <video
@@ -2320,14 +2664,17 @@ function Scanner() {
                     style={{
                       transform: [
                         mode === "magnifier" ? `scale(${magnify})` : "",
-                        (mode === "camera" || mode === "record") && selfieMirror
+                        (mode === "camera" || mode === "record" || mode === "portrait") &&
+                        selfieMirror
                           ? "scaleX(-1)"
                           : "",
                       ]
                         .filter(Boolean)
                         .join(" ") || undefined,
+                      filter: filterActive ? filterCss(photoFilter) || undefined : undefined,
                     }}
                   />
+
 
 
                   {mode === "video" &&
@@ -2768,22 +3115,40 @@ function Scanner() {
                   Free — no AI, no credits. Videos stay on your device.
                 </p>
               </div>
-            ) : mode === "camera" || mode === "magnifier" ? (
+            ) : mode === "panorama" ? (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  size="lg"
+                  data-no-sound
+                  variant={panoActive ? "destructive" : "default"}
+                  onClick={panoActive ? finishPanorama : startPanorama}
+                  className="w-full max-w-xs"
+                >
+                  <MoveHorizontal className="mr-2 h-5 w-5" />
+                  {panoActive ? "Finish panorama" : "Start panorama"}
+                </Button>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Free — stitched on your device and saved to your gallery.
+                </p>
+              </div>
+            ) : mode === "camera" || mode === "magnifier" || mode === "portrait" ? (
               <div className="flex flex-col items-center gap-2">
                 <div className="flex w-full max-w-xs items-center gap-2">
                   <Button
                     size="lg"
                     data-no-sound
                     onClick={capture}
-                    disabled={countdown !== null || burstBusy}
+                    disabled={countdown !== null || burstBusy || portraitBusy}
                     className="flex-1"
                   >
                     <Camera className="mr-2 h-5 w-5" />
                     {countdown !== null
                       ? `${countdown}…`
-                      : burstBusy
-                        ? "Burst…"
-                        : t("takePhoto")}
+                      : portraitBusy
+                        ? "Blurring…"
+                        : burstBusy
+                          ? "Burst…"
+                          : t("takePhoto")}
                   </Button>
                 </div>
                 <p className="text-center text-[11px] text-muted-foreground">
@@ -2898,9 +3263,35 @@ function Scanner() {
             <div className="flex justify-center">
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                {mode === "camera" || mode === "magnifier" ? t("newPhoto") : t("newScan")}
+                {mode === "camera" ||
+                mode === "magnifier" ||
+                mode === "portrait" ||
+                mode === "panorama"
+                  ? t("newPhoto")
+                  : t("newScan")}
               </Button>
             </div>
+            {offlinePreds && offlinePreds.length > 0 && (
+              <div className="mx-auto max-w-md rounded-2xl border border-primary/40 bg-card p-3">
+                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  <WifiOff className="h-3.5 w-3.5" />
+                  Offline best guess
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {offlinePreds.map((p) => (
+                    <li key={p.name} className="flex justify-between text-sm">
+                      <span className="capitalize">{p.name}</span>
+                      <span className="text-muted-foreground">
+                        {Math.round(p.confidence * 100)}%
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Identified on your device. Full AI details run once you're back online.
+                </p>
+              </div>
+            )}
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
               <div {...photoZoom.handlers} className="relative overflow-hidden">
 
