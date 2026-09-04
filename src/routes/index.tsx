@@ -2304,9 +2304,14 @@ function Scanner() {
                     playsInline
                     muted
                     className="absolute inset-0 h-full w-full object-cover"
-                    style={
-                      mode === "magnifier" ? { transform: `scale(${magnify})` } : undefined
-                    }
+                    style={{
+                      transform: [
+                        mode === "magnifier" ? `scale(${magnify})` : "",
+                        mode === "camera" && selfieMirror ? "scaleX(-1)" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ") || undefined,
+                    }}
                   />
 
 
