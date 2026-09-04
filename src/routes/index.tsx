@@ -1853,6 +1853,19 @@ function Scanner() {
 
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
+              {mode === "camera" && photoGrid && (
+                <div className="pointer-events-none absolute inset-0 z-10">
+                  <div className="absolute inset-y-0 left-1/3 w-px bg-white/40" />
+                  <div className="absolute inset-y-0 left-2/3 w-px bg-white/40" />
+                  <div className="absolute inset-x-0 top-1/3 h-px bg-white/40" />
+                  <div className="absolute inset-x-0 top-2/3 h-px bg-white/40" />
+                </div>
+              )}
+              {mode === "camera" && countdown !== null && (
+                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+                  <span className="text-7xl font-bold text-white drop-shadow-lg">{countdown}</span>
+                </div>
+              )}
               <div {...cameraZoom.handlers} className="absolute inset-0">
                 <div style={cameraZoom.transformStyle}>
                   <video
@@ -2212,6 +2225,22 @@ function Scanner() {
                   )}
                 </div>
               </>
+            ) : mode === "camera" ? (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  size="lg"
+                  data-no-sound
+                  onClick={capture}
+                  disabled={countdown !== null}
+                  className="w-full max-w-xs"
+                >
+                  <Camera className="mr-2 h-5 w-5" />
+                  {countdown !== null ? `${countdown}…` : t("takePhoto")}
+                </Button>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Free — no AI, no credits. Photos stay on your device.
+                </p>
+              </div>
             ) : (
               !isGuest && (
                 <div className="flex flex-col items-center gap-2">
