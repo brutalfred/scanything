@@ -3249,9 +3249,35 @@ function Scanner() {
             <div className="flex justify-center">
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                {mode === "camera" || mode === "magnifier" ? t("newPhoto") : t("newScan")}
+                {mode === "camera" ||
+                mode === "magnifier" ||
+                mode === "portrait" ||
+                mode === "panorama"
+                  ? t("newPhoto")
+                  : t("newScan")}
               </Button>
             </div>
+            {offlinePreds && offlinePreds.length > 0 && (
+              <div className="mx-auto max-w-md rounded-2xl border border-primary/40 bg-card p-3">
+                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  <WifiOff className="h-3.5 w-3.5" />
+                  Offline best guess
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {offlinePreds.map((p) => (
+                    <li key={p.label} className="flex justify-between text-sm">
+                      <span className="capitalize">{p.label}</span>
+                      <span className="text-muted-foreground">
+                        {Math.round(p.confidence * 100)}%
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Identified on your device. Full AI details run once you're back online.
+                </p>
+              </div>
+            )}
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
               <div {...photoZoom.handlers} className="relative overflow-hidden">
 
