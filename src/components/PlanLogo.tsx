@@ -1,4 +1,4 @@
-import logoAsset from "@/assets/scanything-logo.jpg.asset.json";
+import logoAsset from "@/assets/scanything-logo.png.asset.json";
 import type { PlanType } from "@/lib/plan-mapping";
 
 /**
