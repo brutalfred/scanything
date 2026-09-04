@@ -161,11 +161,12 @@ type Mode =
   | "resale"
   | "authenticate"
   | "camera"
+  | "record"
   | "barcode"
   | "magnifier";
 
 /** Free utility modes that never call the AI and never cost credits. */
-const TOOL_MODES: Mode[] = ["camera", "barcode", "magnifier"];
+const TOOL_MODES: Mode[] = ["camera", "record", "barcode", "magnifier"];
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -1011,10 +1012,10 @@ function Scanner() {
     }
   }, []);
 
-  // Leaving the camera tool stops any in-flight recording.
+  // Leaving the video tool stops any in-flight recording.
   useEffect(() => {
-    if (mode !== "camera" && recorderRef.current) stopRecording();
-    if (mode !== "camera" && clip) {
+    if (mode !== "record" && recorderRef.current) stopRecording();
+    if (mode !== "record" && clip) {
       URL.revokeObjectURL(clip.url);
       setClip(null);
     }
@@ -1146,6 +1147,7 @@ function Scanner() {
       await takePhoto();
       return;
     }
+    if (mode === "record") return;
     if (mode === "barcode") {
       const frame = uploaded ?? grabFrame(1600, 0.9);
       if (!frame) {
@@ -2060,11 +2062,13 @@ function Scanner() {
                     <span>
                       {mode === "camera"
                         ? t("takePhoto")
-                        : mode === "barcode"
-                          ? "QR / Barcode"
-                          : mode === "magnifier"
-                            ? "Magnifier"
-                            : "Tools"}
+                        : mode === "record"
+                          ? "Video"
+                          : mode === "barcode"
+                            ? "QR / Barcode"
+                            : mode === "magnifier"
+                              ? "Magnifier"
+                              : "Tools"}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
@@ -2076,6 +2080,13 @@ function Scanner() {
                   >
                     <Camera className="h-4 w-4" />
                     {t("takePhoto")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("record")}
+                    className="flex items-center gap-2"
+                  >
+                    <Video className="h-4 w-4" />
+                    Video
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => switchMode("barcode")}
@@ -2129,6 +2140,8 @@ function Scanner() {
                 {mode === "document" && t("documentScanDescription")}
                 {mode === "authenticate" && t("authenticateScanDescription")}
                 {mode === "camera" && t("takePhotoDescription")}
+                {mode === "record" &&
+                  "Record video clips with zoom and torch — free, saved to your device."}
                 {mode === "barcode" &&
                   "Point at any QR code or product barcode — free, instant, no credits."}
                 {mode === "magnifier" &&
@@ -2136,7 +2149,7 @@ function Scanner() {
               </p>
             )}
 
-            {(mode === "camera" || mode === "magnifier") && (
+            {(mode === "camera" || mode === "record" || mode === "magnifier") && (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
@@ -2165,34 +2178,34 @@ function Scanner() {
                   3s
                 </button>
                 {mode === "camera" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setBurst((b) => !b)}
-                      aria-pressed={burst}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                        burst
-                          ? "border-primary bg-primary/15 text-primary"
-                          : "border-border/70 bg-card text-foreground hover:bg-accent"
-                      }`}
-                    >
-                      <Zap className="h-3.5 w-3.5" />
-                      Burst
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelfieMirror((m) => !m)}
-                      aria-pressed={selfieMirror}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                        selfieMirror
-                          ? "border-primary bg-primary/15 text-primary"
-                          : "border-border/70 bg-card text-foreground hover:bg-accent"
-                      }`}
-                    >
-                      <FlipHorizontal2 className="h-3.5 w-3.5" />
-                      Mirror
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => setBurst((b) => !b)}
+                    aria-pressed={burst}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      burst
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-border/70 bg-card text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    Burst
+                  </button>
+                )}
+                {(mode === "camera" || mode === "record") && (
+                  <button
+                    type="button"
+                    onClick={() => setSelfieMirror((m) => !m)}
+                    aria-pressed={selfieMirror}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      selfieMirror
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-border/70 bg-card text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    <FlipHorizontal2 className="h-3.5 w-3.5" />
+                    Mirror
+                  </button>
                 )}
                 <button
                   type="button"
@@ -2279,7 +2292,7 @@ function Scanner() {
 
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
-              {(mode === "camera" || mode === "magnifier") && photoGrid && (
+              {(mode === "camera" || mode === "record" || mode === "magnifier") && photoGrid && (
                 <div className="pointer-events-none absolute inset-0 z-10">
                   <div className="absolute inset-y-0 left-1/3 w-px bg-white/40" />
                   <div className="absolute inset-y-0 left-2/3 w-px bg-white/40" />
@@ -2292,7 +2305,7 @@ function Scanner() {
                   <div className="h-40 w-64 rounded-xl border-2 border-primary/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
                 </div>
               )}
-              {(mode === "camera" || mode === "magnifier") && countdown !== null && (
+              {(mode === "camera" || mode === "record" || mode === "magnifier") && countdown !== null && (
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/30">
                   <span className="text-7xl font-bold text-white drop-shadow-lg">{countdown}</span>
                 </div>
@@ -2307,7 +2320,9 @@ function Scanner() {
                     style={{
                       transform: [
                         mode === "magnifier" ? `scale(${magnify})` : "",
-                        mode === "camera" && selfieMirror ? "scaleX(-1)" : "",
+                        (mode === "camera" || mode === "record") && selfieMirror
+                          ? "scaleX(-1)"
+                          : "",
                       ]
                         .filter(Boolean)
                         .join(" ") || undefined,
@@ -2728,6 +2743,31 @@ function Scanner() {
                   Free — codes are read on your device. Hold steady inside the frame.
                 </p>
               </div>
+            ) : mode === "record" ? (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  size="lg"
+                  data-no-sound
+                  variant={recording ? "destructive" : "default"}
+                  onClick={recording ? stopRecording : startRecording}
+                  className="w-full max-w-xs"
+                >
+                  {recording ? (
+                    <>
+                      <Square className="mr-2 h-5 w-5 fill-current" />
+                      Stop recording
+                    </>
+                  ) : (
+                    <>
+                      <Video className="mr-2 h-5 w-5" />
+                      Record video
+                    </>
+                  )}
+                </Button>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Free — no AI, no credits. Videos stay on your device.
+                </p>
+              </div>
             ) : mode === "camera" || mode === "magnifier" ? (
               <div className="flex flex-col items-center gap-2">
                 <div className="flex w-full max-w-xs items-center gap-2">
@@ -2735,7 +2775,7 @@ function Scanner() {
                     size="lg"
                     data-no-sound
                     onClick={capture}
-                    disabled={countdown !== null || burstBusy || recording}
+                    disabled={countdown !== null || burstBusy}
                     className="flex-1"
                   >
                     <Camera className="mr-2 h-5 w-5" />
@@ -2745,26 +2785,9 @@ function Scanner() {
                         ? "Burst…"
                         : t("takePhoto")}
                   </Button>
-                  {mode === "camera" && (
-                    <Button
-                      size="lg"
-                      data-no-sound
-                      variant={recording ? "destructive" : "outline"}
-                      onClick={recording ? stopRecording : startRecording}
-                      aria-label={recording ? "Stop recording" : "Record video"}
-                      title={recording ? "Stop recording" : "Record video"}
-                      className="shrink-0 px-4"
-                    >
-                      {recording ? (
-                        <Square className="h-5 w-5 fill-current" />
-                      ) : (
-                        <Video className="h-5 w-5" />
-                      )}
-                    </Button>
-                  )}
                 </div>
                 <p className="text-center text-[11px] text-muted-foreground">
-                  Free — no AI, no credits. Photos and videos stay on your device.
+                  Free — no AI, no credits. Photos stay on your device.
                 </p>
               </div>
             ) : (

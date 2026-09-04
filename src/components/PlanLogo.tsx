@@ -1,4 +1,4 @@
-import logoAsset from "@/assets/scanything111.png.asset.json";
+import logoAsset from "@/assets/scanything-logo.jpg.asset.json";
 import type { PlanType } from "@/lib/plan-mapping";
 
 /**
@@ -11,8 +11,8 @@ export function PlanLogo({ plan, className }: { plan: PlanType | null; className
       src={logoAsset.url}
       alt="Scanything logo — AI camera item identifier and price estimator"
       className={className ?? "h-20 w-auto max-w-full object-contain sm:h-[100px]"}
-    width={1024}
-    height={1024}
+    width={886}
+    height={580}
     />
   );
 
