@@ -7,7 +7,7 @@ import { PiSignInButton } from "@/components/PiAuthButton";
 import { usePiMode } from "@/hooks/usePiMode";
 import { SIGNUP_GRANT } from "@/lib/credits";
 import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "@/lib/email-domains";
-import logoUrl from "@/assets/flipr-logo.png";
+import logoUrl from "@/assets/dolphin-logo.png";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
