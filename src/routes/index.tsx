@@ -2037,6 +2037,7 @@ function Scanner() {
                           type="file"
                           accept="image/*"
                           className="hidden"
+                          aria-label="Upload a photo to authenticate"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             e.target.value = "";
@@ -2104,6 +2105,7 @@ function Scanner() {
                         value={authNote}
                         onChange={(e) => setAuthNote(e.target.value)}
                         placeholder={t("authNotePlaceholder")}
+                        aria-label="Authentication note"
                         className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
                       />
                     </div>
@@ -2287,6 +2289,7 @@ function Scanner() {
                               type="file"
                               accept="image/*"
                               className="hidden"
+                              aria-label="Upload a photo to scan"
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 e.target.value = "";
@@ -2824,6 +2827,7 @@ function Scanner() {
                 value={addressInput}
                 onChange={(e) => setAddressInput(e.target.value)}
                 placeholder="e.g. 1600 Pennsylvania Ave NW, Washington, DC"
+                aria-label="Enter a resale location address"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
               />
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -2945,6 +2949,7 @@ function Scanner() {
               }}
               maxLength={60}
               placeholder="Collection name"
+              aria-label="Collection name"
               className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
             />
             <div className="mt-4 flex gap-2">
@@ -3702,6 +3707,7 @@ function DetailPanel({
                         onChange={(e) =>
                           setListingDraft((prev) => (prev ? { ...prev, title: e.target.value } : prev))
                         }
+                        aria-label="Listing title"
                         className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
                       />
                     ) : (
@@ -4013,6 +4019,7 @@ function DetailPanel({
                   capture="environment"
                   multiple
                   className="hidden"
+                  aria-label="Add extra photos for analysis"
                   onChange={(e) => {
                     void addExtraShots(e.target.files);
                     e.target.value = "";
@@ -4024,6 +4031,7 @@ function DetailPanel({
                   accept="image/*"
                   capture="environment"
                   className="hidden"
+                  aria-label="Replace this photo"
                   onChange={(e) => {
                     void replaceExtraShot(e.target.files);
                     e.target.value = "";

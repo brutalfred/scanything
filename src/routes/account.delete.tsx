@@ -63,10 +63,13 @@ function DeleteAccountPage() {
         </span>
       </div>
 
+      <label htmlFor="delete-confirm" className="sr-only">Type DELETE to confirm</label>
       <input
+        id="delete-confirm"
         value={confirm}
         onChange={(e) => setConfirm(e.target.value)}
         placeholder="DELETE"
+        aria-label="Type DELETE to confirm account deletion"
         className="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
       />
 
