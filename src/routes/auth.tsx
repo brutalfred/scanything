@@ -124,7 +124,7 @@ function AuthPage() {
           <img
             src={authLogoAsset.url}
             alt="Scanything — Scan anything, know everything"
-            className="block w-full rounded-2xl"
+            className="relative block w-full rounded-2xl"
           />
           {/* Flash on the camera lens in the artwork, every 3 seconds */}
           <div className="camera-flash" aria-hidden="true" />
