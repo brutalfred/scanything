@@ -10,10 +10,13 @@
 - Video recording in the camera tool (MediaRecorder, save/share clip).
 - Burst mode (8 rapid frames straight to the gallery).
 - Selfie mirror toggle (mirrored preview + mirrored capture).
+- Front/back camera switch on every camera tool.
+- Photo filter menu (20 presets incl. Cartoon, Disney, Comic) baked into captures.
+- Panorama sweep mode (on-device slit-scan stitching).
+- Portrait mode with adjustable depth-of-field blur.
+- Offline/on-device fallback identification (MobileNet, cached locally).
 
 ## Next up
 - Receipt / business-card / plant / wine label recognizers built on the scan pipeline.
 - Barcode-driven resale sourcing (sold-comps lookup, keep list, price alerts).
 - Cloud sync of gallery for signed-in users.
-- Panorama, portrait blur.
-- Offline/on-device fallback model for basic identification.
