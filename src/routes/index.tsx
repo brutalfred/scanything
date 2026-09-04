@@ -2037,6 +2037,7 @@ function Scanner() {
                           type="file"
                           accept="image/*"
                           className="hidden"
+                          aria-label="Upload a photo to authenticate"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             e.target.value = "";
