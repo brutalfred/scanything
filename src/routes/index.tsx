@@ -1034,7 +1034,7 @@ function Scanner() {
   }, []);
 
   const startPanorama = useCallback(() => {
-    panoRef.current = new PanoramaStitcher(720, 26);
+    panoRef.current = new PanoramaStitcher(720);
     setPanoProgress(0);
     setPanoActive(true);
   }, []);
