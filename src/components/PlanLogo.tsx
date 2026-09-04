@@ -1,4 +1,4 @@
-import logoAsset from "@/assets/scanything-logo.png.asset.json";
+import logoUrl from "@/assets/flipr-logo.png";
 import type { PlanType } from "@/lib/plan-mapping";
 
 /**
@@ -8,11 +8,11 @@ import type { PlanType } from "@/lib/plan-mapping";
 export function PlanLogo({ plan, className }: { plan: PlanType | null; className?: string }) {
   const img = (
     <img
-      src={logoAsset.url}
-      alt="Scanything logo"
-      className={className ?? "h-20 w-auto max-w-full object-contain sm:h-[100px]"}
+      src={logoUrl}
+      alt="Scanything dolphin logo"
+      className={className ?? "h-20 w-auto max-w-full rounded-2xl object-contain sm:h-[100px]"}
       width={1024}
-      height={512}
+      height={1024}
     />
   );
 

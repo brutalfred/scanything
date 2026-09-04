@@ -16,10 +16,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
-import { THEMES } from "@/lib/theme";
+
 import { LANGUAGES, LANGUAGE_NATIVE } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useTheme } from "@/hooks/useTheme";
+
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useCameraPermission } from "@/hooks/useCameraPermission";
 import { useAiConsent } from "@/hooks/useAiConsent";
@@ -53,7 +53,7 @@ export function AccountButton({
   const accountSlide = useSlideDismiss("left", () => setOpen(false));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { theme, setTheme } = useTheme();
+  
   const { language, setLanguage, t } = useLanguage();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const camera = useCameraPermission();
@@ -316,40 +316,6 @@ export function AccountButton({
 
 
 
-            <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{t("theme")}</p>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="mt-2 flex w-full items-center justify-between gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 text-sm font-semibold transition-colors hover:bg-current/10"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="flex h-4 w-10 overflow-hidden rounded">
-                        {(THEMES.find((th) => th.key === theme) ?? THEMES[0]).swatch.map((c) => (
-                          <span key={c} className="flex-1" style={{ backgroundColor: c }} />
-                        ))}
-                      </span>
-                      {(THEMES.find((th) => th.key === theme) ?? THEMES[0]).label}
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-70" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="z-[60] max-h-64 w-56 overflow-y-auto">
-                  {THEMES.map((th) => (
-                    <DropdownMenuItem key={th.key} onSelect={() => setTheme(th.key)} className="gap-2">
-                      <span className="flex h-4 w-10 shrink-0 overflow-hidden rounded">
-                        {th.swatch.map((c) => (
-                          <span key={c} className="flex-1" style={{ backgroundColor: c }} />
-                        ))}
-                      </span>
-                      <span className="flex-1 truncate text-xs">{th.label}</span>
-                      {theme === th.key && <Check className="h-3.5 w-3.5" />}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
 
             <div className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide opacity-70">
