@@ -1071,24 +1071,6 @@ function Scanner() {
   // --- Offline / on-device identification ------------------------------
   const [offlinePreds, setOfflinePreds] = useState<OfflinePrediction[] | null>(null);
   const [offlineBusy, setOfflineBusy] = useState(false);
-  const [offlineReady, setOfflineReady] = useState(false);
-
-  useEffect(() => {
-    setOfflineReady(offlineModelDownloaded());
-  }, []);
-
-  const prepareOfflineModel = useCallback(async () => {
-    setOfflineBusy(true);
-    try {
-      await loadOfflineModel();
-      setOfflineReady(true);
-      toast.success("Offline recognition is ready — it now works with no connection.");
-    } catch {
-      toast.error("Could not download the offline model. Check your connection.");
-    } finally {
-      setOfflineBusy(false);
-    }
-  }, []);
 
   const identifyOffline = useCallback(async (dataUrl: string) => {
     setOfflineBusy(true);
