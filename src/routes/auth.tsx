@@ -1,4 +1,3 @@
-import { X } from "lucide-react";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import { PiSignInButton } from "@/components/PiAuthButton";
 import { usePiMode } from "@/hooks/usePiMode";
 import { SIGNUP_GRANT } from "@/lib/credits";
 import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "@/lib/email-domains";
+import logoUrl from "@/assets/flipr-logo.png";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
