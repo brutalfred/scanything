@@ -45,6 +45,9 @@ import {
   FileDown,
   Wrench,
   ScanLine,
+  Zap,
+  FlipHorizontal2,
+  Square,
 } from "lucide-react";
 
 import { toast } from "sonner";
