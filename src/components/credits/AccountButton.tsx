@@ -16,10 +16,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAccountStats } from "@/lib/credits.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
-import { THEMES } from "@/lib/theme";
+
 import { LANGUAGES, LANGUAGE_NATIVE } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useTheme } from "@/hooks/useTheme";
+
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useCameraPermission } from "@/hooks/useCameraPermission";
 import { useAiConsent } from "@/hooks/useAiConsent";
@@ -53,7 +53,7 @@ export function AccountButton({
   const accountSlide = useSlideDismiss("left", () => setOpen(false));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { theme, setTheme } = useTheme();
+  
   const { language, setLanguage, t } = useLanguage();
   const { canInstall, installed, isIos, promptInstall } = useInstallPrompt();
   const camera = useCameraPermission();
