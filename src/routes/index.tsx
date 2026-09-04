@@ -1715,12 +1715,14 @@ function Scanner() {
                     {mode === "resale" && <Tag className="h-4 w-4" />}
                     {mode === "document" && <FileText className="h-4 w-4" />}
                     {mode === "authenticate" && <ShieldCheck className="h-4 w-4" />}
+                    {mode === "camera" && <Camera className="h-4 w-4" />}
                     <span>
                       {mode === "photo" && t("photoScan")}
                       {mode === "video" && t("videoScan")}
                       {mode === "resale" && t("resaleScan")}
                       {mode === "document" && t("documentScan")}
                       {mode === "authenticate" && t("authenticateScan")}
+                      {mode === "camera" && t("takePhoto")}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
@@ -1766,6 +1768,13 @@ function Scanner() {
                   >
                     <ShieldCheck className="h-4 w-4" />
                     {t("authenticateScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("camera")}
+                    className="flex items-center gap-2"
+                  >
+                    <Camera className="h-4 w-4" />
+                    {t("takePhoto")}
                   </DropdownMenuItem>
                   {credits.signedIn && (
                     <DropdownMenuItem
