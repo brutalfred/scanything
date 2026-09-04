@@ -2164,6 +2164,36 @@ function Scanner() {
                   <Timer className="h-3.5 w-3.5" />
                   3s
                 </button>
+                {mode === "camera" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setBurst((b) => !b)}
+                      aria-pressed={burst}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        burst
+                          ? "border-primary bg-primary/15 text-primary"
+                          : "border-border/70 bg-card text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <Zap className="h-3.5 w-3.5" />
+                      Burst
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelfieMirror((m) => !m)}
+                      aria-pressed={selfieMirror}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        selfieMirror
+                          ? "border-primary bg-primary/15 text-primary"
+                          : "border-border/70 bg-card text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <FlipHorizontal2 className="h-3.5 w-3.5" />
+                      Mirror
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={() => setGalleryOpen(true)}
