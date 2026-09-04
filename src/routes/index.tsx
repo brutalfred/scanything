@@ -2730,18 +2730,41 @@ function Scanner() {
               </div>
             ) : mode === "camera" || mode === "magnifier" ? (
               <div className="flex flex-col items-center gap-2">
-                <Button
-                  size="lg"
-                  data-no-sound
-                  onClick={capture}
-                  disabled={countdown !== null}
-                  className="w-full max-w-xs"
-                >
-                  <Camera className="mr-2 h-5 w-5" />
-                  {countdown !== null ? `${countdown}…` : t("takePhoto")}
-                </Button>
+                <div className="flex w-full max-w-xs items-center gap-2">
+                  <Button
+                    size="lg"
+                    data-no-sound
+                    onClick={capture}
+                    disabled={countdown !== null || burstBusy || recording}
+                    className="flex-1"
+                  >
+                    <Camera className="mr-2 h-5 w-5" />
+                    {countdown !== null
+                      ? `${countdown}…`
+                      : burstBusy
+                        ? "Burst…"
+                        : t("takePhoto")}
+                  </Button>
+                  {mode === "camera" && (
+                    <Button
+                      size="lg"
+                      data-no-sound
+                      variant={recording ? "destructive" : "outline"}
+                      onClick={recording ? stopRecording : startRecording}
+                      aria-label={recording ? "Stop recording" : "Record video"}
+                      title={recording ? "Stop recording" : "Record video"}
+                      className="shrink-0 px-4"
+                    >
+                      {recording ? (
+                        <Square className="h-5 w-5 fill-current" />
+                      ) : (
+                        <Video className="h-5 w-5" />
+                      )}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-center text-[11px] text-muted-foreground">
-                  Free — no AI, no credits. Photos stay on your device.
+                  Free — no AI, no credits. Photos and videos stay on your device.
                 </p>
               </div>
             ) : (
