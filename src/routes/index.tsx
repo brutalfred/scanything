@@ -3108,11 +3108,10 @@ function Scanner() {
                   data-no-sound
                   variant={panoActive ? "destructive" : "default"}
                   onClick={panoActive ? finishPanorama : startPanorama}
-                  disabled={panoBusy}
                   className="w-full max-w-xs"
                 >
                   <MoveHorizontal className="mr-2 h-5 w-5" />
-                  {panoBusy ? "Stitching…" : panoActive ? "Finish panorama" : "Start panorama"}
+                  {panoActive ? "Finish panorama" : "Start panorama"}
                 </Button>
                 <p className="text-center text-[11px] text-muted-foreground">
                   Free — stitched on your device and saved to your gallery.
