@@ -2,8 +2,8 @@ import logoUrl from "@/assets/flipr-logo.png";
 import type { PlanType } from "@/lib/plan-mapping";
 
 /**
- * App logo. Pro and Max subscribers get a glowing variant with a stylish
- * wordmark underneath (gold shine for Pro, diamond shine for Max).
+ * App logo. Pro and Max subscribers get a glowing variant
+ * (gold glow for Pro, diamond glow for Max).
  */
 export function PlanLogo({ plan, className }: { plan: PlanType | null; className?: string }) {
   const img = (
@@ -16,25 +16,13 @@ export function PlanLogo({ plan, className }: { plan: PlanType | null; className
     />
   );
 
-  // The scan-line overlay wraps the image so the sweeping line stays clipped
-  // to the logo's bounding box.
-  const withScanLine = (
-    <span className="logo-scan-wrap relative isolate inline-flex overflow-hidden">
-      {img}
-      <span aria-hidden className="logo-scan-line" />
-    </span>
-  );
-
-  if (!plan) return withScanLine;
+  if (!plan) return img;
 
   return (
-    <span className="flex flex-col items-center">
-      <span
-        className={`relative isolate inline-flex ${plan === "max" ? "plan-glow-max" : "plan-glow-pro"}`}
-      >
-        {withScanLine}
-      </span>
-      <PlanWordmark plan={plan} />
+    <span
+      className={`relative isolate inline-flex ${plan === "max" ? "plan-glow-max" : "plan-glow-pro"}`}
+    >
+      {img}
     </span>
   );
 }
