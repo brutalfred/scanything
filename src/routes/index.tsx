@@ -2484,7 +2484,36 @@ function Scanner() {
                         {sellable.length} of {resaleItems.length} items worth listing · ~$
                         {sellTotal} from those
                       </p>
+                      {sellable.length > 0 && (
+                        <div className="mt-3 border-t border-primary/20 pt-2">
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Best flips
+                          </div>
+                          <ul className="mt-1 space-y-1">
+                            {[...sellable]
+                              .sort((a, b) => (b.resale?.typical ?? 0) - (a.resale?.typical ?? 0))
+                              .slice(0, 3)
+                              .map((it, i) => (
+                                <li key={i}>
+                                  <button
+                                    type="button"
+                                    onClick={() => openItem(it)}
+                                    className="flex w-full items-center justify-between gap-3 rounded-md px-1 py-1 text-left text-xs hover:bg-primary/10"
+                                  >
+                                    <span className="truncate text-foreground">
+                                      {i + 1}. {it.name}
+                                    </span>
+                                    <span className="shrink-0 font-semibold tabular-nums text-primary">
+                                      ${it.resale?.typical}
+                                    </span>
+                                  </button>
+                                </li>
+                              ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
+
                   );
                 })()}
                 <div className="mb-2 flex items-center justify-between gap-2">
