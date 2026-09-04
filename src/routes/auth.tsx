@@ -8,6 +8,7 @@ import { PiSignInButton } from "@/components/PiAuthButton";
 import { usePiMode } from "@/hooks/usePiMode";
 import { SIGNUP_GRANT } from "@/lib/credits";
 import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "@/lib/email-domains";
+import authLogoAsset from "@/assets/scanything111.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -97,6 +98,16 @@ function AuthPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-5">
+      <div className="w-full max-w-sm">
+        <div className="relative mb-5 w-full">
+          <img
+            src={authLogoAsset.url}
+            alt="Scanything — Scan anything, know everything"
+            className="block w-full rounded-2xl"
+          />
+          {/* Flash on the camera lens in the artwork, every 3 seconds */}
+          <div className="camera-flash" aria-hidden="true" />
+        </div>
       <div className="gold-glow gold-line w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-white p-6 text-black">
         {piMode ? (
           <>
@@ -192,6 +203,7 @@ function AuthPage() {
         >
           <X className="h-4 w-4" />
         </Link>
+      </div>
       </div>
     </main>
   );

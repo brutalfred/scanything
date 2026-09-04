@@ -810,3 +810,26 @@
 @media (prefers-reduced-motion: reduce) {
   .slide-enter-left, .slide-enter-right, .slide-enter-bottom { animation-duration: 1ms; }
 }
+
+/* Camera-lens flash on the auth-screen artwork (every 3s) */
+@keyframes camera-flash {
+  0%, 88%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  90% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  93% { opacity: 0.35; transform: translate(-50%, -50%) scale(1.2); }
+  96% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.9); }
+  98% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+}
+
+.camera-flash {
+  position: absolute;
+  left: 43.5%;
+  top: 28.5%;
+  width: 24%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(170,220,255,0.6) 30%, rgba(140,120,255,0.25) 55%, transparent 72%);
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  animation: camera-flash 3s ease-in-out infinite;
+}
