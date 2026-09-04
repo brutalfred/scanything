@@ -41,6 +41,20 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // The auth page always uses the cyber theme; restore the user's theme on leave.
+  useEffect(() => {
+    let restore: string | null = null;
+    try {
+      restore = localStorage.getItem(THEME_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    applyTheme("cyber");
+    return () => {
+      applyTheme(isThemeKey(restore) ? restore : "cyber");
+    };
+  }, []);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
