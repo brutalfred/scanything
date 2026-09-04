@@ -2114,17 +2114,6 @@ function Scanner() {
               </button>
             )}
 
-            {!offlineReady && (
-              <button
-                onClick={() => void prepareOfflineModel()}
-                disabled={offlineBusy}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-60"
-                title="Download the on-device model so scans still give a best guess offline"
-              >
-                <WifiOff className="h-3.5 w-3.5" />
-                {offlineBusy ? "Preparing…" : "Offline mode"}
-              </button>
-            )}
 
 
 

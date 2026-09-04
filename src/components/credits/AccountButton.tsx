@@ -4,7 +4,8 @@ import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Camera, Check, ChevronDown, Download, GraduationCap, LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
+import { Bell, Camera, Check, ChevronDown, Download, GraduationCap, LogIn, LogOut, ShieldCheck, User2, WifiOff, X } from "lucide-react";
+import { loadOfflineModel, offlineModelDownloaded } from "@/lib/offline-model";
 import {
   DropdownMenu,
   DropdownMenuContent,
