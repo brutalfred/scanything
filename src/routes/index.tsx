@@ -39,6 +39,12 @@ import {
   ShieldCheck,
   Grid3x3,
   Timer,
+  Images,
+  QrCode,
+  ZoomIn,
+  FileDown,
+  Wrench,
+  ScanLine,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -92,6 +98,16 @@ import {
 import { AiConsentModal } from "@/components/AiConsentModal";
 import { useAiConsent } from "@/hooks/useAiConsent";
 import { ScanHistorySheet } from "@/components/credits/ScanHistorySheet";
+import { GallerySheet } from "@/components/GallerySheet";
+import { PhotoEditor } from "@/components/PhotoEditor";
+import { savePhoto as saveGalleryPhoto } from "@/lib/gallery";
+import {
+  classifyBarcode,
+  decodeFromDataUrl,
+  decodeFromSource,
+  productLookupLinks,
+  type BarcodeHit,
+} from "@/lib/barcode";
 import {
   saveScanHistory,
   appendScanHistory,
@@ -135,7 +151,18 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video" | "document" | "resale" | "authenticate" | "camera";
+type Mode =
+  | "photo"
+  | "video"
+  | "document"
+  | "resale"
+  | "authenticate"
+  | "camera"
+  | "barcode"
+  | "magnifier";
+
+/** Free utility modes that never call the AI and never cost credits. */
+const TOOL_MODES: Mode[] = ["camera", "barcode", "magnifier"];
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
@@ -885,11 +912,117 @@ function Scanner() {
     }
     setError(null);
     setSnapshot(dataUrl);
+    // Every plain photo is kept in the in-app gallery.
+    void saveGalleryPhoto(dataUrl);
   }, [countdown, photoTimer, grabFrame]);
 
+  // --- Tools: gallery, editor, barcode reader, magnifier ---------------
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [editorSrc, setEditorSrc] = useState<string | null>(null);
+  const [barcodeHit, setBarcodeHit] = useState<BarcodeHit | null>(null);
+  const [barcodeBusy, setBarcodeBusy] = useState(false);
+  const [magnify, setMagnify] = useState(2);
+
+  // Continuously read QR codes / barcodes straight from the live preview.
+  useEffect(() => {
+    if (mode !== "barcode" || phase !== "camera" || snapshot || barcodeHit) return;
+    let cancelled = false;
+    let busy = false;
+    const id = window.setInterval(async () => {
+      if (busy || cancelled) return;
+      const video = videoRef.current;
+      if (!video || !video.videoWidth) return;
+      busy = true;
+      try {
+        const hit = await decodeFromSource(video);
+        if (hit && !cancelled) setBarcodeHit(hit);
+      } catch {
+        /* keep trying */
+      } finally {
+        busy = false;
+      }
+    }, 450);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, phase, snapshot, barcodeHit]);
+
+  const scanBarcodeFromImage = useCallback(async (dataUrl: string) => {
+    setBarcodeBusy(true);
+    try {
+      const hit = await decodeFromDataUrl(dataUrl);
+      if (hit) setBarcodeHit(hit);
+      else toast.error("No barcode or QR code found in that picture.");
+    } finally {
+      setBarcodeBusy(false);
+    }
+  }, []);
+
+  /** Export the current capture (and any scanned text) as a PDF. */
+  const exportPdf = useCallback(
+    async (image: string | null, text: string, title = "Scanything document") => {
+      try {
+        const { jsPDF } = await import("jspdf");
+        const doc = new jsPDF({ unit: "pt", format: "a4" });
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const margin = 40;
+        doc.setFontSize(14);
+        doc.text(title, margin, margin);
+        let y = margin + 20;
+        if (image) {
+          const img = new Image();
+          await new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = image;
+          });
+          if (img.naturalWidth) {
+            const w = pageW - margin * 2;
+            const h = (img.naturalHeight / img.naturalWidth) * w;
+            const fit = Math.min(h, pageH - y - margin);
+            doc.addImage(image, "JPEG", margin, y, (fit / h) * w, fit);
+            y += fit + 20;
+          }
+        }
+        if (text.trim()) {
+          doc.addPage();
+          doc.setFontSize(11);
+          const lines = doc.splitTextToSize(text, pageW - margin * 2) as string[];
+          let cursor = margin;
+          for (const line of lines) {
+            if (cursor > pageH - margin) {
+              doc.addPage();
+              cursor = margin;
+            }
+            doc.text(line, margin, cursor);
+            cursor += 15;
+          }
+        }
+        doc.save(`scanything-${Date.now()}.pdf`);
+        toast.success("PDF saved");
+      } catch {
+        toast.error("Could not create the PDF");
+      }
+    },
+    [],
+  );
+
+
   const capture = useCallback(async () => {
-    if (mode === "camera") {
+    if (mode === "camera" || mode === "magnifier") {
       await takePhoto();
+      return;
+    }
+    if (mode === "barcode") {
+      const frame = uploaded ?? grabFrame(1600, 0.9);
+      if (!frame) {
+        toast.error("Camera not ready yet — try again.");
+        return;
+      }
+      await scanBarcodeFromImage(frame);
       return;
     }
     const isDoc = mode === "document";
@@ -914,7 +1047,7 @@ function Scanner() {
 
     setUploaded(null);
     await runScan(dataUrl, mode);
-  }, [grabFrame, mode, uploaded, runScan, refreshQueue, takePhoto]);
+  }, [grabFrame, mode, uploaded, runScan, refreshQueue, takePhoto, scanBarcodeFromImage]);
 
   const cancelScan = useCallback(() => {
     cancelScanRef.current = true;
@@ -1281,6 +1414,7 @@ function Scanner() {
     setAuthReport(null);
     setAuthAnalyzing(false);
     setAuthNote("");
+    setBarcodeHit(null);
     setPhase("camera");
   }, []);
 
@@ -1390,6 +1524,8 @@ function Scanner() {
     setAuthReport(null);
     setAuthAnalyzing(false);
     setAuthNote("");
+    setBarcodeHit(null);
+    setSnapshot(null);
   }, []);
 
   // Door handling
@@ -1702,32 +1838,31 @@ function Scanner() {
       <main className="mx-auto max-w-4xl px-4 pt-4 pb-6">
         {phase === "camera" && !snapshot && (
           <div className="space-y-3">
-            {/* Mode toggle */}
-            <div className="flex items-center justify-center gap-2">
+            {/* Scan modes and tools live in two separate menus */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-secondary/80"
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition-colors ${
+                      TOOL_MODES.includes(mode)
+                        ? "border-border bg-card text-muted-foreground hover:bg-accent"
+                        : "border-primary/60 bg-secondary text-foreground hover:bg-secondary/80"
+                    }`}
                     aria-label="Choose scan mode"
                   >
-                    {mode === "photo" && <ImageIcon className="h-4 w-4" />}
-                    {mode === "video" && <Video className="h-4 w-4" />}
-                    {mode === "resale" && <Tag className="h-4 w-4" />}
-                    {mode === "document" && <FileText className="h-4 w-4" />}
-                    {mode === "authenticate" && <ShieldCheck className="h-4 w-4" />}
-                    {mode === "camera" && <Camera className="h-4 w-4" />}
+                    <ScanLine className="h-4 w-4" />
                     <span>
                       {mode === "photo" && t("photoScan")}
                       {mode === "video" && t("videoScan")}
                       {mode === "resale" && t("resaleScan")}
                       {mode === "document" && t("documentScan")}
                       {mode === "authenticate" && t("authenticateScan")}
-                      {mode === "camera" && t("takePhoto")}
+                      {TOOL_MODES.includes(mode) && "Scan"}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="min-w-[10rem]">
+                <DropdownMenuContent align="center" className="min-w-[11rem]">
                   <DropdownMenuItem
                     onClick={() => switchMode("photo")}
                     className="flex items-center gap-2"
@@ -1769,13 +1904,6 @@ function Scanner() {
                     <ShieldCheck className="h-4 w-4" />
                     {t("authenticateScan")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => switchMode("camera")}
-                    className="flex items-center gap-2"
-                  >
-                    <Camera className="h-4 w-4" />
-                    {t("takePhoto")}
-                  </DropdownMenuItem>
                   {credits.signedIn && (
                     <DropdownMenuItem
                       onClick={() => setHistoryOpen(true)}
@@ -1787,13 +1915,68 @@ function Scanner() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition-colors ${
+                      TOOL_MODES.includes(mode)
+                        ? "border-primary/60 bg-secondary text-foreground hover:bg-secondary/80"
+                        : "border-border bg-card text-muted-foreground hover:bg-accent"
+                    }`}
+                    aria-label="Choose a tool"
+                  >
+                    <Wrench className="h-4 w-4" />
+                    <span>
+                      {mode === "camera"
+                        ? t("takePhoto")
+                        : mode === "barcode"
+                          ? "QR / Barcode"
+                          : mode === "magnifier"
+                            ? "Magnifier"
+                            : "Tools"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="min-w-[11rem]">
+                  <DropdownMenuItem
+                    onClick={() => switchMode("camera")}
+                    className="flex items-center gap-2"
+                  >
+                    <Camera className="h-4 w-4" />
+                    {t("takePhoto")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("barcode")}
+                    className="flex items-center gap-2"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    QR / Barcode
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("magnifier")}
+                    className="flex items-center gap-2"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                    Magnifier
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setGalleryOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Images className="h-4 w-4" />
+                    Gallery
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <CreditMeter
                 balance={credits.balance}
                 loading={credits.loading}
                 signedIn={credits.signedIn}
                 onClick={credits.openSheet}
               />
-              {!isGuest && mode !== "camera" && (
+              {!isGuest && !TOOL_MODES.includes(mode) && (
                 <button
                   onClick={() => setFilterOpen((o) => !o)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-accent gold-glow"
@@ -1809,18 +1992,22 @@ function Scanner() {
             </div>
 
 
-            {(mode === "photo" || mode === "resale" || mode === "document" || mode === "authenticate" || mode === "camera") && (
+            {(mode === "photo" || mode === "resale" || mode === "document" || mode === "authenticate" || TOOL_MODES.includes(mode)) && (
               <p className="text-center text-[11px] text-muted-foreground">
                 {mode === "photo" && t("photoScanDescription")}
                 {mode === "resale" && t("resaleScanDescription")}
                 {mode === "document" && t("documentScanDescription")}
                 {mode === "authenticate" && t("authenticateScanDescription")}
                 {mode === "camera" && t("takePhotoDescription")}
+                {mode === "barcode" &&
+                  "Point at any QR code or product barcode — free, instant, no credits."}
+                {mode === "magnifier" &&
+                  "Use the camera as a magnifying glass for small print and serial numbers."}
               </p>
             )}
 
-            {mode === "camera" && (
-              <div className="flex items-center justify-center gap-2">
+            {(mode === "camera" || mode === "magnifier") && (
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={() => setPhotoGrid((g) => !g)}
@@ -1847,13 +2034,92 @@ function Scanner() {
                   <Timer className="h-3.5 w-3.5" />
                   3s
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setGalleryOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+                >
+                  <Images className="h-3.5 w-3.5" />
+                  Gallery
+                </button>
               </div>
+            )}
+
+            {mode === "magnifier" && (
+              <label className="mx-auto flex max-w-xs items-center gap-3 text-[11px] font-medium text-muted-foreground">
+                <ZoomIn className="h-3.5 w-3.5" />
+                <input
+                  type="range"
+                  min={1}
+                  max={6}
+                  step={0.5}
+                  value={magnify}
+                  aria-label="Magnification"
+                  onChange={(e) => setMagnify(Number(e.target.value))}
+                  className="w-full accent-[hsl(var(--primary))]"
+                />
+                <span className="w-10 text-right">{magnify.toFixed(1)}×</span>
+              </label>
+            )}
+
+            {mode === "barcode" && barcodeHit && (
+              <div className="mx-auto max-w-md rounded-2xl border border-primary/50 bg-card p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  {barcodeHit.format.replace(/_/g, " ")}
+                </p>
+                <p className="mt-1 break-all text-sm font-medium">{barcodeHit.value}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {classifyBarcode(barcodeHit) === "url" && (
+                    <a
+                      href={barcodeHit.value}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Open link
+                    </a>
+                  )}
+                  {classifyBarcode(barcodeHit) === "product" &&
+                    productLookupLinks(barcodeHit.value).map((l) => (
+                      <a
+                        key={l.label}
+                        href={l.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-accent"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" /> {l.label}
+                      </a>
+                    ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(barcodeHit.value);
+                      toast.success("Copied");
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-accent"
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBarcodeHit(null)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-accent"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" /> Scan again
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {mode === "barcode" && barcodeBusy && (
+              <p className="text-center text-[11px] text-muted-foreground">Reading code…</p>
             )}
 
 
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
-              {mode === "camera" && photoGrid && (
+              {(mode === "camera" || mode === "magnifier") && photoGrid && (
                 <div className="pointer-events-none absolute inset-0 z-10">
                   <div className="absolute inset-y-0 left-1/3 w-px bg-white/40" />
                   <div className="absolute inset-y-0 left-2/3 w-px bg-white/40" />
@@ -1861,7 +2127,12 @@ function Scanner() {
                   <div className="absolute inset-x-0 top-2/3 h-px bg-white/40" />
                 </div>
               )}
-              {mode === "camera" && countdown !== null && (
+              {mode === "barcode" && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                  <div className="h-40 w-64 rounded-xl border-2 border-primary/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                </div>
+              )}
+              {(mode === "camera" || mode === "magnifier") && countdown !== null && (
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/30">
                   <span className="text-7xl font-bold text-white drop-shadow-lg">{countdown}</span>
                 </div>
@@ -1873,7 +2144,11 @@ function Scanner() {
                     playsInline
                     muted
                     className="absolute inset-0 h-full w-full object-cover"
+                    style={
+                      mode === "magnifier" ? { transform: `scale(${magnify})` } : undefined
+                    }
                   />
+
 
                   {mode === "video" &&
                     visibleTracked.map((it) => (
@@ -1972,7 +2247,7 @@ function Scanner() {
                 </button>
               )}
 
-              {isGuest && mode !== "camera" && (
+              {isGuest && !TOOL_MODES.includes(mode) && (
                 <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/85 p-3 text-center text-xs text-white">
                   <p className="mb-2">Sign in for your {SIGNUP_GRANT} free credits and get started.</p>
                   <PiSignInButton className="mb-2 w-full rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50" />
@@ -2227,7 +2502,23 @@ function Scanner() {
                   )}
                 </div>
               </>
-            ) : mode === "camera" ? (
+            ) : mode === "barcode" ? (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  size="lg"
+                  data-no-sound
+                  onClick={capture}
+                  disabled={barcodeBusy}
+                  className="w-full max-w-xs"
+                >
+                  <QrCode className="mr-2 h-5 w-5" />
+                  {barcodeBusy ? "Reading…" : "Scan code"}
+                </Button>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Free — codes are read on your device. Hold steady inside the frame.
+                </p>
+              </div>
+            ) : mode === "camera" || mode === "magnifier" ? (
               <div className="flex flex-col items-center gap-2">
                 <Button
                   size="lg"
@@ -2351,7 +2642,7 @@ function Scanner() {
             <div className="flex justify-center">
               <Button size="sm" variant="secondary" onClick={reset}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                {mode === "camera" ? t("newPhoto") : t("newScan")}
+                {mode === "camera" || mode === "magnifier" ? t("newPhoto") : t("newScan")}
               </Button>
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black gold-glow">
@@ -2412,6 +2703,45 @@ function Scanner() {
               )}
 
               <div className="absolute bottom-2 right-2 z-10 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditorSrc(snapshot)}
+                  aria-label="Edit photo"
+                  title="Edit photo"
+                  className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!snapshot) return;
+                    const saved = await saveGalleryPhoto(snapshot);
+                    toast[saved ? "success" : "error"](
+                      saved ? "Added to gallery" : "Could not save to gallery",
+                    );
+                  }}
+                  aria-label="Save to gallery"
+                  title="Save to gallery"
+                  className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
+                >
+                  <Images className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void exportPdf(
+                      snapshot,
+                      docPages.join("\n\n"),
+                      mode === "document" ? "Scanything document" : "Scanything photo",
+                    )
+                  }
+                  aria-label="Export as PDF"
+                  title="Export as PDF"
+                  className="rounded-full border border-primary/40 bg-black/70 p-2 text-primary backdrop-blur-sm transition-colors hover:bg-black/90"
+                >
+                  <FileDown className="h-4 w-4" />
+                </button>
                 <button
                   type="button"
                   onClick={handleSharePicture}
@@ -2687,6 +3017,15 @@ function Scanner() {
                     .join("\n\n")}
                   onAddPage={addDocumentPage}
                 />
+                <button
+                  type="button"
+                  onClick={() =>
+                    void exportPdf(snapshot, docPages.join("\n\n"), "Scanything document")
+                  }
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                >
+                  <FileDown className="h-3.5 w-3.5" /> Export PDF
+                </button>
               </div>
             )}
 
@@ -2854,6 +3193,29 @@ function Scanner() {
 
       {/* Video scan warning for signed-in users */}
       <ScanHistorySheet open={historyOpen} onClose={() => setHistoryOpen(false)} />
+
+      <GallerySheet
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        onEdit={(p) => setEditorSrc(p.dataUrl)}
+        onScan={(dataUrl) => {
+          if (TOOL_MODES.includes(mode)) switchMode("photo");
+          setUploaded(dataUrl);
+          setSnapshot(dataUrl);
+        }}
+      />
+
+      <PhotoEditor
+        open={editorSrc !== null}
+        src={editorSrc}
+        onClose={() => setEditorSrc(null)}
+        onDone={async (dataUrl) => {
+          setEditorSrc(null);
+          setSnapshot(dataUrl);
+          await saveGalleryPhoto(dataUrl);
+          toast.success("Edited photo saved to your gallery");
+        }}
+      />
 
       {queueOpen && (
         <div
