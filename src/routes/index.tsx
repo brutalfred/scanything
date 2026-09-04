@@ -371,7 +371,7 @@ function Scanner() {
 
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
-  const [mode, setMode] = useState<Mode>("photo");
+  const [mode, setMode] = useState<Mode>("resale");
   const [phase, setPhase] = useState<Phase>("camera");
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
