@@ -1700,13 +1700,31 @@ function Scanner() {
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="min-w-[10rem]">
+                <DropdownMenuContent align="center" className="min-w-[12rem]">
+                  <DropdownMenuItem
+                    onClick={() => switchMode("resale")}
+                    className="flex items-center gap-2"
+                  >
+                    <Tag className="h-4 w-4 text-primary" />
+                    <span className="font-semibold">{t("resaleScan")}</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => switchMode("photo")}
                     className="flex items-center gap-2"
                   >
                     <ImageIcon className="h-4 w-4" />
                     {t("photoScan")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    More tools
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("authenticate")}
+                    className="flex items-center gap-2"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    {t("authenticateScan")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
@@ -1722,26 +1740,13 @@ function Scanner() {
                     {t("videoScan")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => switchMode("resale")}
-                    className="flex items-center gap-2"
-                  >
-                    <Tag className="h-4 w-4" />
-                    {t("resaleScan")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
                     onClick={() => switchMode("document")}
                     className="flex items-center gap-2"
                   >
                     <FileText className="h-4 w-4" />
                     {t("documentScan")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => switchMode("authenticate")}
-                    className="flex items-center gap-2"
-                  >
-                    <ShieldCheck className="h-4 w-4" />
-                    {t("authenticateScan")}
-                  </DropdownMenuItem>
+
                   {credits.signedIn && (
                     <DropdownMenuItem
                       onClick={() => setHistoryOpen(true)}
