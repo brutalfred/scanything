@@ -309,6 +309,8 @@ export function AccountButton({
 
             <DailyCheckin enabled={signedIn && open} />
 
+            <OfflineModelRow />
+
 
 
 
