@@ -905,8 +905,16 @@ function Scanner() {
   const [photoTimer, setPhotoTimer] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 
+  const [burst, setBurst] = useState(false);
+  const [burstBusy, setBurstBusy] = useState(false);
+  const [selfieMirror, setSelfieMirror] = useState(false);
+
+  useEffect(() => {
+    mirrorRef.current = selfieMirror;
+  }, [selfieMirror]);
+
   const takePhoto = useCallback(async () => {
-    if (countdown !== null) return;
+    if (countdown !== null || burstBusy) return;
     if (photoTimer) {
       for (const n of [3, 2, 1]) {
         setCountdown(n);
@@ -915,6 +923,26 @@ function Scanner() {
       setCountdown(null);
     }
     // Full resolution — this photo is for keeping, not for a quick AI pass.
+    if (burst) {
+      // Burst: rapid-fire 8 frames and keep them all in the gallery.
+      setBurstBusy(true);
+      const shots: string[] = [];
+      for (let i = 0; i < 8; i++) {
+        const frame = grabFrame(2200, 0.92);
+        if (frame) shots.push(frame);
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      setBurstBusy(false);
+      if (!shots.length) {
+        toast.error("Camera not ready yet — try again.");
+        return;
+      }
+      setError(null);
+      setSnapshot(shots[shots.length - 1]);
+      for (const s of shots) void saveGalleryPhoto(s);
+      toast.success(`Burst saved — ${shots.length} photos in your gallery.`);
+      return;
+    }
     const dataUrl = grabFrame(2200, 0.92);
     if (!dataUrl) {
       toast.error("Camera not ready yet — try again.");
@@ -924,7 +952,99 @@ function Scanner() {
     setSnapshot(dataUrl);
     // Every plain photo is kept in the in-app gallery.
     void saveGalleryPhoto(dataUrl);
-  }, [countdown, photoTimer, grabFrame]);
+  }, [countdown, burstBusy, photoTimer, burst, grabFrame]);
+
+  // --- Video recording (camera tool) -----------------------------------
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recChunksRef = useRef<Blob[]>([]);
+  const recStartRef = useRef(0);
+  const [recording, setRecording] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
+  const [clip, setClip] = useState<{ url: string; blob: Blob } | null>(null);
+
+  useEffect(() => {
+    if (!recording) return;
+    const id = window.setInterval(
+      () => setRecSeconds(Math.floor((Date.now() - recStartRef.current) / 1000)),
+      500,
+    );
+    return () => window.clearInterval(id);
+  }, [recording]);
+
+  const stopRecording = useCallback(() => {
+    const rec = recorderRef.current;
+    recorderRef.current = null;
+    setRecording(false);
+    if (rec && rec.state !== "inactive") rec.stop();
+  }, []);
+
+  const startRecording = useCallback(() => {
+    const stream = streamRef.current;
+    if (!stream || recorderRef.current) return;
+    const mime = ["video/webm;codecs=vp9", "video/webm", "video/mp4"].find((m) =>
+      typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m),
+    );
+    if (!mime) {
+      toast.error("Video recording is not supported on this device.");
+      return;
+    }
+    try {
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      recChunksRef.current = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) recChunksRef.current.push(e.data);
+      };
+      rec.onstop = () => {
+        const blob = new Blob(recChunksRef.current, { type: mime });
+        recChunksRef.current = [];
+        if (blob.size > 0) {
+          setClip({ url: URL.createObjectURL(blob), blob });
+        }
+      };
+      rec.start(250);
+      recorderRef.current = rec;
+      recStartRef.current = Date.now();
+      setRecSeconds(0);
+      setRecording(true);
+    } catch {
+      toast.error("Could not start video recording.");
+    }
+  }, []);
+
+  // Leaving the camera tool stops any in-flight recording.
+  useEffect(() => {
+    if (mode !== "camera" && recorderRef.current) stopRecording();
+    if (mode !== "camera" && clip) {
+      URL.revokeObjectURL(clip.url);
+      setClip(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  const saveClip = useCallback(() => {
+    if (!clip) return;
+    const ext = clip.blob.type.includes("mp4") ? "mp4" : "webm";
+    const a = document.createElement("a");
+    a.href = clip.url;
+    a.download = `scanything-${Date.now()}.${ext}`;
+    a.click();
+    toast.success("Video saved");
+  }, [clip]);
+
+  const shareClip = useCallback(async () => {
+    if (!clip) return;
+    const ext = clip.blob.type.includes("mp4") ? "mp4" : "webm";
+    const file = new File([clip.blob], `scanything.${ext}`, { type: clip.blob.type });
+    try {
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        saveClip();
+      }
+    } catch {
+      /* user cancelled */
+    }
+  }, [clip, saveClip]);
 
   // --- Tools: gallery, editor, barcode reader, magnifier ---------------
   const [galleryOpen, setGalleryOpen] = useState(false);
