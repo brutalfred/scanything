@@ -2061,11 +2061,13 @@ function Scanner() {
                     <span>
                       {mode === "camera"
                         ? t("takePhoto")
-                        : mode === "barcode"
-                          ? "QR / Barcode"
-                          : mode === "magnifier"
-                            ? "Magnifier"
-                            : "Tools"}
+                        : mode === "record"
+                          ? "Video"
+                          : mode === "barcode"
+                            ? "QR / Barcode"
+                            : mode === "magnifier"
+                              ? "Magnifier"
+                              : "Tools"}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </button>
@@ -2077,6 +2079,13 @@ function Scanner() {
                   >
                     <Camera className="h-4 w-4" />
                     {t("takePhoto")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => switchMode("record")}
+                    className="flex items-center gap-2"
+                  >
+                    <Video className="h-4 w-4" />
+                    Video
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => switchMode("barcode")}
