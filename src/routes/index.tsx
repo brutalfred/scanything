@@ -1147,6 +1147,7 @@ function Scanner() {
       await takePhoto();
       return;
     }
+    if (mode === "record") return;
     if (mode === "barcode") {
       const frame = uploaded ?? grabFrame(1600, 0.9);
       if (!frame) {
