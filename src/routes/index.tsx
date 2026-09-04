@@ -1034,23 +1034,31 @@ function Scanner() {
   }, []);
 
   const startPanorama = useCallback(() => {
-    panoRef.current = new PanoramaStitcher(720, 26);
+    panoRef.current = new PanoramaStitcher(720);
     setPanoProgress(0);
     setPanoActive(true);
   }, []);
 
   useEffect(() => {
     if (!panoActive) return;
-    const id = window.setInterval(() => {
+    let raf = 0;
+    const tick = () => {
       const stitcher = panoRef.current;
       const video = videoRef.current;
-      if (!stitcher || !video) return;
-      stitcher.push(video);
-      setPanoProgress(Math.min(1, stitcher.width / 6000));
-      if (stitcher.full) finishPanorama();
-    }, 120);
-    return () => window.clearInterval(id);
+      if (stitcher && video) {
+        stitcher.push(video);
+        setPanoProgress(Math.min(1, stitcher.width / 4500));
+        if (stitcher.full) {
+          finishPanorama();
+          return;
+        }
+      }
+      raf = window.requestAnimationFrame(tick);
+    };
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
   }, [panoActive, finishPanorama]);
+
 
   useEffect(() => {
     if (mode !== "panorama" && panoRef.current) {
