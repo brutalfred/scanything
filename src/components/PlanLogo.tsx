@@ -29,15 +29,12 @@ export function PlanLogo({ plan, className }: { plan: PlanType | null; className
 
   return (
     <span className="flex flex-col items-center">
-      <span
-        className={`relative isolate inline-flex ${plan === "max" ? "plan-glow-max" : "plan-glow-pro"}`}
-      >
-        {withScanLine}
-      </span>
+      {withScanLine}
       <PlanWordmark plan={plan} />
     </span>
   );
 }
+
 
 export function PlanWordmark({ plan }: { plan: PlanType }) {
   const isMax = plan === "max";
