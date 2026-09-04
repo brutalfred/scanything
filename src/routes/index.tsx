@@ -3002,6 +3002,10 @@ function DetailPanel({
   const [listingEdited, setListingEdited] = useState(false);
   const [listingError, setListingError] = useState<string | null>(null);
 
+  /** What the flipper paid (or expects to pay) for this item — drives profit math. */
+  const [buyPrice, setBuyPrice] = useState<string>("");
+
+
 
 
   const detectedCountry = useMemo(() => detectCountry(), []);
