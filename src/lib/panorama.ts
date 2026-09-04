@@ -45,8 +45,10 @@ export class PanoramaStitcher {
   }
 
   get full() {
+    if (!this.started) return false;
     return this.right >= this.maxWidth - 8 || this.left <= 8;
   }
+
 
 
   private grab(video: HTMLVideoElement): Float32Array | null {
