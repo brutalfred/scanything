@@ -96,7 +96,32 @@ function AuthPage() {
 
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-5">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-5">
+      {/* Ambient backdrop */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          background:
+            "radial-gradient(900px 500px at 50% -10%, rgba(13,148,136,0.30), transparent 60%), radial-gradient(700px 500px at 50% 110%, rgba(234,179,8,0.18), transparent 60%)",
+        }}
+      />
+
+      {/* Logo on top of the sign-in box */}
+      <img
+        src={logoUrl}
+        alt="Scanything dolphin logo"
+        width={1024}
+        height={1024}
+        className="mb-2 h-28 w-auto max-w-[80%] rounded-full object-contain drop-shadow-[0_8px_30px_rgba(13,148,136,0.45)] sm:h-32"
+      />
+      <h1 className="font-[Bebas_Neue] text-4xl leading-none tracking-wide text-foreground sm:text-5xl">
+        Scanything
+      </h1>
+      <p className="mb-5 mt-1 max-w-xs text-center text-sm text-muted-foreground">
+        Scan anything, know everything. Sign in to start flipping.
+      </p>
+
       <div className="gold-glow gold-line w-full max-w-sm rounded-2xl border-2 border-primary/70 bg-white p-6 text-black">
         {piMode ? (
           <>
@@ -184,15 +209,14 @@ function AuthPage() {
         </button>
         </>
         )}
-
-        <Link
-          to="/"
-          aria-label="Close"
-          className="mx-auto mt-4 flex h-8 w-8 items-center justify-center rounded-full border border-black/20 text-red-500 hover:bg-black/5"
-        >
-          <X className="h-4 w-4" />
-        </Link>
       </div>
+
+      <p className="mt-5 text-center text-[11px] text-muted-foreground/80">
+        By continuing you agree to our{" "}
+        <Link to="/terms" className="underline hover:text-foreground">Terms</Link>{" "}
+        &{" "}
+        <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>.
+      </p>
     </main>
   );
 }
