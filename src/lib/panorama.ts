@@ -116,12 +116,15 @@ export class PanoramaStitcher {
 
     // First frame: seed the canvas with a wide centre slab so the panorama
     // does not start as a sliver.
-    if (this.x === 0) {
+    if (!this.started) {
       const scale0 = this.height / vh;
-      const seedSrc = Math.min(vw, vh * 0.6);
+      const seedSrc = Math.min(vw, vh * 0.7);
       const seedOut = Math.round(seedSrc * scale0);
-      ctx.drawImage(video, (vw - seedSrc) / 2, 0, seedSrc, vh, 0, 0, seedOut, this.height);
-      this.x = seedOut;
+      const mid = Math.round(this.maxWidth / 2 - seedOut / 2);
+      ctx.drawImage(video, (vw - seedSrc) / 2, 0, seedSrc, vh, mid, 0, seedOut, this.height);
+      this.left = mid;
+      this.right = mid + seedOut;
+      this.started = true;
       this.frames = 1;
       return true;
     }
@@ -138,34 +141,42 @@ export class PanoramaStitcher {
 
     const scale = this.height / vh;
     const srcPerSmall = vw / SMALL_W;
-    const srcStrip = Math.abs(shift) * srcPerSmall;
+    const srcStrip = Math.min(vw * 0.5, Math.abs(shift) * srcPerSmall);
     const outStrip = Math.max(1, Math.round(srcStrip * scale));
     if (outStrip < 2) return false;
-    if (this.x + outStrip > this.maxWidth) return false;
 
-    // Take the freshly revealed band from the leading edge of the frame,
-    // slightly inside it to avoid lens distortion at the very border.
-    const inset = vw * 0.08;
-    const sx =
-      this.direction > 0
-        ? Math.min(vw - srcStrip, vw - inset - srcStrip)
-        : Math.max(0, inset);
+    // shift < 0 means the camera is panning right: new image appears on the
+    // right edge of the frame and is appended to the right of the panorama.
+    const panRight = this.direction < 0;
+    const inset = vw * 0.06;
+    const sx = panRight
+      ? Math.max(0, vw - inset - srcStrip)
+      : Math.min(vw - srcStrip, inset);
 
-    ctx.drawImage(video, Math.max(0, sx), 0, srcStrip, vh, this.x, 0, outStrip, this.height);
-    this.x += outStrip;
+    if (panRight) {
+      if (this.right + outStrip > this.maxWidth) return false;
+      ctx.drawImage(video, sx, 0, srcStrip, vh, this.right, 0, outStrip, this.height);
+      this.right += outStrip;
+    } else {
+      if (this.left - outStrip < 0) return false;
+      this.left -= outStrip;
+      ctx.drawImage(video, sx, 0, srcStrip, vh, this.left, 0, outStrip, this.height);
+    }
     this.frames++;
     return true;
   }
 
   /** Crop to what was actually captured and return a JPEG data URL. */
   finish(): string | null {
-    if (this.frames < 3 || this.x < this.height * 0.9) return null;
+    const w = this.right - this.left;
+    if (this.frames < 3 || w < this.height * 1.1) return null;
     const out = document.createElement("canvas");
-    out.width = this.x;
+    out.width = w;
     out.height = this.height;
     const ctx = out.getContext("2d");
     if (!ctx) return null;
-    ctx.drawImage(this.canvas, 0, 0, this.x, this.height, 0, 0, this.x, this.height);
+    ctx.drawImage(this.canvas, this.left, 0, w, this.height, 0, 0, w, this.height);
     return out.toDataURL("image/jpeg", 0.92);
   }
+
 }
