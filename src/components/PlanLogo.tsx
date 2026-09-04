@@ -1,4 +1,4 @@
-import logoUrl from "@/assets/flipr-logo.png";
+import logoUrl from "@/assets/dolphin-logo.png";
 import type { PlanType } from "@/lib/plan-mapping";
 
 /**
