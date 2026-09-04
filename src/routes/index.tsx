@@ -3621,7 +3621,7 @@ function DetailPanel({
                   <p className="mt-1.5 text-xs text-muted-foreground">{item.resale.reason}</p>
                 )}
                 <div className="mt-3">
-                  <h4 className="text-xs font-medium text-primary">{t("whereToSell")}</h4>
+                  <h3 className="text-xs font-medium text-primary">{t("whereToSell")}</h3>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
@@ -3677,7 +3677,7 @@ function DetailPanel({
             {listingOpen && listingDraft && (
               <div className="mt-4 rounded-lg border border-primary/40 bg-primary/5 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-xs font-medium text-primary">{t("listingDraft")}</h4>
+                  <h3 className="text-xs font-medium text-primary">{t("listingDraft")}</h3>
                   <button
                     onClick={() => {
                       setListingOpen(false);
@@ -3886,7 +3886,7 @@ function DetailPanel({
             )}
 
             <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
-              <h4 className="text-xs font-medium text-foreground">{t("priceCompare")}</h4>
+              <h3 className="text-xs font-medium text-foreground">{t("priceCompare")}</h3>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {getPriceCompareLinks(name).map((l) => (
                   <a
