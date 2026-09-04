@@ -37,8 +37,8 @@ import {
   MessageCircle,
   Send,
   ShieldCheck,
-
-
+  Grid3x3,
+  Timer,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -135,7 +135,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Phase = "camera" | "analyzing" | "results";
-type Mode = "photo" | "video" | "document" | "resale" | "authenticate";
+type Mode = "photo" | "video" | "document" | "resale" | "authenticate" | "camera";
 type Box = { x: number; y: number; w: number; h: number };
 
 type Enrichment = Omit<DetectedItem, "box" | "name">;
