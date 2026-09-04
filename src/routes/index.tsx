@@ -2139,6 +2139,8 @@ function Scanner() {
                 {mode === "document" && t("documentScanDescription")}
                 {mode === "authenticate" && t("authenticateScanDescription")}
                 {mode === "camera" && t("takePhotoDescription")}
+                {mode === "record" &&
+                  "Record video clips with zoom and torch — free, saved to your device."}
                 {mode === "barcode" &&
                   "Point at any QR code or product barcode — free, instant, no credits."}
                 {mode === "magnifier" &&
@@ -2146,7 +2148,7 @@ function Scanner() {
               </p>
             )}
 
-            {(mode === "camera" || mode === "magnifier") && (
+            {(mode === "camera" || mode === "record" || mode === "magnifier") && (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
