@@ -3707,6 +3707,7 @@ function DetailPanel({
                         onChange={(e) =>
                           setListingDraft((prev) => (prev ? { ...prev, title: e.target.value } : prev))
                         }
+                        aria-label="Listing title"
                         className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
                       />
                     ) : (
