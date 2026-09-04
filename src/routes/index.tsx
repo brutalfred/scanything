@@ -1077,7 +1077,6 @@ function Scanner() {
     try {
       const preds = await classifyOffline(dataUrl);
       setOfflinePreds(preds.length ? preds : []);
-      setOfflineReady(true);
     } catch {
       setOfflinePreds(null);
     } finally {
