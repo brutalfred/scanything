@@ -2291,7 +2291,7 @@ function Scanner() {
 
 
             <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[3/4] sm:aspect-video gold-glow">
-              {(mode === "camera" || mode === "magnifier") && photoGrid && (
+              {(mode === "camera" || mode === "record" || mode === "magnifier") && photoGrid && (
                 <div className="pointer-events-none absolute inset-0 z-10">
                   <div className="absolute inset-y-0 left-1/3 w-px bg-white/40" />
                   <div className="absolute inset-y-0 left-2/3 w-px bg-white/40" />
@@ -2304,7 +2304,7 @@ function Scanner() {
                   <div className="h-40 w-64 rounded-xl border-2 border-primary/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
                 </div>
               )}
-              {(mode === "camera" || mode === "magnifier") && countdown !== null && (
+              {(mode === "camera" || mode === "record" || mode === "magnifier") && countdown !== null && (
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/30">
                   <span className="text-7xl font-bold text-white drop-shadow-lg">{countdown}</span>
                 </div>
@@ -2319,7 +2319,9 @@ function Scanner() {
                     style={{
                       transform: [
                         mode === "magnifier" ? `scale(${magnify})` : "",
-                        mode === "camera" && selfieMirror ? "scaleX(-1)" : "",
+                        (mode === "camera" || mode === "record") && selfieMirror
+                          ? "scaleX(-1)"
+                          : "",
                       ]
                         .filter(Boolean)
                         .join(" ") || undefined,
