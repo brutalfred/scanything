@@ -120,6 +120,9 @@ export const EN = {
   photoScanDescription: "Identify objects and text in one still photo.",
   resaleScanDescription: "Values everything for second-hand sale and tells you what's worth listing.",
   documentScanDescription: "Reads text, forms, and documents clearly for easy copying.",
+  takePhoto: "Take Photo",
+  takePhotoDescription: "Just a camera — snap and save, no AI, no credits.",
+  newPhoto: "New photo",
   version: "Version",
 
   scanHistory: "Scan History",
