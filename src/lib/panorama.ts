@@ -18,10 +18,13 @@ export class PanoramaStitcher {
   private small: HTMLCanvasElement;
   private smallCtx: CanvasRenderingContext2D | null;
   private prev: Float32Array | null = null;
-  private x = 0;
+  private left = 0;
+  private right = 0;
+  private started = false;
   private height: number;
   private maxWidth: number;
-  private direction = 0; // +1 = camera panning right, -1 = left
+  private direction = 0; // sign of measured shift: <0 camera pans right
+
   frames = 0;
 
   constructor(height = 720, _stripWidth = 0, maxWidth = 8000) {
