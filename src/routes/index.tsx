@@ -1793,7 +1793,7 @@ function Scanner() {
                 signedIn={credits.signedIn}
                 onClick={credits.openSheet}
               />
-              {!isGuest && (
+              {!isGuest && mode !== "camera" && (
                 <button
                   onClick={() => setFilterOpen((o) => !o)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-accent gold-glow"
