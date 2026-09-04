@@ -3526,6 +3526,94 @@ function DetailPanel({
                 {item.resale.reason && (
                   <p className="mt-1.5 text-xs text-muted-foreground">{item.resale.reason}</p>
                 )}
+
+                {/* Buy price → profit, and fee-adjusted net payout per marketplace */}
+                {(() => {
+                  const typical = item.resale.typical;
+                  const buy = Number.parseFloat(buyPrice.replace(",", "."));
+                  const hasBuy = Number.isFinite(buy) && buy >= 0;
+                  const fees: { label: string; fee: number }[] = [
+                    { label: "eBay", fee: 0.13 },
+                    { label: "Mercari", fee: 0.1 },
+                    { label: "Depop", fee: 0.1 },
+                    { label: "Poshmark", fee: 0.2 },
+                    { label: "Facebook Marketplace", fee: 0 },
+                  ];
+                  const best = Math.round(typical * (1 - fees[4].fee));
+                  const bestProfit = hasBuy ? best - buy : null;
+                  return (
+                    <div className="mt-3 rounded-lg border border-border/60 bg-background/60 p-3">
+                      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        What did you pay?
+                      </label>
+                      <div className="mt-1 flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.5"
+                            value={buyPrice}
+                            onChange={(e) => setBuyPrice(e.target.value)}
+                            placeholder="0"
+                            className="w-full rounded-md border border-border bg-background py-1.5 pl-5 pr-2 text-sm tabular-nums outline-none focus:border-primary"
+                          />
+                        </div>
+                        {hasBuy && (
+                          <div className="text-right">
+                            <div
+                              className={`text-lg font-bold tabular-nums ${
+                                (bestProfit ?? 0) > 0 ? "text-primary" : "text-destructive"
+                              }`}
+                            >
+                              {(bestProfit ?? 0) >= 0 ? "+" : "−"}$
+                              {Math.abs(Math.round(bestProfit ?? 0))}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              profit at ${typical}
+                              {buy > 0
+                                ? ` · ${Math.round(((best - buy) / Math.max(buy, 1)) * 100)}% ROI`
+                                : ""}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 space-y-1">
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Net after typical fees
+                        </div>
+                        {fees.map((f) => {
+                          const net = Math.round(typical * (1 - f.fee));
+                          return (
+                            <div
+                              key={f.label}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <span className="text-muted-foreground">
+                                {f.label}
+                                {f.fee > 0 ? ` · ${Math.round(f.fee * 100)}%` : " · no fee"}
+                              </span>
+                              <span className="font-medium tabular-nums text-foreground">
+                                ${net}
+                                {hasBuy && (
+                                  <span
+                                    className={`ml-2 ${net - buy >= 0 ? "text-primary" : "text-destructive"}`}
+                                  >
+                                    {net - buy >= 0 ? "+" : "−"}${Math.abs(Math.round(net - buy))}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="mt-3">
                   <h4 className="text-xs font-medium text-primary">{t("whereToSell")}</h4>
                   <DropdownMenu>
