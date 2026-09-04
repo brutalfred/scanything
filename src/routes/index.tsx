@@ -115,7 +115,6 @@ import { PanoramaStitcher } from "@/lib/panorama";
 import { applyPortraitBlur } from "@/lib/portrait-blur";
 import {
   classifyOffline,
-  loadOfflineModel,
   offlineModelDownloaded,
   type OfflinePrediction,
 } from "@/lib/offline-model";
@@ -1071,31 +1070,12 @@ function Scanner() {
   // --- Offline / on-device identification ------------------------------
   const [offlinePreds, setOfflinePreds] = useState<OfflinePrediction[] | null>(null);
   const [offlineBusy, setOfflineBusy] = useState(false);
-  const [offlineReady, setOfflineReady] = useState(false);
-
-  useEffect(() => {
-    setOfflineReady(offlineModelDownloaded());
-  }, []);
-
-  const prepareOfflineModel = useCallback(async () => {
-    setOfflineBusy(true);
-    try {
-      await loadOfflineModel();
-      setOfflineReady(true);
-      toast.success("Offline recognition is ready — it now works with no connection.");
-    } catch {
-      toast.error("Could not download the offline model. Check your connection.");
-    } finally {
-      setOfflineBusy(false);
-    }
-  }, []);
 
   const identifyOffline = useCallback(async (dataUrl: string) => {
     setOfflineBusy(true);
     try {
       const preds = await classifyOffline(dataUrl);
       setOfflinePreds(preds.length ? preds : []);
-      setOfflineReady(true);
     } catch {
       setOfflinePreds(null);
     } finally {
@@ -2114,17 +2094,6 @@ function Scanner() {
               </button>
             )}
 
-            {!offlineReady && (
-              <button
-                onClick={() => void prepareOfflineModel()}
-                disabled={offlineBusy}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-60"
-                title="Download the on-device model so scans still give a best guess offline"
-              >
-                <WifiOff className="h-3.5 w-3.5" />
-                {offlineBusy ? "Preparing…" : "Offline mode"}
-              </button>
-            )}
 
 
 

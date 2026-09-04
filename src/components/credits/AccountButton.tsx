@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Camera, Check, ChevronDown, Download, GraduationCap, LogIn, LogOut, ShieldCheck, User2, X } from "lucide-react";
+import { Bell, Camera, Check, ChevronDown, Download, GraduationCap, LogIn, LogOut, ShieldCheck, User2, WifiOff, X } from "lucide-react";
+import { loadOfflineModel, offlineModelDownloaded } from "@/lib/offline-model";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,8 +37,58 @@ import { openOnboarding } from "@/components/OnboardingTour";
 import { useDailyReminder } from "@/hooks/useDailyReminder";
 import { PiAccountRow } from "@/components/PiAuthButton";
 
+function OfflineModelRow() {
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    setReady(offlineModelDownloaded());
+  }, []);
 
+  async function prepare() {
+    setBusy(true);
+    try {
+      await loadOfflineModel();
+      setReady(true);
+      toast.success("Offline recognition is ready — it now works with no connection.");
+    } catch {
+      toast.error("Could not download the offline model. Check your connection.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-current/30 bg-current/5 px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2 font-semibold">
+          <WifiOff className="h-4 w-4" />
+          Offline mode
+        </span>
+        {ready ? (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+            <Check className="h-3.5 w-3.5" />
+            Ready
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void prepare()}
+            disabled={busy}
+            className="rounded-lg border border-current/30 px-2 py-1 text-xs font-semibold transition-colors hover:bg-current/10 disabled:opacity-50"
+          >
+            {busy ? "Preparing…" : "Download"}
+          </button>
+        )}
+      </div>
+      <p className="mt-1.5 text-[11px] leading-snug opacity-70">
+        {ready
+          ? "The on-device model is saved — scans still give a best guess with no connection."
+          : "Download a small on-device model so scans still give a best guess while offline."}
+      </p>
+    </div>
+  );
+}
 
 export function AccountButton({
   signedIn,
@@ -307,6 +358,8 @@ export function AccountButton({
             </div>
 
             <DailyCheckin enabled={signedIn && open} />
+
+            <OfflineModelRow />
 
 
 
