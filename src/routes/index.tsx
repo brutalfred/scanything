@@ -3265,8 +3265,8 @@ function Scanner() {
                 </p>
                 <ul className="mt-1.5 space-y-1">
                   {offlinePreds.map((p) => (
-                    <li key={p.label} className="flex justify-between text-sm">
-                      <span className="capitalize">{p.label}</span>
+                    <li key={p.name} className="flex justify-between text-sm">
+                      <span className="capitalize">{p.name}</span>
                       <span className="text-muted-foreground">
                         {Math.round(p.confidence * 100)}%
                       </span>
