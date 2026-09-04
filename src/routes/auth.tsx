@@ -112,9 +112,15 @@ function AuthPage() {
 
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-5">
-      <div className="w-full max-w-sm">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-5">
+      {/* Starlike splash that radiates out from the artwork across the page */}
+      <div className="auth-splash" aria-hidden="true">
+        <div className="auth-stars auth-stars-a" />
+        <div className="auth-stars auth-stars-b" />
+      </div>
+      <div className="relative w-full max-w-sm">
         <div className="relative mb-5 w-full">
+          <div className="auth-splash-halo" aria-hidden="true" />
           <img
             src={authLogoAsset.url}
             alt="Scanything — Scan anything, know everything"
