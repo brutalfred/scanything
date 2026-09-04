@@ -41,12 +41,13 @@ export class PanoramaStitcher {
   }
 
   get width() {
-    return this.x;
+    return this.right - this.left;
   }
 
   get full() {
-    return this.x >= this.maxWidth - 8;
+    return this.right >= this.maxWidth - 8 || this.left <= 8;
   }
+
 
   private grab(video: HTMLVideoElement): Float32Array | null {
     const c = this.smallCtx;
