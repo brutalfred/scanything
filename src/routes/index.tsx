@@ -4019,6 +4019,7 @@ function DetailPanel({
                   capture="environment"
                   multiple
                   className="hidden"
+                  aria-label="Add extra photos for analysis"
                   onChange={(e) => {
                     void addExtraShots(e.target.files);
                     e.target.value = "";
