@@ -1754,6 +1754,7 @@ function Scanner() {
     setAuthAnalyzing(false);
     setAuthNote("");
     setBarcodeHit(null);
+    setOfflinePreds(null);
     setPhase("camera");
   }, []);
 
@@ -1856,6 +1857,7 @@ function Scanner() {
     });
     setMode(m);
     setUploaded(null);
+    setOfflinePreds(null);
     setVideoPaused(false);
     setError(null);
     setAuthWhole(null);
