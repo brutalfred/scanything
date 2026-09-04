@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSlideDismiss } from "@/hooks/useSlideDismiss";
 import { AnimatedCount } from "@/components/credits/AnimatedCount";
 import { createPortal } from "react-dom";
@@ -41,9 +41,9 @@ function OfflineModelRow() {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     setReady(offlineModelDownloaded());
-  });
+  }, []);
 
   async function prepare() {
     setBusy(true);
