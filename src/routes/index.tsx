@@ -2412,6 +2412,51 @@ function Scanner() {
                 </button>
               )}
 
+              {recording && (
+                <div className="absolute left-2 top-2 z-30 flex items-center gap-1.5 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                  REC {Math.floor(recSeconds / 60)}:{String(recSeconds % 60).padStart(2, "0")}
+                </div>
+              )}
+
+              {clip && (
+                <div className="absolute inset-0 z-40 flex flex-col bg-black">
+                  <video
+                    src={clip.url}
+                    controls
+                    playsInline
+                    className="min-h-0 w-full flex-1 object-contain"
+                  />
+                  <div className="flex items-center justify-center gap-2 p-2">
+                    <button
+                      type="button"
+                      onClick={saveClip}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void shareClip()}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+                    >
+                      <Share2 className="h-3.5 w-3.5" /> Share
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        URL.revokeObjectURL(clip.url);
+                        setClip(null);
+                      }}
+                      aria-label="Discard video"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Discard
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {isGuest && !TOOL_MODES.includes(mode) && (
                 <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/85 p-3 text-center text-xs text-white">
                   <p className="mb-2">Sign in for your {SIGNUP_GRANT} free credits and get started.</p>
