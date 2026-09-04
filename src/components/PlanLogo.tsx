@@ -9,7 +9,7 @@ export function PlanLogo({ plan, className }: { plan: PlanType | null; className
   const img = (
     <img
       src={logoAsset.url}
-      alt="Scanything logo"
+      alt="Scanything logo — AI camera item identifier and price estimator"
       className={className ?? "h-20 w-auto max-w-full object-contain sm:h-[100px]"}
       width={1024}
       height={512}
