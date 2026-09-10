@@ -3676,65 +3676,6 @@ function Scanner() {
         )}
       </main>
 
-      <footer className="border-t border-border/60 bg-background/70 py-6 text-center text-xs text-muted-foreground backdrop-blur">
-        <div className="mx-auto max-w-4xl px-4">
-          <div className="mb-2 flex flex-wrap items-center justify-center gap-4">
-            <Link to="/terms" className="hover:text-foreground hover:underline">
-              {t("terms")}
-            </Link>
-            <Link to="/refund-policy" className="hover:text-foreground hover:underline">
-              {t("refunds")}
-            </Link>
-            <Link to="/privacy" className="hover:text-foreground hover:underline">
-              {t("privacy")}
-            </Link>
-            <Link to="/account/data" className="hover:text-foreground hover:underline">
-              Delete my data
-            </Link>
-            <Link to="/account/delete" className="hover:text-foreground hover:underline">
-              {t("deleteMyAccount")}
-            </Link>
-
-          </div>
-          <p>© {new Date().getFullYear()} Scanything. All rights reserved. v{appVersion}</p>
-          <div className="mt-3 flex items-center justify-center gap-4">
-            <a
-              href="https://x.com/scanythingapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="X / Twitter"
-              className="inline-flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              <X size={18} />
-            </a>
-            <a
-              href="https://t.me/scanythingapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Telegram"
-              className="inline-flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M21.7 3.5c-.4-.3-.9-.3-1.3-.1L2.5 11.4c-.5.2-.8.7-.7 1.2.1.5.5.9 1 .9l4.4.1 1.6 5.6c.1.5.6.8 1.1.8.2 0 .4-.1.6-.2l3.2-2.4 3.2 2.4c.4.3 1 .3 1.4-.1.4-.3.5-.9.3-1.3l-2.6-5.1 5.3-7.3c.3-.4.2-1-.2-1.4z" />
-              </svg>
-            </a>
-            <a
-              href="mailto:scanythingapp@gmail.com"
-              aria-label="Email"
-              className="inline-flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              <Mail size={18} />
-            </a>
-          </div>
-        </div>
-      </footer>
 
       {selected && (
         <DetailPanel
