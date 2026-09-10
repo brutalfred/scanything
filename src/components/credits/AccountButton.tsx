@@ -481,6 +481,18 @@ export function AccountButton({
               {t("logOut")}
             </button>
 
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <Link to="/terms" onClick={() => setOpen(false)} className="underline hover:text-foreground">
+                {t("terms")}
+              </Link>
+              <Link to="/refund-policy" onClick={() => setOpen(false)} className="underline hover:text-foreground">
+                {t("refunds")}
+              </Link>
+              <Link to="/privacy" onClick={() => setOpen(false)} className="underline hover:text-foreground">
+                {t("privacy")}
+              </Link>
+            </div>
+
             <Link
               to="/account/data"
               onClick={() => setOpen(false)}
@@ -497,8 +509,18 @@ export function AccountButton({
               {t("deleteMyAccount")}
             </Link>
 
+            <a
+              href="mailto:scanythingapp@gmail.com"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-current/30 bg-current/5 px-3 py-2 text-sm font-semibold transition-colors hover:bg-current/10"
+            >
+              <Mail className="h-4 w-4" />
+              scanythingapp@gmail.com
+            </a>
 
             <p className="mt-3 text-center text-[10px] text-muted-foreground opacity-60">
+              © {new Date().getFullYear()} Scanything. All rights reserved.
+            </p>
+            <p className="mt-1 text-center text-[10px] text-muted-foreground opacity-60">
               {t("version")} {appVersion} · {androidApp ? "Android app" : "Web"}
             </p>
 
