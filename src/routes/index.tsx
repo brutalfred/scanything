@@ -21,7 +21,7 @@ import {
   Languages,
   User,
   History,
-  Mail,
+  
   Share2,
   Download,
   FileText,
